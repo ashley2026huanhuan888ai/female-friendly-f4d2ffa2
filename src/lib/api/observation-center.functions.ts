@@ -18,7 +18,7 @@ export const getObservationFeed = createServerFn({ method: "GET" })
     const limit = data.limit ?? 40;
     let q = supabaseAdmin
       .from("temperature_events" as never)
-      .select("id, object_id, delta, temperature_after, reason, breakdown, created_at")
+      .select("id, object_id, delta, temperature_after, reason, created_at")
       .order("created_at", { ascending: false })
       .limit(limit);
     if (kind === "heating") q = q.gt("delta", 0);
@@ -27,8 +27,9 @@ export const getObservationFeed = createServerFn({ method: "GET" })
     const { data: rows } = await q;
     const events = (rows ?? []) as Array<{
       id: string; object_id: string; delta: number; temperature_after: number;
-      reason: string; breakdown: unknown; created_at: string;
+      reason: string; created_at: string;
     }>;
+
     const ids = [...new Set(events.map((e) => e.object_id))];
     if (ids.length === 0) return [];
     const { data: objs } = await supabaseAdmin
