@@ -102,9 +102,33 @@ function ObjectDetail() {
             <div className="mt-4 text-right text-xs text-muted-foreground">
               共 {obj.observation_count} 条已审核观察
             </div>
+            <button
+              onClick={() => setShowExpl((v) => !v)}
+              className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {showExpl ? "收起" : "为什么是这个温度？"}
+            </button>
           </div>
         </div>
       </section>
+
+      {showExpl && (
+        <section className="border-b border-border bg-card/40 py-12">
+          <div className="container-prose space-y-8">
+            <TemperatureBreakdown data={expl?.breakdown ?? null} />
+            <HeatSources
+              heat={obj.heat_sources ?? []}
+              cooling={obj.cooling_sources ?? []}
+            />
+            <div>
+              <h3 className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">温度变化时间线</h3>
+              <div className="mt-4">
+                <TemperatureTimeline objectId={id} limit={30} />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-16">
         <div className="container-prose">
