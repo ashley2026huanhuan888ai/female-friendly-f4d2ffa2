@@ -56,8 +56,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "女性体验温度 · Female Experience Temperature" },
+      { title: "女性友好测评" },
       { name: "description", content: "基于用户观察与 AI 分析的女性体验观察平台。不进行法律意义上的事实认定，不进行道德审判。" },
+      { property: "og:title", content: "女性友好测评" },
+      { name: "twitter:title", content: "女性友好测评" },
+      { property: "og:description", content: "基于用户观察与 AI 分析的女性体验观察平台。不进行法律意义上的事实认定，不进行道德审判。" },
+      { name: "twitter:description", content: "基于用户观察与 AI 分析的女性体验观察平台。不进行法律意义上的事实认定，不进行道德审判。" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76304c01-5feb-48be-b366-e72692f2087b/id-preview-aa932e1d--521cf5fe-4250-44d0-8d80-2645e28c5002.lovable.app-1780306144641.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/76304c01-5feb-48be-b366-e72692f2087b/id-preview-aa932e1d--521cf5fe-4250-44d0-8d80-2645e28c5002.lovable.app-1780306144641.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
