@@ -245,14 +245,9 @@ export const submitObservation = createServerFn({ method: "POST" })
     // 2. AI 风险审查
     const risk = await callAIRiskCheck(data.content);
 
-    // 3. 简单相似度查重（与同对象近 30 天已通过观察对比）
+    // 3. 简单相似度查重（同对象近 50 条已通过观察，2-gram Jaccard >= 0.8）
     let duplicate_of: string | null = null;
     let similarity_score: number | null = null;
-    try {
-      const { data: sim } = await supabaseAdmin.rpc("exec_sql" as never, {} as never).then(() => ({ data: null })).catch(() => ({ data: null }));
-      void sim;
-    } catch { /* ignore */ }
-    // 直接 SQL 通过 REST 不可用；用简单 JS：拉近 50 条已通过观察做 trigram 近似（按词集合 Jaccard）
     const { data: existing } = await supabaseAdmin
       .from("observations")
       .select("id, cleaned_content, content")
