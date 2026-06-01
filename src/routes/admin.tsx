@@ -48,7 +48,7 @@ function AdminLayout() {
         <button
           onClick={async () => {
             try { await claim({}); toast.success("已成为管理员"); router.invalidate(); }
-            catch (e: any) { toast.error(e.message); }
+            catch (e) { toast.error((e as Error).message); }
           }}
           className="mt-6 border border-foreground bg-foreground px-5 py-2.5 text-sm text-background hover:bg-accent"
         >
@@ -65,9 +65,12 @@ function AdminLayout() {
           <span className="mr-4 font-serif text-base">管理后台</span>
           {[
             { to: "/admin", label: "概览" },
+            { to: "/admin/analytics", label: "数据" },
             { to: "/admin/objects", label: "对象" },
             { to: "/admin/observations", label: "观察审核" },
             { to: "/admin/requests", label: "对象申请" },
+            { to: "/admin/users", label: "用户信誉" },
+            { to: "/admin/audit", label: "审计日志" },
           ].map((t) => (
             <Link key={t.to} to={t.to}
               activeOptions={{ exact: t.to === "/admin" }}
