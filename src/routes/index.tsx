@@ -113,10 +113,11 @@ function Index() {
             </p>
           ) : (
             <div className="mt-8 grid gap-3 md:grid-cols-2">
-              {summary.today_events.map((e: any) => (
-                <MiniEventCard key={e.object_id + e.created_at} ev={e} />
+              {summary.today_events.map((e: any, i: number) => (
+                <FeedEventCard key={i} ev={{ ...e, id: String(i) }} />
               ))}
             </div>
+
           )}
         </div>
       </section>
