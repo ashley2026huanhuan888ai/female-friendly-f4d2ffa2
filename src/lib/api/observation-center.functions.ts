@@ -34,7 +34,8 @@ export const getObservationFeed = createServerFn({ method: "GET" })
     if (ids.length === 0) return [];
     const { data: objs } = await supabaseAdmin
       .from("objects")
-      .select("id, name, type, temperature, top_tags")
+      .select("id, name, type, temperature")
+
       .in("id", ids);
     const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
     return events.map((e) => ({
