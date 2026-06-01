@@ -54,23 +54,36 @@ async function callAIAnalyze(
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY 未配置");
 
-  const sys = `你是「女性体验温度」平台的内容分析引擎。你不是法官，不做道德裁决。
-仅分析用户提交内容中出现的「模式」与「议题」。
+  const kb = await loadKnowledgeContext();
+  const principleCodes = kb.principles.map((p) => p.code);
+  const caseCodes = kb.cases.map((c) => c.code);
 
-【步骤 1 内容清洗】删除：情绪化辱骂、广告、重复无意义内容；保留：事实描述、观察、场景。
-【步骤 2 提取事实】从清洗后内容中抽取若干客观事实描述（每条不超过 30 字）。
-【步骤 3 标签识别】仅可从以下一级标签选择：${FEMINIST_TAGS.join("、")}
-【步骤 4 证据等级】
-  A：附原始截图/视频/广告原文/台词/采访原文
-  B：详细描述，时间地点情境可核验
-  C：主观感受、模糊判断
-  D：辱骂、情绪宣泄、人身攻击（不参与计算）
-【步骤 5 置信度】0-1 之间，反映你对该判定的确信程度。
-【步骤 6 摘要】80 字以内。禁止使用："厌女""垃圾""恶臭""恶心""有毒"等情绪化词汇；
-  应使用："观察显示""讨论集中于""反馈主要涉及"等中立表达。
-  禁止输出"该品牌厌女"；允许输出"观察中出现较高比例的女性物化讨论"。
+  const sys = `你是「女性友好测评」平台的知识引擎分析器。你不是法官，不做道德裁决。
+你必须基于平台知识库（原则 + 标签 + 案例）进行可解释、可追溯的分析。
 
-reason：一句话说明判定理由（给管理员审核用）。`;
+【知识库 · 原则 Principles】（仅可引用下列 code）
+${kb.principles.map((p) => `- ${p.code} 「${p.name}」${p.description ?? ""}`).join("\n")}
+
+【知识库 · 一级标签】（仅可使用以下中文名）
+${FEMINIST_TAGS.join("、")}
+
+【知识库 · 已发布案例】（仅可引用下列 code，按相关性挑选 0-3 条）
+${kb.cases.map((c) => `- ${c.code} [${c.polarity}] ${c.title} —— ${c.summary} (tags: ${c.tags.join(",") || "-"})`).join("\n") || "（暂无案例）"}
+
+【分析步骤】
+1) 内容清洗：删除情绪化辱骂、广告、刷屏；保留事实与观察。
+2) 提取事实：每条 ≤30 字。
+3) 匹配知识库：找到本次观察对应的 principles_matched（原则 code）与 cases_cited（案例 code）。
+4) 标签识别：从一级标签集合中选择。
+5) 证据等级 A/B/C/D：A=有原始截图/台词/广告原文；B=可核验描述；C=主观感受；D=辱骂或纯情绪（不参与计算）。
+6) 置信度 0-1。
+7) summary（≤80字）与 explanation（≤120字 可解释性说明，须援引匹配到的原则/案例 code，例如 "匹配原则 non_objectification，与案例 KB-00003 模式一致"）。
+8) reason：一句话给管理员看的判定理由。
+
+【硬规则】
+- 禁止使用"厌女""恶心""有毒""垃圾"等情绪化词汇。
+- 禁止输出"该品牌厌女"；允许输出"观察中出现较高比例的女性物化讨论"。
+- principles_matched 与 cases_cited 中的 code 必须严格来自上方知识库列表，未匹配请留空数组。`;
 
   const user = `观察内容：${content}
 ${scene ? `场景：${scene}` : ""}
@@ -91,15 +104,24 @@ ${ref ? `参考链接：${ref}` : ""}`;
           parameters: {
             type: "object",
             properties: {
-              cleaned_content: { type: "string", description: "清洗后的事实性描述" },
-              facts: { type: "array", items: { type: "string" }, description: "提取的客观事实，每条≤30字" },
+              cleaned_content: { type: "string" },
+              facts: { type: "array", items: { type: "string" } },
               evidence_level: { type: "string", enum: ["A", "B", "C", "D"] },
               tags: { type: "array", items: { type: "string", enum: [...FEMINIST_TAGS] } },
               confidence: { type: "number", minimum: 0, maximum: 1 },
-              summary: { type: "string", description: "≤80字中立摘要" },
-              reason: { type: "string", description: "判定理由（管理员审核用）" },
+              summary: { type: "string" },
+              reason: { type: "string" },
+              principles_matched: {
+                type: "array",
+                items: principleCodes.length ? { type: "string", enum: principleCodes } : { type: "string" },
+              },
+              cases_cited: {
+                type: "array",
+                items: caseCodes.length ? { type: "string", enum: caseCodes } : { type: "string" },
+              },
+              explanation: { type: "string", description: "可解释性说明，需援引 code" },
             },
-            required: ["cleaned_content", "facts", "evidence_level", "tags", "confidence", "summary", "reason"],
+            required: ["cleaned_content","facts","evidence_level","tags","confidence","summary","reason","principles_matched","cases_cited","explanation"],
             additionalProperties: false,
           },
         },
