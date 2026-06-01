@@ -13,9 +13,11 @@ export const Route = createFileRoute("/admin/objects")({
 function ObjectsAdmin() {
   const create = useServerFn(createObject);
   const recompute = useServerFn(recomputeTemperature);
+  const freeze = useServerFn(freezeObject);
   const [items, setItems] = useState<any[]>([]);
   const [form, setForm] = useState({ name: "", type: "brand", description: "" });
   const [busy, setBusy] = useState<string | null>(null);
+  const [manualTemp, setManualTemp] = useState<Record<string, string>>({});
 
   const reload = () =>
     supabase.from("objects").select("*").order("updated_at", { ascending: false }).limit(100).then(({ data }) => setItems(data ?? []));
