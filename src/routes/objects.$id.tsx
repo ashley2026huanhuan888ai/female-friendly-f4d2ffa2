@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
+import { ObjectTimeline } from "@/components/ObjectTimeline";
 import { OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
 
 export const Route = createFileRoute("/objects/$id")({
@@ -98,7 +99,16 @@ function ObjectDetail() {
 
       <section className="py-16">
         <div className="container-prose">
-          <h2 className="font-serif text-2xl">观察记录</h2>
+          <h2 className="font-serif text-2xl">案例时间线</h2>
+          <div className="mt-6">
+            <ObjectTimeline objectId={id} />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-border py-16">
+        <div className="container-prose">
+          <h2 className="font-serif text-2xl">最近观察</h2>
           {obs.length === 0 ? (
             <p className="mt-8 text-sm text-muted-foreground">尚无已审核的观察记录。</p>
           ) : (
