@@ -501,7 +501,7 @@ export const hideObject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     await supabaseAdmin.from("objects")
-      .update({ hidden: data.hidden, status: data.hidden ? "hidden" : "published" } as never)
+      .update({ hidden: data.hidden })
       .eq("id", data.object_id);
     await writeAuditLog(context.userId, data.hidden ? "hide" : "show", "object", data.object_id, null, null);
     return { ok: true };
