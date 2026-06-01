@@ -626,7 +626,7 @@ export const adjustReputation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     await supabaseAdmin.rpc("apply_reputation_delta", {
-      _user: data.user_id, _delta: data.delta, _reason: `admin_adjust:${data.reason}`, _obs: null,
+      _user: data.user_id, _delta: data.delta, _reason: `admin_adjust:${data.reason}`, _obs: null as never,
     });
     await writeAuditLog(context.userId, "adjust_reputation", "user", data.user_id, null, { delta: data.delta }, data.reason);
     return { ok: true };
