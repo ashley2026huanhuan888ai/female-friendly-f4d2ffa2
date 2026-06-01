@@ -173,6 +173,50 @@ async function assertAdmin(userId: string) {
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
+// ===== AI 风险审查 =====
+async function callAIRiskCheck(content: string): Promise<{
+  risk_level: "low" | "medium" | "high";
+  reasons: string[];
+  suggested_action: "approve" | "review" | "reject";
+}> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) throw new Error("LOVABLE_API_KEY 未配置");
+  const sys = `你是平台内容风险审查员。判断用户提交的观察是否存在以下风险：
+abuse(辱骂/人身攻击) / ad(广告) / spam(刷屏/重复无意义) / extreme(极端情绪宣泄) / political(政治内容) / illegal(违法) / defamation(诽谤)。
+风险等级：low=正常观察；medium=存在争议但可审；high=涉嫌前述严重情形。
+suggested_action：approve(明显正常)/review(需人工审)/reject(强烈建议拒绝)。`;
+  const res = await fetch(GATEWAY, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: "system", content: sys }, { role: "user", content }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "risk",
+          parameters: {
+            type: "object",
+            properties: {
+              risk_level: { type: "string", enum: ["low", "medium", "high"] },
+              reasons: { type: "array", items: { type: "string", enum: ["abuse","ad","spam","extreme","political","illegal","defamation"] } },
+              suggested_action: { type: "string", enum: ["approve", "review", "reject"] },
+            },
+            required: ["risk_level", "reasons", "suggested_action"],
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "risk" } },
+    }),
+  });
+  if (!res.ok) return { risk_level: "low", reasons: [], suggested_action: "review" };
+  const json = await res.json();
+  const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) return { risk_level: "low", reasons: [], suggested_action: "review" };
+  return JSON.parse(args);
+}
+
 // ===== 提交观察并触发 AI 分析 =====
 export const submitObservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -187,10 +231,65 @@ export const submitObservation = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+
+    // 1. 限额检查
+    const { data: lim } = await supabaseAdmin.rpc("check_user_submit_limit", {
+      _user: userId, _object: data.object_id,
+    });
+    const limit = lim as { allowed: boolean; total_24h: number; same_object_24h: number } | null;
+    if (limit && !limit.allowed) {
+      if (limit.same_object_24h >= 1) throw new Error("同一对象 24 小时内仅可提交 1 条观察");
+      throw new Error("24 小时内最多提交 3 条观察");
+    }
+
+    // 2. AI 风险审查
+    const risk = await callAIRiskCheck(data.content);
+
+    // 3. 简单相似度查重（与同对象近 30 天已通过观察对比）
+    let duplicate_of: string | null = null;
+    let similarity_score: number | null = null;
+    try {
+      const { data: sim } = await supabaseAdmin.rpc("exec_sql" as never, {} as never).then(() => ({ data: null })).catch(() => ({ data: null }));
+      void sim;
+    } catch { /* ignore */ }
+    // 直接 SQL 通过 REST 不可用；用简单 JS：拉近 50 条已通过观察做 trigram 近似（按词集合 Jaccard）
+    const { data: existing } = await supabaseAdmin
+      .from("observations")
+      .select("id, cleaned_content, content")
+      .eq("object_id", data.object_id)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (existing?.length) {
+      const norm = (s: string) => new Set(s.toLowerCase().replace(/[\s\p{P}]+/gu, "").match(/.{1,2}/g) ?? []);
+      const a = norm(data.content);
+      for (const e of existing) {
+        const b = norm(e.cleaned_content || e.content || "");
+        if (b.size === 0) continue;
+        let inter = 0;
+        a.forEach((x) => { if (b.has(x)) inter++; });
+        const jac = inter / (a.size + b.size - inter);
+        if (jac > (similarity_score ?? 0)) { similarity_score = jac; duplicate_of = e.id; }
+      }
+      if ((similarity_score ?? 0) < 0.8) { duplicate_of = null; }
+    }
+
+    // 4. AI 结构化分析
     const a = await callAIAnalyze(
       data.content, data.scene ?? null, data.screenshot_url ?? null, data.reference_url ?? null,
     );
     const impact = computeImpact(a.tags, a.evidence_level, a.confidence);
+
+    // 5. 自动通过判定
+    const { data: profile } = await supabaseAdmin
+      .from("profiles").select("auto_approve").eq("id", userId).maybeSingle();
+    const canAuto =
+      profile?.auto_approve === true &&
+      risk.risk_level === "low" &&
+      !duplicate_of &&
+      a.evidence_level !== "D";
+    const status = canAuto ? "approved" : "pending";
+
     const { data: inserted, error } = await supabaseAdmin
       .from("observations")
       .insert({
@@ -207,19 +306,39 @@ export const submitObservation = createServerFn({ method: "POST" })
         tags: a.tags,
         confidence: a.confidence,
         impact_score: impact,
-        status: "pending",
+        status,
+        risk_level: risk.risk_level,
+        risk_reasons: risk.reasons,
+        duplicate_of,
+        similarity_score,
       })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    // 自动通过则立即重算温度
+    if (status === "approved") {
+      void recomputeObjectInternal(data.object_id).catch(() => {});
+      await supabaseAdmin.rpc("apply_reputation_delta", {
+        _user: userId, _delta: data.reference_url ? 10 : 5,
+        _reason: "auto_approve", _obs: inserted.id,
+      });
+    }
+
     return {
       id: inserted.id,
+      status,
+      risk_level: risk.risk_level,
+      risk_reasons: risk.reasons,
+      duplicate_of,
+      similarity_score,
       evidence_level: a.evidence_level,
       tags: a.tags,
       impact_score: impact,
       confidence: a.confidence,
       summary: a.summary,
       reason: a.reason,
+      limit_info: limit,
     };
   });
 
