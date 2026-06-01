@@ -14,16 +14,236 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analysis_logs: {
+        Row: {
+          created_at: string
+          id: string
+          object_id: string
+          snapshot: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          object_id: string
+          snapshot: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          object_id?: string
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_logs_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      object_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          id: string
+          reason: string | null
+          requested_name: string
+          requested_type: Database["public"]["Enums"]["object_type"]
+          requester_id: string
+          status: Database["public"]["Enums"]["request_status"]
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_name: string
+          requested_type: Database["public"]["Enums"]["object_type"]
+          requester_id: string
+          status?: Database["public"]["Enums"]["request_status"]
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          reason?: string | null
+          requested_name?: string
+          requested_type?: Database["public"]["Enums"]["object_type"]
+          requester_id?: string
+          status?: Database["public"]["Enums"]["request_status"]
+        }
+        Relationships: []
+      }
+      objects: {
+        Row: {
+          ai_summary: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          observation_count: number
+          status: Database["public"]["Enums"]["object_status"]
+          temperature: number
+          top_tags: Json
+          type: Database["public"]["Enums"]["object_type"]
+          updated_at: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          observation_count?: number
+          status?: Database["public"]["Enums"]["object_status"]
+          temperature?: number
+          top_tags?: Json
+          type: Database["public"]["Enums"]["object_type"]
+          updated_at?: string
+        }
+        Update: {
+          ai_summary?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          observation_count?: number
+          status?: Database["public"]["Enums"]["object_status"]
+          temperature?: number
+          top_tags?: Json
+          type?: Database["public"]["Enums"]["object_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      observations: {
+        Row: {
+          admin_note: string | null
+          cleaned_content: string | null
+          content: string
+          created_at: string
+          evidence_level: Database["public"]["Enums"]["evidence_level"] | null
+          id: string
+          object_id: string
+          reference_url: string | null
+          scene: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["observation_status"]
+          tags: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          cleaned_content?: string | null
+          content: string
+          created_at?: string
+          evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          id?: string
+          object_id: string
+          reference_url?: string | null
+          scene?: string | null
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["observation_status"]
+          tags?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          cleaned_content?: string | null
+          content?: string
+          created_at?: string
+          evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          id?: string
+          object_id?: string
+          reference_url?: string | null
+          scene?: string | null
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["observation_status"]
+          tags?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observations_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      evidence_level: "A" | "B" | "C" | "D"
+      object_status: "published" | "draft"
+      object_type:
+        | "brand"
+        | "product"
+        | "service"
+        | "organization"
+        | "film"
+        | "game"
+        | "show"
+        | "event"
+      observation_status: "pending" | "approved" | "rejected"
+      request_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +370,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      evidence_level: ["A", "B", "C", "D"],
+      object_status: ["published", "draft"],
+      object_type: [
+        "brand",
+        "product",
+        "service",
+        "organization",
+        "film",
+        "game",
+        "show",
+        "event",
+      ],
+      observation_status: ["pending", "approved", "rejected"],
+      request_status: ["pending", "approved", "rejected"],
+    },
   },
 } as const
