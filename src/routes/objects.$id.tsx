@@ -9,7 +9,9 @@ import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
 import { HeatSources } from "@/components/HeatSources";
 import { TemperatureTimeline } from "@/components/TemperatureTimeline";
 import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
+import { FollowButton } from "@/components/FollowButton";
 import { OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
+
 
 export const Route = createFileRoute("/objects/$id")({
   component: ObjectDetail,
