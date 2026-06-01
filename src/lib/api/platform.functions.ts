@@ -398,7 +398,10 @@ export const submitObservation = createServerFn({ method: "POST" })
         risk_reasons: risk.reasons,
         duplicate_of,
         similarity_score,
-      })
+        principles_matched: a.principles_matched ?? [],
+        cases_cited: a.cases_cited ?? [],
+        explanation: a.explanation ?? null,
+      } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
