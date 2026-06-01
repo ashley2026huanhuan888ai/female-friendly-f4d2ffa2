@@ -204,19 +204,3 @@ function ColumnList({ title, hint, items, positive }: { title: string; hint: str
   );
 }
 
-function MiniEventCard({ ev }: { ev: any }) {
-  return (
-    <FeedEventCard
-      ev={{
-        id: ev.object_id + ev.created_at,
-        object_id: ev.object_id,
-        delta: Number(ev.delta),
-        temperature_after: Number(ev.temperature_after),
-        before: Math.round((Number(ev.temperature_after) - Number(ev.delta)) * 10) / 10,
-        reason: ev.reason,
-        created_at: ev.created_at,
-        object: null,
-      }}
-    />
-  );
-}
