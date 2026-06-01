@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { createObject, recomputeTemperature } from "@/lib/api/platform.functions";
+import { createObject, recomputeTemperature, freezeObject } from "@/lib/api/platform.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { toast } from "sonner";
 
