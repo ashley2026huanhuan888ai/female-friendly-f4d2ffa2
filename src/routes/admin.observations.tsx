@@ -38,6 +38,9 @@ type Obs = {
   rejection_reason: string | null;
   duplicate_of: string | null;
   similarity_score: number | null;
+  principles_matched: string[] | null;
+  cases_cited: string[] | null;
+  explanation: string | null;
   created_at: string;
   objects: { id: string; name: string } | null;
 };
@@ -168,6 +171,23 @@ function ObsAdmin() {
                 <ul className="space-y-0.5 text-sm">
                   {o.facts.map((f, i) => <li key={i}>· {f}</li>)}
                 </ul>
+              </div>
+            )}
+
+            {(o.explanation || (o.principles_matched?.length ?? 0) > 0 || (o.cases_cited?.length ?? 0) > 0) && (
+              <div className="mt-3 border border-dashed border-accent/40 bg-accent/5 p-3">
+                <div className="mb-1 text-xs uppercase tracking-wider text-accent">可解释性 · Explainability</div>
+                {o.explanation && <p className="text-sm">{o.explanation}</p>}
+                {(o.principles_matched?.length ?? 0) > 0 && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">匹配原则：
+                    {(o.principles_matched ?? []).map((p) => <span key={p} className="ml-1 px-1.5 py-0.5 bg-muted/40 font-mono">{p}</span>)}
+                  </p>
+                )}
+                {(o.cases_cited?.length ?? 0) > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">引用案例：
+                    {(o.cases_cited ?? []).map((c) => <span key={c} className="ml-1 px-1.5 py-0.5 bg-muted/40 font-mono">{c}</span>)}
+                  </p>
+                )}
               </div>
             )}
 

@@ -53,6 +53,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <Link to="/archive" className="text-muted-foreground hover:text-foreground">
               案例档案库
             </Link>
+            <Link to="/knowledge" className="text-muted-foreground hover:text-foreground">
+              知识引擎
+            </Link>
             <Link to="/discussions" className="text-muted-foreground hover:text-foreground">
               热门讨论
             </Link>

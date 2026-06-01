@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as ObjectsRouteImport } from './routes/objects'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
@@ -26,6 +27,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
 import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
+import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
@@ -42,6 +44,11 @@ const ObjectsRoute = ObjectsRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KnowledgeRoute = KnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiscussionsRoute = DiscussionsRouteImport.update({
@@ -85,14 +92,14 @@ const ObjectsIdRoute = ObjectsIdRouteImport.update({
   getParentRoute: () => ObjectsRoute,
 } as any)
 const ArchiveEvidenceRoute = ArchiveEvidenceRouteImport.update({
-  id: '/evidence',
-  path: '/evidence',
-  getParentRoute: () => ArchiveRoute,
+  id: '/archive/evidence',
+  path: '/archive/evidence',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ArchiveCaseCodeRoute = ArchiveCaseCodeRouteImport.update({
-  id: '/$caseCode',
-  path: '/$caseCode',
-  getParentRoute: () => ArchiveRoute,
+  id: '/archive/$caseCode',
+  path: '/archive/$caseCode',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -114,6 +121,11 @@ const AdminObjectsRoute = AdminObjectsRouteImport.update({
   path: '/objects',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminKnowledgeRoute = AdminKnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -130,11 +142,13 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/discussions': typeof DiscussionsRoute
+  '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
@@ -150,11 +164,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/discussions': typeof DiscussionsRoute
+  '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
@@ -172,11 +188,13 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/discussions': typeof DiscussionsRoute
+  '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
@@ -195,11 +213,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/discussions'
+    | '/knowledge'
     | '/login'
     | '/objects'
     | '/request-object'
     | '/admin/analytics'
     | '/admin/audit'
+    | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
@@ -215,11 +235,13 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/discussions'
+    | '/knowledge'
     | '/login'
     | '/objects'
     | '/request-object'
     | '/admin/analytics'
     | '/admin/audit'
+    | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
@@ -236,11 +258,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/discussions'
+    | '/knowledge'
     | '/login'
     | '/objects'
     | '/request-object'
     | '/admin/analytics'
     | '/admin/audit'
+    | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
@@ -258,9 +282,12 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   DiscussionsRoute: typeof DiscussionsRoute
+  KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   ObjectsRoute: typeof ObjectsRouteWithChildren
   RequestObjectRoute: typeof RequestObjectRoute
+  ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
+  ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
   ArchiveIndexRoute: typeof ArchiveIndexRoute
 }
@@ -286,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/knowledge': {
+      id: '/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof KnowledgeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/discussions': {
@@ -346,17 +380,17 @@ declare module '@tanstack/react-router' {
     }
     '/archive/evidence': {
       id: '/archive/evidence'
-      path: '/evidence'
+      path: '/archive/evidence'
       fullPath: '/archive/evidence'
       preLoaderRoute: typeof ArchiveEvidenceRouteImport
-      parentRoute: typeof ArchiveRoute
+      parentRoute: typeof rootRouteImport
     }
     '/archive/$caseCode': {
       id: '/archive/$caseCode'
-      path: '/$caseCode'
+      path: '/archive/$caseCode'
       fullPath: '/archive/$caseCode'
       preLoaderRoute: typeof ArchiveCaseCodeRouteImport
-      parentRoute: typeof ArchiveRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
       id: '/admin/users'
@@ -386,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminObjectsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/knowledge': {
+      id: '/admin/knowledge'
+      path: '/knowledge'
+      fullPath: '/admin/knowledge'
+      preLoaderRoute: typeof AdminKnowledgeRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/audit': {
       id: '/admin/audit'
       path: '/audit'
@@ -406,6 +447,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminKnowledgeRoute: typeof AdminKnowledgeRoute
   AdminObjectsRoute: typeof AdminObjectsRoute
   AdminObservationsRoute: typeof AdminObservationsRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
@@ -416,6 +458,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAuditRoute: AdminAuditRoute,
+  AdminKnowledgeRoute: AdminKnowledgeRoute,
   AdminObjectsRoute: AdminObjectsRoute,
   AdminObservationsRoute: AdminObservationsRoute,
   AdminRequestsRoute: AdminRequestsRoute,
@@ -441,22 +484,15 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   DiscussionsRoute: DiscussionsRoute,
+  KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   ObjectsRoute: ObjectsRouteWithChildren,
   RequestObjectRoute: RequestObjectRoute,
+  ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
+  ArchiveEvidenceRoute: ArchiveEvidenceRoute,
   SubmitObjectIdRoute: SubmitObjectIdRoute,
   ArchiveIndexRoute: ArchiveIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
