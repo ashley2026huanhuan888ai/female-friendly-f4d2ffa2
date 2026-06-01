@@ -89,6 +89,8 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div>本平台不进行法律意义上的事实认定，不进行道德审判。</div>
         </div>
       </footer>
+      <Toaster position="top-center" theme="light" />
     </div>
   );
 }
+
