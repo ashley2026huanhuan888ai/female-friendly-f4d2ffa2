@@ -9,38 +9,233 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RequestObjectRouteImport } from './routes/request-object'
+import { Route as ObjectsRouteImport } from './routes/objects'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DiscussionsRouteImport } from './routes/discussions'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
+import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
+import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
+import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
+import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
 
+const RequestObjectRoute = RequestObjectRouteImport.update({
+  id: '/request-object',
+  path: '/request-object',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjectsRoute = ObjectsRouteImport.update({
+  id: '/objects',
+  path: '/objects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscussionsRoute = DiscussionsRouteImport.update({
+  id: '/discussions',
+  path: '/discussions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const SubmitObjectIdRoute = SubmitObjectIdRouteImport.update({
+  id: '/submit/$objectId',
+  path: '/submit/$objectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjectsIdRoute = ObjectsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ObjectsRoute,
+} as any)
+const AdminRequestsRoute = AdminRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminObservationsRoute = AdminObservationsRouteImport.update({
+  id: '/observations',
+  path: '/observations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminObjectsRoute = AdminObjectsRouteImport.update({
+  id: '/objects',
+  path: '/objects',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/discussions': typeof DiscussionsRoute
+  '/login': typeof LoginRoute
+  '/objects': typeof ObjectsRouteWithChildren
+  '/request-object': typeof RequestObjectRoute
+  '/admin/objects': typeof AdminObjectsRoute
+  '/admin/observations': typeof AdminObservationsRoute
+  '/admin/requests': typeof AdminRequestsRoute
+  '/objects/$id': typeof ObjectsIdRoute
+  '/submit/$objectId': typeof SubmitObjectIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/discussions': typeof DiscussionsRoute
+  '/login': typeof LoginRoute
+  '/objects': typeof ObjectsRouteWithChildren
+  '/request-object': typeof RequestObjectRoute
+  '/admin/objects': typeof AdminObjectsRoute
+  '/admin/observations': typeof AdminObservationsRoute
+  '/admin/requests': typeof AdminRequestsRoute
+  '/objects/$id': typeof ObjectsIdRoute
+  '/submit/$objectId': typeof SubmitObjectIdRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/discussions': typeof DiscussionsRoute
+  '/login': typeof LoginRoute
+  '/objects': typeof ObjectsRouteWithChildren
+  '/request-object': typeof RequestObjectRoute
+  '/admin/objects': typeof AdminObjectsRoute
+  '/admin/observations': typeof AdminObservationsRoute
+  '/admin/requests': typeof AdminRequestsRoute
+  '/objects/$id': typeof ObjectsIdRoute
+  '/submit/$objectId': typeof SubmitObjectIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/discussions'
+    | '/login'
+    | '/objects'
+    | '/request-object'
+    | '/admin/objects'
+    | '/admin/observations'
+    | '/admin/requests'
+    | '/objects/$id'
+    | '/submit/$objectId'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/about'
+    | '/discussions'
+    | '/login'
+    | '/objects'
+    | '/request-object'
+    | '/admin/objects'
+    | '/admin/observations'
+    | '/admin/requests'
+    | '/objects/$id'
+    | '/submit/$objectId'
+    | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/discussions'
+    | '/login'
+    | '/objects'
+    | '/request-object'
+    | '/admin/objects'
+    | '/admin/observations'
+    | '/admin/requests'
+    | '/objects/$id'
+    | '/submit/$objectId'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  DiscussionsRoute: typeof DiscussionsRoute
+  LoginRoute: typeof LoginRoute
+  ObjectsRoute: typeof ObjectsRouteWithChildren
+  RequestObjectRoute: typeof RequestObjectRoute
+  SubmitObjectIdRoute: typeof SubmitObjectIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/request-object': {
+      id: '/request-object'
+      path: '/request-object'
+      fullPath: '/request-object'
+      preLoaderRoute: typeof RequestObjectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/objects': {
+      id: '/objects'
+      path: '/objects'
+      fullPath: '/objects'
+      preLoaderRoute: typeof ObjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discussions': {
+      id: '/discussions'
+      path: '/discussions'
+      fullPath: '/discussions'
+      preLoaderRoute: typeof DiscussionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +243,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/submit/$objectId': {
+      id: '/submit/$objectId'
+      path: '/submit/$objectId'
+      fullPath: '/submit/$objectId'
+      preLoaderRoute: typeof SubmitObjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/objects/$id': {
+      id: '/objects/$id'
+      path: '/$id'
+      fullPath: '/objects/$id'
+      preLoaderRoute: typeof ObjectsIdRouteImport
+      parentRoute: typeof ObjectsRoute
+    }
+    '/admin/requests': {
+      id: '/admin/requests'
+      path: '/requests'
+      fullPath: '/admin/requests'
+      preLoaderRoute: typeof AdminRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/observations': {
+      id: '/admin/observations'
+      path: '/observations'
+      fullPath: '/admin/observations'
+      preLoaderRoute: typeof AdminObservationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/objects': {
+      id: '/admin/objects'
+      path: '/objects'
+      fullPath: '/admin/objects'
+      preLoaderRoute: typeof AdminObjectsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminObjectsRoute: typeof AdminObjectsRoute
+  AdminObservationsRoute: typeof AdminObservationsRoute
+  AdminRequestsRoute: typeof AdminRequestsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminObjectsRoute: AdminObjectsRoute,
+  AdminObservationsRoute: AdminObservationsRoute,
+  AdminRequestsRoute: AdminRequestsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface ObjectsRouteChildren {
+  ObjectsIdRoute: typeof ObjectsIdRoute
+}
+
+const ObjectsRouteChildren: ObjectsRouteChildren = {
+  ObjectsIdRoute: ObjectsIdRoute,
+}
+
+const ObjectsRouteWithChildren =
+  ObjectsRoute._addFileChildren(ObjectsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
+  DiscussionsRoute: DiscussionsRoute,
+  LoginRoute: LoginRoute,
+  ObjectsRoute: ObjectsRouteWithChildren,
+  RequestObjectRoute: RequestObjectRoute,
+  SubmitObjectIdRoute: SubmitObjectIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
