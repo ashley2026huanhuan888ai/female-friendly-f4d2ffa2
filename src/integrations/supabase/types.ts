@@ -140,6 +140,7 @@ export type Database = {
           merged_into: string | null
           name_en: string | null
           name_zh: string
+          polarity: Database["public"]["Enums"]["tag_polarity"]
           updated_at: string
           weight: number
         }
@@ -152,6 +153,7 @@ export type Database = {
           merged_into?: string | null
           name_en?: string | null
           name_zh: string
+          polarity?: Database["public"]["Enums"]["tag_polarity"]
           updated_at?: string
           weight?: number
         }
@@ -164,6 +166,7 @@ export type Database = {
           merged_into?: string | null
           name_en?: string | null
           name_zh?: string
+          polarity?: Database["public"]["Enums"]["tag_polarity"]
           updated_at?: string
           weight?: number
         }
@@ -214,11 +217,14 @@ export type Database = {
         Row: {
           ai_summary: string | null
           category: string | null
+          cooling_sources: Json
           created_at: string
           description: string | null
           frozen: boolean
+          heat_sources: Json
           hidden: boolean
           id: string
+          last_cooled_at: string | null
           merged_into: string | null
           name: string
           observation_count: number
@@ -231,11 +237,14 @@ export type Database = {
         Insert: {
           ai_summary?: string | null
           category?: string | null
+          cooling_sources?: Json
           created_at?: string
           description?: string | null
           frozen?: boolean
+          heat_sources?: Json
           hidden?: boolean
           id?: string
+          last_cooled_at?: string | null
           merged_into?: string | null
           name: string
           observation_count?: number
@@ -248,11 +257,14 @@ export type Database = {
         Update: {
           ai_summary?: string | null
           category?: string | null
+          cooling_sources?: Json
           created_at?: string
           description?: string | null
           frozen?: boolean
+          heat_sources?: Json
           hidden?: boolean
           id?: string
+          last_cooled_at?: string | null
           merged_into?: string | null
           name?: string
           observation_count?: number
@@ -469,6 +481,45 @@ export type Database = {
         }
         Relationships: []
       }
+      temperature_events: {
+        Row: {
+          actor_id: string | null
+          breakdown: Json
+          created_at: string
+          delta: number
+          id: string
+          note: string | null
+          object_id: string
+          observation_id: string | null
+          reason: string
+          temperature_after: number
+        }
+        Insert: {
+          actor_id?: string | null
+          breakdown?: Json
+          created_at?: string
+          delta?: number
+          id?: string
+          note?: string | null
+          object_id: string
+          observation_id?: string | null
+          reason: string
+          temperature_after: number
+        }
+        Update: {
+          actor_id?: string | null
+          breakdown?: Json
+          created_at?: string
+          delta?: number
+          id?: string
+          note?: string | null
+          object_id?: string
+          observation_id?: string | null
+          reason?: string
+          temperature_after?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -546,6 +597,7 @@ export type Database = {
         | "off_topic"
       request_status: "pending" | "approved" | "rejected"
       risk_level: "low" | "medium" | "high"
+      tag_polarity: "negative" | "positive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -707,6 +759,7 @@ export const Constants = {
       ],
       request_status: ["pending", "approved", "rejected"],
       risk_level: ["low", "medium", "high"],
+      tag_polarity: ["negative", "positive"],
     },
   },
 } as const
