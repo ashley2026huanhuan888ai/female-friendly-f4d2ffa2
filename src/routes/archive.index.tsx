@@ -5,7 +5,7 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { searchArchive, ARCHIVE_CATEGORIES } from "@/lib/api/archive.functions";
 import { FEMINIST_TAGS, OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
 
-export const Route = createFileRoute("/archive")({
+export const Route = createFileRoute("/archive/")({
   head: () => ({
     meta: [
       { title: "案例档案库 · 女性体验温度" },

@@ -13,10 +13,10 @@ import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as ObjectsRouteImport } from './routes/objects'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
-import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ArchiveIndexRouteImport } from './routes/archive.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
 import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
@@ -49,11 +49,6 @@ const DiscussionsRoute = DiscussionsRouteImport.update({
   path: '/discussions',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ArchiveRoute = ArchiveRouteImport.update({
-  id: '/archive',
-  path: '/archive',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -67,6 +62,11 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArchiveIndexRoute = ArchiveIndexRouteImport.update({
+  id: '/archive/',
+  path: '/archive/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -129,7 +129,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/archive': typeof ArchiveRouteWithChildren
   '/discussions': typeof DiscussionsRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
@@ -145,11 +144,11 @@ export interface FileRoutesByFullPath {
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/archive/': typeof ArchiveIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/archive': typeof ArchiveRouteWithChildren
   '/discussions': typeof DiscussionsRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
@@ -165,13 +164,13 @@ export interface FileRoutesByTo {
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin': typeof AdminIndexRoute
+  '/archive': typeof ArchiveIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/archive': typeof ArchiveRouteWithChildren
   '/discussions': typeof DiscussionsRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
@@ -187,6 +186,7 @@ export interface FileRoutesById {
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/archive/': typeof ArchiveIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -194,7 +194,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
-    | '/archive'
     | '/discussions'
     | '/login'
     | '/objects'
@@ -210,11 +209,11 @@ export interface FileRouteTypes {
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin/'
+    | '/archive/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/archive'
     | '/discussions'
     | '/login'
     | '/objects'
@@ -230,12 +229,12 @@ export interface FileRouteTypes {
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin'
+    | '/archive'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/admin'
-    | '/archive'
     | '/discussions'
     | '/login'
     | '/objects'
@@ -251,18 +250,19 @@ export interface FileRouteTypes {
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin/'
+    | '/archive/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
-  ArchiveRoute: typeof ArchiveRouteWithChildren
   DiscussionsRoute: typeof DiscussionsRoute
   LoginRoute: typeof LoginRoute
   ObjectsRoute: typeof ObjectsRouteWithChildren
   RequestObjectRoute: typeof RequestObjectRoute
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
+  ArchiveIndexRoute: typeof ArchiveIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -295,13 +295,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscussionsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/archive': {
-      id: '/archive'
-      path: '/archive'
-      fullPath: '/archive'
-      preLoaderRoute: typeof ArchiveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -321,6 +314,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/archive/': {
+      id: '/archive/'
+      path: '/archive'
+      fullPath: '/archive/'
+      preLoaderRoute: typeof ArchiveIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -425,19 +425,6 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface ArchiveRouteChildren {
-  ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
-  ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
-}
-
-const ArchiveRouteChildren: ArchiveRouteChildren = {
-  ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
-  ArchiveEvidenceRoute: ArchiveEvidenceRoute,
-}
-
-const ArchiveRouteWithChildren =
-  ArchiveRoute._addFileChildren(ArchiveRouteChildren)
-
 interface ObjectsRouteChildren {
   ObjectsIdRoute: typeof ObjectsIdRoute
 }
@@ -453,13 +440,23 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
-  ArchiveRoute: ArchiveRouteWithChildren,
   DiscussionsRoute: DiscussionsRoute,
   LoginRoute: LoginRoute,
   ObjectsRoute: ObjectsRouteWithChildren,
   RequestObjectRoute: RequestObjectRoute,
   SubmitObjectIdRoute: SubmitObjectIdRoute,
+  ArchiveIndexRoute: ArchiveIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
