@@ -9,38 +9,167 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RequestObjectRouteImport } from './routes/request-object'
+import { Route as ObjectsRouteImport } from './routes/objects'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DiscussionsRouteImport } from './routes/discussions'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
+import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
 
+const RequestObjectRoute = RequestObjectRouteImport.update({
+  id: '/request-object',
+  path: '/request-object',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjectsRoute = ObjectsRouteImport.update({
+  id: '/objects',
+  path: '/objects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscussionsRoute = DiscussionsRouteImport.update({
+  id: '/discussions',
+  path: '/discussions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubmitObjectIdRoute = SubmitObjectIdRouteImport.update({
+  id: '/submit/$objectId',
+  path: '/submit/$objectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjectsIdRoute = ObjectsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ObjectsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/discussions': typeof DiscussionsRoute
+  '/login': typeof LoginRoute
+  '/objects': typeof ObjectsRouteWithChildren
+  '/request-object': typeof RequestObjectRoute
+  '/objects/$id': typeof ObjectsIdRoute
+  '/submit/$objectId': typeof SubmitObjectIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/discussions': typeof DiscussionsRoute
+  '/login': typeof LoginRoute
+  '/objects': typeof ObjectsRouteWithChildren
+  '/request-object': typeof RequestObjectRoute
+  '/objects/$id': typeof ObjectsIdRoute
+  '/submit/$objectId': typeof SubmitObjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/discussions': typeof DiscussionsRoute
+  '/login': typeof LoginRoute
+  '/objects': typeof ObjectsRouteWithChildren
+  '/request-object': typeof RequestObjectRoute
+  '/objects/$id': typeof ObjectsIdRoute
+  '/submit/$objectId': typeof SubmitObjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/discussions'
+    | '/login'
+    | '/objects'
+    | '/request-object'
+    | '/objects/$id'
+    | '/submit/$objectId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/about'
+    | '/discussions'
+    | '/login'
+    | '/objects'
+    | '/request-object'
+    | '/objects/$id'
+    | '/submit/$objectId'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/discussions'
+    | '/login'
+    | '/objects'
+    | '/request-object'
+    | '/objects/$id'
+    | '/submit/$objectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  DiscussionsRoute: typeof DiscussionsRoute
+  LoginRoute: typeof LoginRoute
+  ObjectsRoute: typeof ObjectsRouteWithChildren
+  RequestObjectRoute: typeof RequestObjectRoute
+  SubmitObjectIdRoute: typeof SubmitObjectIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/request-object': {
+      id: '/request-object'
+      path: '/request-object'
+      fullPath: '/request-object'
+      preLoaderRoute: typeof RequestObjectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/objects': {
+      id: '/objects'
+      path: '/objects'
+      fullPath: '/objects'
+      preLoaderRoute: typeof ObjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discussions': {
+      id: '/discussions'
+      path: '/discussions'
+      fullPath: '/discussions'
+      preLoaderRoute: typeof DiscussionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +177,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/submit/$objectId': {
+      id: '/submit/$objectId'
+      path: '/submit/$objectId'
+      fullPath: '/submit/$objectId'
+      preLoaderRoute: typeof SubmitObjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/objects/$id': {
+      id: '/objects/$id'
+      path: '/$id'
+      fullPath: '/objects/$id'
+      preLoaderRoute: typeof ObjectsIdRouteImport
+      parentRoute: typeof ObjectsRoute
+    }
   }
 }
 
+interface ObjectsRouteChildren {
+  ObjectsIdRoute: typeof ObjectsIdRoute
+}
+
+const ObjectsRouteChildren: ObjectsRouteChildren = {
+  ObjectsIdRoute: ObjectsIdRoute,
+}
+
+const ObjectsRouteWithChildren =
+  ObjectsRoute._addFileChildren(ObjectsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  DiscussionsRoute: DiscussionsRoute,
+  LoginRoute: LoginRoute,
+  ObjectsRoute: ObjectsRouteWithChildren,
+  RequestObjectRoute: RequestObjectRoute,
+  SubmitObjectIdRoute: SubmitObjectIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
