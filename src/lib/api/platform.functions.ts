@@ -22,6 +22,27 @@ interface AnalyzeResult {
   confidence: number;
   summary: string;
   reason: string;
+  principles_matched: string[];
+  cases_cited: string[];
+  explanation: string;
+}
+
+// 检索可被 AI 引用的知识：活跃原则 + 已发布案例
+async function loadKnowledgeContext() {
+  const [pRes, cRes] = await Promise.all([
+    supabaseAdmin.from("principles" as never).select("code, name, description")
+      .eq("active", true).order("display_order"),
+    supabaseAdmin.from("knowledge_cases" as never)
+      .select("code, title, summary, polarity, tags")
+      .eq("status", "published")
+      .order("featured", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(40),
+  ]);
+  return {
+    principles: (pRes.data ?? []) as { code: string; name: string; description: string | null }[],
+    cases: (cRes.data ?? []) as { code: string; title: string; summary: string; polarity: string; tags: string[] }[],
+  };
 }
 
 async function callAIAnalyze(
