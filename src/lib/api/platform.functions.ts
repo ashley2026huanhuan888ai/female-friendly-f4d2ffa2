@@ -532,7 +532,9 @@ export const mergeObjects = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     if (data.source_id === data.target_id) throw new Error("源对象与目标相同");
     await supabaseAdmin.from("observations").update({ object_id: data.target_id }).eq("object_id", data.source_id);
-    await supabaseAdmin.from("objects").update({ merged_into: data.target_id, hidden: true, status: "hidden" } as never)
+    await supabaseAdmin.from("objects").update({ merged_into: data.target_id, hidden: true })
+      .eq("id", data.source_id);
+    /* hide source from public list via objects.hidden flag; status enum unchanged */
       .eq("id", data.source_id);
     await writeAuditLog(context.userId, "merge", "object", data.source_id,
       { source_id: data.source_id }, { target_id: data.target_id }, data.reason ?? null);
