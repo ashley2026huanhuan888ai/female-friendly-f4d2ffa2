@@ -66,6 +66,7 @@ function AdminLayout() {
           {[
             { to: "/admin", label: "概览" },
             { to: "/admin/analytics", label: "数据" },
+            { to: "/admin/temperature", label: "温度中心" },
             { to: "/admin/knowledge", label: "知识引擎" },
             { to: "/admin/objects", label: "对象" },
             { to: "/admin/observations", label: "观察审核" },

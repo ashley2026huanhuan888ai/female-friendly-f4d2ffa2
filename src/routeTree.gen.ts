@@ -24,6 +24,7 @@ import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
 import { Route as ArchiveEvidenceRouteImport } from './routes/archive.evidence'
 import { Route as ArchiveCaseCodeRouteImport } from './routes/archive.$caseCode'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTemperatureRouteImport } from './routes/admin.temperature'
 import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
 import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
@@ -106,6 +107,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTemperatureRoute = AdminTemperatureRouteImport.update({
+  id: '/temperature',
+  path: '/temperature',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRequestsRoute = AdminRequestsRouteImport.update({
   id: '/requests',
   path: '/requests',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
+  '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
+  '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
@@ -198,6 +206,7 @@ export interface FileRoutesById {
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
+  '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
+    | '/admin/temperature'
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
@@ -245,6 +255,7 @@ export interface FileRouteTypes {
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
+    | '/admin/temperature'
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
@@ -268,6 +279,7 @@ export interface FileRouteTypes {
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
+    | '/admin/temperature'
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
@@ -399,6 +411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/temperature': {
+      id: '/admin/temperature'
+      path: '/temperature'
+      fullPath: '/admin/temperature'
+      preLoaderRoute: typeof AdminTemperatureRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/requests': {
       id: '/admin/requests'
       path: '/requests'
@@ -451,6 +470,7 @@ interface AdminRouteChildren {
   AdminObjectsRoute: typeof AdminObjectsRoute
   AdminObservationsRoute: typeof AdminObservationsRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
+  AdminTemperatureRoute: typeof AdminTemperatureRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -462,6 +482,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminObjectsRoute: AdminObjectsRoute,
   AdminObservationsRoute: AdminObservationsRoute,
   AdminRequestsRoute: AdminRequestsRoute,
+  AdminTemperatureRoute: AdminTemperatureRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
