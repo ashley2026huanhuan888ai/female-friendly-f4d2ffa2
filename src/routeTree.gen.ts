@@ -9,16 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TopicsRouteImport } from './routes/topics'
 import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as ObjectsRouteImport } from './routes/objects'
+import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
+import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ArchiveIndexRouteImport } from './routes/archive.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as TopicsTagRouteImport } from './routes/topics.$tag'
 import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
 import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
 import { Route as ArchiveEvidenceRouteImport } from './routes/archive.evidence'
@@ -32,6 +36,11 @@ import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
+const TopicsRoute = TopicsRouteImport.update({
+  id: '/topics',
+  path: '/topics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RequestObjectRoute = RequestObjectRouteImport.update({
   id: '/request-object',
   path: '/request-object',
@@ -42,6 +51,11 @@ const ObjectsRoute = ObjectsRouteImport.update({
   path: '/objects',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MeRoute = MeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -50,6 +64,11 @@ const LoginRoute = LoginRouteImport.update({
 const KnowledgeRoute = KnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedRoute = FeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiscussionsRoute = DiscussionsRouteImport.update({
@@ -81,6 +100,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const TopicsTagRoute = TopicsTagRouteImport.update({
+  id: '/$tag',
+  path: '/$tag',
+  getParentRoute: () => TopicsRoute,
 } as any)
 const SubmitObjectIdRoute = SubmitObjectIdRouteImport.update({
   id: '/submit/$objectId',
@@ -148,10 +172,13 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/discussions': typeof DiscussionsRoute
+  '/feed': typeof FeedRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/me': typeof MeRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
+  '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
@@ -164,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/archive/evidence': typeof ArchiveEvidenceRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
+  '/topics/$tag': typeof TopicsTagRoute
   '/admin/': typeof AdminIndexRoute
   '/archive/': typeof ArchiveIndexRoute
 }
@@ -171,10 +199,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/discussions': typeof DiscussionsRoute
+  '/feed': typeof FeedRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/me': typeof MeRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
+  '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
@@ -187,6 +218,7 @@ export interface FileRoutesByTo {
   '/archive/evidence': typeof ArchiveEvidenceRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
+  '/topics/$tag': typeof TopicsTagRoute
   '/admin': typeof AdminIndexRoute
   '/archive': typeof ArchiveIndexRoute
 }
@@ -196,10 +228,13 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/discussions': typeof DiscussionsRoute
+  '/feed': typeof FeedRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/me': typeof MeRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
+  '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
@@ -212,6 +247,7 @@ export interface FileRoutesById {
   '/archive/evidence': typeof ArchiveEvidenceRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
+  '/topics/$tag': typeof TopicsTagRoute
   '/admin/': typeof AdminIndexRoute
   '/archive/': typeof ArchiveIndexRoute
 }
@@ -222,10 +258,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/discussions'
+    | '/feed'
     | '/knowledge'
     | '/login'
+    | '/me'
     | '/objects'
     | '/request-object'
+    | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
     | '/admin/knowledge'
@@ -238,6 +277,7 @@ export interface FileRouteTypes {
     | '/archive/evidence'
     | '/objects/$id'
     | '/submit/$objectId'
+    | '/topics/$tag'
     | '/admin/'
     | '/archive/'
   fileRoutesByTo: FileRoutesByTo
@@ -245,10 +285,13 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/discussions'
+    | '/feed'
     | '/knowledge'
     | '/login'
+    | '/me'
     | '/objects'
     | '/request-object'
+    | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
     | '/admin/knowledge'
@@ -261,6 +304,7 @@ export interface FileRouteTypes {
     | '/archive/evidence'
     | '/objects/$id'
     | '/submit/$objectId'
+    | '/topics/$tag'
     | '/admin'
     | '/archive'
   id:
@@ -269,10 +313,13 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/discussions'
+    | '/feed'
     | '/knowledge'
     | '/login'
+    | '/me'
     | '/objects'
     | '/request-object'
+    | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
     | '/admin/knowledge'
@@ -285,6 +332,7 @@ export interface FileRouteTypes {
     | '/archive/evidence'
     | '/objects/$id'
     | '/submit/$objectId'
+    | '/topics/$tag'
     | '/admin/'
     | '/archive/'
   fileRoutesById: FileRoutesById
@@ -294,10 +342,13 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   DiscussionsRoute: typeof DiscussionsRoute
+  FeedRoute: typeof FeedRoute
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
+  MeRoute: typeof MeRoute
   ObjectsRoute: typeof ObjectsRouteWithChildren
   RequestObjectRoute: typeof RequestObjectRoute
+  TopicsRoute: typeof TopicsRouteWithChildren
   ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
   ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
@@ -306,6 +357,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/topics': {
+      id: '/topics'
+      path: '/topics'
+      fullPath: '/topics'
+      preLoaderRoute: typeof TopicsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/request-object': {
       id: '/request-object'
       path: '/request-object'
@@ -320,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ObjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/me': {
+      id: '/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -332,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/knowledge'
       fullPath: '/knowledge'
       preLoaderRoute: typeof KnowledgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed': {
+      id: '/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/discussions': {
@@ -375,6 +447,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/topics/$tag': {
+      id: '/topics/$tag'
+      path: '/$tag'
+      fullPath: '/topics/$tag'
+      preLoaderRoute: typeof TopicsTagRouteImport
+      parentRoute: typeof TopicsRoute
     }
     '/submit/$objectId': {
       id: '/submit/$objectId'
@@ -500,15 +579,29 @@ const ObjectsRouteChildren: ObjectsRouteChildren = {
 const ObjectsRouteWithChildren =
   ObjectsRoute._addFileChildren(ObjectsRouteChildren)
 
+interface TopicsRouteChildren {
+  TopicsTagRoute: typeof TopicsTagRoute
+}
+
+const TopicsRouteChildren: TopicsRouteChildren = {
+  TopicsTagRoute: TopicsTagRoute,
+}
+
+const TopicsRouteWithChildren =
+  TopicsRoute._addFileChildren(TopicsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   DiscussionsRoute: DiscussionsRoute,
+  FeedRoute: FeedRoute,
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
+  MeRoute: MeRoute,
   ObjectsRoute: ObjectsRouteWithChildren,
   RequestObjectRoute: RequestObjectRoute,
+  TopicsRoute: TopicsRouteWithChildren,
   ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
   ArchiveEvidenceRoute: ArchiveEvidenceRoute,
   SubmitObjectIdRoute: SubmitObjectIdRoute,
