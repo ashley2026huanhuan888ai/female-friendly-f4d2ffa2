@@ -173,6 +173,99 @@ async function assertAdmin(userId: string) {
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
+async function writeAuditLog(
+  actor: string, action: string, target_type: string, target_id: string | null,
+  before: unknown, after: unknown, reason?: string | null,
+) {
+  await supabaseAdmin.from("audit_logs").insert({
+    actor_id: actor, action, target_type, target_id,
+    before: before as never, after: after as never, reason: reason ?? null,
+  });
+}
+
+// 内部温度重算（用于自动通过 / 审核通过后调用，无权限检查）
+async function recomputeObjectInternal(object_id: string): Promise<number | null> {
+  const { data: obj } = await supabaseAdmin
+    .from("objects").select("id, name, frozen").eq("id", object_id).single();
+  if (!obj || obj.frozen) return null;
+  const { data: obs } = await supabaseAdmin
+    .from("observations")
+    .select("summary, cleaned_content, content, evidence_level, tags, impact_score")
+    .eq("object_id", object_id).eq("status", "approved");
+  const list = (obs ?? []).map((o) => ({
+    summary: o.summary || o.cleaned_content || o.content?.slice(0, 80) || "",
+    evidence_level: (o.evidence_level ?? "C") as string,
+    tags: (o.tags as string[]) ?? [],
+    impact_score: Number(o.impact_score) || 0,
+  }));
+  if (list.length === 0) {
+    await supabaseAdmin.from("objects").update({
+      temperature: 24, ai_summary: "暂无足够观察生成总结。", top_tags: [], observation_count: 0,
+    }).eq("id", object_id);
+    return 24;
+  }
+  const temperature = computeTemperature(list.map((o) => o.impact_score));
+  let summary = "";
+  let top_tags: { tag: string; count: number }[] = [];
+  let evidence_distribution: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
+  try {
+    const r = await callAIObjectSummary(obj.name, list);
+    summary = r.summary; top_tags = r.top_tags; evidence_distribution = r.evidence_distribution;
+  } catch { /* tolerate AI failure */ }
+  await supabaseAdmin.from("objects").update({
+    temperature, ai_summary: summary || null, top_tags,
+    observation_count: list.filter((o) => o.evidence_level !== "D").length,
+  }).eq("id", object_id);
+  await supabaseAdmin.from("analysis_logs").insert({
+    object_id, snapshot: { temperature, top_tags, evidence_distribution, obs_count: list.length },
+  });
+  return temperature;
+}
+
+// ===== AI 风险审查 =====
+async function callAIRiskCheck(content: string): Promise<{
+  risk_level: "low" | "medium" | "high";
+  reasons: string[];
+  suggested_action: "approve" | "review" | "reject";
+}> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) throw new Error("LOVABLE_API_KEY 未配置");
+  const sys = `你是平台内容风险审查员。判断用户提交的观察是否存在以下风险：
+abuse(辱骂/人身攻击) / ad(广告) / spam(刷屏/重复无意义) / extreme(极端情绪宣泄) / political(政治内容) / illegal(违法) / defamation(诽谤)。
+风险等级：low=正常观察；medium=存在争议但可审；high=涉嫌前述严重情形。
+suggested_action：approve(明显正常)/review(需人工审)/reject(强烈建议拒绝)。`;
+  const res = await fetch(GATEWAY, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [{ role: "system", content: sys }, { role: "user", content }],
+      tools: [{
+        type: "function",
+        function: {
+          name: "risk",
+          parameters: {
+            type: "object",
+            properties: {
+              risk_level: { type: "string", enum: ["low", "medium", "high"] },
+              reasons: { type: "array", items: { type: "string", enum: ["abuse","ad","spam","extreme","political","illegal","defamation"] } },
+              suggested_action: { type: "string", enum: ["approve", "review", "reject"] },
+            },
+            required: ["risk_level", "reasons", "suggested_action"],
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: "function", function: { name: "risk" } },
+    }),
+  });
+  if (!res.ok) return { risk_level: "low", reasons: [], suggested_action: "review" };
+  const json = await res.json();
+  const args = json.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) return { risk_level: "low", reasons: [], suggested_action: "review" };
+  return JSON.parse(args);
+}
+
 // ===== 提交观察并触发 AI 分析 =====
 export const submitObservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -187,10 +280,60 @@ export const submitObservation = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+
+    // 1. 限额检查
+    const { data: lim } = await supabaseAdmin.rpc("check_user_submit_limit", {
+      _user: userId, _object: data.object_id,
+    });
+    const limit = lim as { allowed: boolean; total_24h: number; same_object_24h: number } | null;
+    if (limit && !limit.allowed) {
+      if (limit.same_object_24h >= 1) throw new Error("同一对象 24 小时内仅可提交 1 条观察");
+      throw new Error("24 小时内最多提交 3 条观察");
+    }
+
+    // 2. AI 风险审查
+    const risk = await callAIRiskCheck(data.content);
+
+    // 3. 简单相似度查重（同对象近 50 条已通过观察，2-gram Jaccard >= 0.8）
+    let duplicate_of: string | null = null;
+    let similarity_score: number | null = null;
+    const { data: existing } = await supabaseAdmin
+      .from("observations")
+      .select("id, cleaned_content, content")
+      .eq("object_id", data.object_id)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (existing?.length) {
+      const norm = (s: string) => new Set(s.toLowerCase().replace(/[\s\p{P}]+/gu, "").match(/.{1,2}/g) ?? []);
+      const a = norm(data.content);
+      for (const e of existing) {
+        const b = norm(e.cleaned_content || e.content || "");
+        if (b.size === 0) continue;
+        let inter = 0;
+        a.forEach((x) => { if (b.has(x)) inter++; });
+        const jac = inter / (a.size + b.size - inter);
+        if (jac > (similarity_score ?? 0)) { similarity_score = jac; duplicate_of = e.id; }
+      }
+      if ((similarity_score ?? 0) < 0.8) { duplicate_of = null; }
+    }
+
+    // 4. AI 结构化分析
     const a = await callAIAnalyze(
       data.content, data.scene ?? null, data.screenshot_url ?? null, data.reference_url ?? null,
     );
     const impact = computeImpact(a.tags, a.evidence_level, a.confidence);
+
+    // 5. 自动通过判定
+    const { data: profile } = await supabaseAdmin
+      .from("profiles").select("auto_approve").eq("id", userId).maybeSingle();
+    const canAuto =
+      profile?.auto_approve === true &&
+      risk.risk_level === "low" &&
+      !duplicate_of &&
+      a.evidence_level !== "D";
+    const status = canAuto ? "approved" : "pending";
+
     const { data: inserted, error } = await supabaseAdmin
       .from("observations")
       .insert({
@@ -207,19 +350,39 @@ export const submitObservation = createServerFn({ method: "POST" })
         tags: a.tags,
         confidence: a.confidence,
         impact_score: impact,
-        status: "pending",
+        status,
+        risk_level: risk.risk_level,
+        risk_reasons: risk.reasons,
+        duplicate_of,
+        similarity_score,
       })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+
+    // 自动通过则立即重算温度
+    if (status === "approved") {
+      void recomputeObjectInternal(data.object_id).catch(() => {});
+      await supabaseAdmin.rpc("apply_reputation_delta", {
+        _user: userId, _delta: data.reference_url ? 10 : 5,
+        _reason: "auto_approve", _obs: inserted.id,
+      });
+    }
+
     return {
       id: inserted.id,
+      status,
+      risk_level: risk.risk_level,
+      risk_reasons: risk.reasons,
+      duplicate_of,
+      similarity_score,
       evidence_level: a.evidence_level,
       tags: a.tags,
       impact_score: impact,
       confidence: a.confidence,
       summary: a.summary,
       reason: a.reason,
+      limit_info: limit,
     };
   });
 
@@ -300,66 +463,22 @@ export const recomputeTemperature = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-
-    const { data: obj } = await supabaseAdmin
-      .from("objects").select("id, name, frozen").eq("id", data.object_id).single();
-    if (!obj) throw new Error("对象不存在");
-
-    // 管理员手动温度覆盖
     if (data.manual_temperature !== undefined) {
+      const { data: before } = await supabaseAdmin
+        .from("objects").select("temperature").eq("id", data.object_id).single();
       await supabaseAdmin.from("objects").update({ temperature: data.manual_temperature })
         .eq("id", data.object_id);
       await supabaseAdmin.from("analysis_logs").insert({
         object_id: data.object_id,
         snapshot: { manual: true, temperature: data.manual_temperature },
       });
+      await writeAuditLog(context.userId, "manual_temperature", "object", data.object_id,
+        before, { temperature: data.manual_temperature }, "管理员手动覆盖");
       return { temperature: data.manual_temperature };
     }
-
-    if (obj.frozen) throw new Error("该对象温度已冻结");
-
-    const { data: obs } = await supabaseAdmin
-      .from("observations")
-      .select("summary, cleaned_content, content, evidence_level, tags, impact_score")
-      .eq("object_id", data.object_id)
-      .eq("status", "approved");
-
-    const list = (obs ?? []).map((o) => ({
-      summary: o.summary || o.cleaned_content || o.content?.slice(0, 80) || "",
-      evidence_level: (o.evidence_level ?? "C") as string,
-      tags: (o.tags as string[]) ?? [],
-      impact_score: Number(o.impact_score) || 0,
-    }));
-
-    if (list.length === 0) {
-      await supabaseAdmin.from("objects").update({
-        temperature: 24, ai_summary: "暂无足够观察生成总结。",
-        top_tags: [], observation_count: 0,
-      }).eq("id", data.object_id);
-      return { temperature: 24 };
-    }
-
-    const temperature = computeTemperature(list.map((o) => o.impact_score));
-    const result = await callAIObjectSummary(obj.name, list);
-
-    await supabaseAdmin.from("objects").update({
-      temperature,
-      ai_summary: result.summary,
-      top_tags: result.top_tags,
-      observation_count: list.filter((o) => o.evidence_level !== "D").length,
-    }).eq("id", data.object_id);
-
-    await supabaseAdmin.from("analysis_logs").insert({
-      object_id: data.object_id,
-      snapshot: {
-        temperature,
-        top_tags: result.top_tags,
-        evidence_distribution: result.evidence_distribution,
-        obs_count: list.length,
-      },
-    });
-
-    return { temperature, summary: result.summary };
+    const t = await recomputeObjectInternal(data.object_id);
+    if (t === null) throw new Error("对象不存在或已冻结");
+    return { temperature: t };
   });
 
 // ===== 冻结 / 解冻对象温度 =====
@@ -371,6 +490,74 @@ export const freezeObject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     await supabaseAdmin.from("objects").update({ frozen: data.frozen }).eq("id", data.object_id);
+    await writeAuditLog(context.userId, data.frozen ? "freeze" : "unfreeze", "object", data.object_id, null, null);
+    return { ok: true };
+  });
+
+// ===== 隐藏 / 显示对象 =====
+export const hideObject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ object_id: z.string().uuid(), hidden: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    await supabaseAdmin.from("objects")
+      .update({ hidden: data.hidden })
+      .eq("id", data.object_id);
+    await writeAuditLog(context.userId, data.hidden ? "hide" : "show", "object", data.object_id, null, null);
+    return { ok: true };
+  });
+
+// ===== 删除对象（admin）=====
+export const deleteObject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ object_id: z.string().uuid(), reason: z.string().max(500).optional() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { data: before } = await supabaseAdmin.from("objects").select("*").eq("id", data.object_id).single();
+    await supabaseAdmin.from("observations").delete().eq("object_id", data.object_id);
+    await supabaseAdmin.from("objects").delete().eq("id", data.object_id);
+    await writeAuditLog(context.userId, "delete", "object", data.object_id, before, null, data.reason ?? null);
+    return { ok: true };
+  });
+
+// ===== 合并对象（将 source 的观察迁移至 target，source 标记 merged_into）=====
+export const mergeObjects = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      source_id: z.string().uuid(), target_id: z.string().uuid(), reason: z.string().max(500).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    if (data.source_id === data.target_id) throw new Error("源对象与目标相同");
+    await supabaseAdmin.from("observations").update({ object_id: data.target_id }).eq("object_id", data.source_id);
+    await supabaseAdmin.from("objects").update({ merged_into: data.target_id, hidden: true })
+      .eq("id", data.source_id);
+    await writeAuditLog(context.userId, "merge", "object", data.source_id,
+      { source_id: data.source_id }, { target_id: data.target_id }, data.reason ?? null);
+    await recomputeObjectInternal(data.target_id).catch(() => {});
+    return { ok: true };
+  });
+
+// ===== 修改对象分类 =====
+export const updateObjectCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      object_id: z.string().uuid(),
+      type: z.enum(["brand", "product", "service", "organization", "film", "game", "show", "event"]).optional(),
+      category: z.string().max(80).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const patch: Record<string, unknown> = {};
+    if (data.type) patch.type = data.type;
+    if (data.category !== undefined) patch.category = data.category || null;
+    if (!Object.keys(patch).length) return { ok: true };
+    await supabaseAdmin.from("objects").update(patch as never).eq("id", data.object_id);
+    await writeAuditLog(context.userId, "update_category", "object", data.object_id, null, patch);
     return { ok: true };
   });
 
@@ -381,21 +568,107 @@ export const reviewObservation = createServerFn({ method: "POST" })
     z.object({
       id: z.string().uuid(),
       action: z.enum(["approve", "reject"]),
+      rejection_reason: z.enum(["too_short","no_facts","pure_emotion","duplicate","advertisement","personal_attack","defamation","off_topic"]).optional(),
       note: z.string().max(500).optional(),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { data: before } = await supabaseAdmin.from("observations")
+      .select("user_id, object_id, status, reference_url").eq("id", data.id).single();
+    if (!before) throw new Error("观察不存在");
+    if (data.action === "reject" && !data.rejection_reason) throw new Error("驳回需选择原因");
     const status = data.action === "approve" ? "approved" : "rejected";
-    const { data: updated, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("observations")
-      .update({ status, admin_note: data.note ?? null })
-      .eq("id", data.id)
-      .select("object_id")
-      .single();
+      .update({
+        status, admin_note: data.note ?? null,
+        rejection_reason: data.action === "reject" ? data.rejection_reason : null,
+      } as never)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { object_id: updated.object_id };
+
+    // 信誉变更
+    let delta = 0; let reason = "review";
+    if (data.action === "approve") {
+      delta = before.reference_url ? 10 : 5; reason = "approved";
+    } else {
+      const map: Record<string, number> = {
+        advertisement: -20, personal_attack: -30, defamation: -30,
+        too_short: -10, no_facts: -10, pure_emotion: -10, duplicate: -10, off_topic: -10,
+      };
+      delta = map[data.rejection_reason!] ?? -10;
+      reason = data.rejection_reason!;
+    }
+    await supabaseAdmin.rpc("apply_reputation_delta", {
+      _user: before.user_id, _delta: delta, _reason: reason, _obs: data.id,
+    });
+
+    await writeAuditLog(context.userId, `review_${data.action}`, "observation", data.id,
+      { status: before.status }, { status, rejection_reason: data.rejection_reason }, data.note ?? null);
+
+    if (data.action === "approve") {
+      void recomputeObjectInternal(before.object_id).catch(() => {});
+    }
+    return { object_id: before.object_id };
   });
+
+// ===== 调整用户信誉（admin）=====
+export const adjustReputation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      user_id: z.string().uuid(),
+      delta: z.number().int().min(-100).max(100),
+      reason: z.string().min(1).max(200),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    await supabaseAdmin.rpc("apply_reputation_delta", {
+      _user: data.user_id, _delta: data.delta, _reason: `admin_adjust:${data.reason}`, _obs: null as never,
+    });
+    await writeAuditLog(context.userId, "adjust_reputation", "user", data.user_id, null, { delta: data.delta }, data.reason);
+    return { ok: true };
+  });
+
+// ===== Admin Analytics =====
+export const getAdminAnalytics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+    const [obs30, approved30, high30, objCount, topObj, topUsers] = await Promise.all([
+      supabaseAdmin.from("observations").select("id, status, created_at, risk_level", { count: "exact" }).gte("created_at", since),
+      supabaseAdmin.from("observations").select("id", { count: "exact", head: true }).gte("created_at", since).eq("status", "approved"),
+      supabaseAdmin.from("observations").select("id", { count: "exact", head: true }).gte("created_at", since).eq("risk_level", "high"),
+      supabaseAdmin.from("objects").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("objects").select("id, name, temperature, observation_count").order("observation_count", { ascending: false }).limit(5),
+      supabaseAdmin.from("profiles").select("id, email, display_name, reputation").order("reputation", { ascending: false }).limit(5),
+    ]);
+    const total30 = obs30.count ?? 0;
+    const approveRate = total30 > 0 ? Math.round(((approved30.count ?? 0) / total30) * 100) : 0;
+    return {
+      observations_30d: total30,
+      approve_rate: approveRate,
+      high_risk_30d: high30.count ?? 0,
+      objects_total: objCount.count ?? 0,
+      top_objects: topObj.data ?? [],
+      top_users: topUsers.data ?? [],
+    };
+  });
+
+// ===== 审计日志列表 =====
+export const listAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data } = await supabaseAdmin
+      .from("audit_logs").select("*").order("created_at", { ascending: false }).limit(200);
+    return data ?? [];
+  });
+
+
 
 // ===== 管理员从申请创建对象 =====
 export const createObject = createServerFn({ method: "POST" })

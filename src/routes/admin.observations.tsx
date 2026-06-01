@@ -10,6 +10,7 @@ import {
   deleteObservation,
 } from "@/lib/api/platform.functions";
 import { FEMINIST_TAGS, TAG_WEIGHTS, EVIDENCE_STRENGTH } from "@/lib/temperature";
+import { REJECTION_REASONS, RISK_LABEL } from "@/lib/reputation";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/observations")({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/admin/observations")({
 type Obs = {
   id: string;
   object_id: string;
+  user_id: string;
   content: string;
   scene: string | null;
   screenshot_url: string | null;
@@ -31,6 +33,11 @@ type Obs = {
   confidence: number;
   impact_score: number;
   status: string;
+  risk_level: "low" | "medium" | "high";
+  risk_reasons: string[];
+  rejection_reason: string | null;
+  duplicate_of: string | null;
+  similarity_score: number | null;
   created_at: string;
   objects: { id: string; name: string } | null;
 };
@@ -44,24 +51,35 @@ function ObsAdmin() {
 
   const [items, setItems] = useState<Obs[]>([]);
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected">("pending");
+  const [risk, setRisk] = useState<"all" | "low" | "medium" | "high">("all");
   const [busy, setBusy] = useState<string | null>(null);
+  const [rejectFor, setRejectFor] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState<string>("too_short");
 
-  const reload = () =>
-    supabase
-      .from("observations")
-      .select("*, objects(id,name)")
-      .eq("status", filter)
-      .order("created_at", { ascending: false })
-      .limit(100)
-      .then(({ data }) => setItems((data ?? []) as unknown as Obs[]));
-  useEffect(() => { reload(); }, [filter]);
+  const reload = () => {
+    let q = supabase.from("observations").select("*, objects(id,name)")
+      .eq("status", filter).order("created_at", { ascending: false }).limit(100);
+    if (risk !== "all") q = q.eq("risk_level", risk);
+    return q.then(({ data }) => setItems((data ?? []) as unknown as Obs[]));
+  };
+  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [filter, risk]);
 
-  const act = async (id: string, objectId: string, action: "approve" | "reject") => {
+  const onApprove = async (id: string, objectId: string) => {
     try {
       setBusy(id);
-      await review({ data: { id, action } });
-      toast.success(action === "approve" ? "已通过" : "已拒绝");
-      if (action === "approve") recompute({ data: { object_id: objectId } }).catch(() => {});
+      await review({ data: { id, action: "approve" } });
+      toast.success("已通过");
+      recompute({ data: { object_id: objectId } }).catch(() => {});
+      reload();
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
+  };
+
+  const onReject = async (id: string) => {
+    try {
+      setBusy(id);
+      await review({ data: { id, action: "reject", rejection_reason: rejectReason as never } });
+      toast.success("已拒绝");
+      setRejectFor(null);
       reload();
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
   };
@@ -88,18 +106,30 @@ function ObsAdmin() {
     catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
   };
 
+  const riskColor = (r: string) =>
+    r === "high" ? "border-destructive text-destructive bg-destructive/5"
+    : r === "medium" ? "border-temp-warm text-temp-warm bg-temp-warm/5"
+    : "border-border text-muted-foreground";
+
   return (
     <div className="container-prose py-12">
-      <h1 className="font-serif text-3xl">观察审核 · AI 分析面板</h1>
+      <h1 className="font-serif text-3xl">观察审核 · AI 风险与分析面板</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         贡献分 = Σ(标签权重) × 证据强度 × 置信度。D 级不参与计算。
       </p>
 
-      <div className="mt-6 flex gap-2 text-sm">
+      <div className="mt-6 flex flex-wrap gap-2 text-sm">
         {(["pending", "approved", "rejected"] as const).map((s) => (
           <button key={s} onClick={() => setFilter(s)}
             className={`border px-3 py-1.5 ${filter === s ? "border-foreground bg-foreground text-background" : "border-border"}`}>
             {s === "pending" ? "待审" : s === "approved" ? "已通过" : "已拒绝"}
+          </button>
+        ))}
+        <span className="ml-4 self-center text-xs text-muted-foreground">风险：</span>
+        {(["all", "low", "medium", "high"] as const).map((r) => (
+          <button key={r} onClick={() => setRisk(r)}
+            className={`border px-2.5 py-1 text-xs ${risk === r ? "border-foreground bg-foreground text-background" : "border-border"}`}>
+            {r === "all" ? "全部" : RISK_LABEL[r]}
           </button>
         ))}
       </div>
@@ -107,10 +137,18 @@ function ObsAdmin() {
       <div className="mt-8 space-y-6">
         {items.map((o) => (
           <article key={o.id} className="border border-border bg-card p-5">
-            {/* Header */}
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span className="font-medium text-foreground">{o.objects?.name ?? "—"}</span>
               <span>·</span>
+              <span className={`border px-1.5 py-0.5 ${riskColor(o.risk_level)}`}>
+                风险 {RISK_LABEL[o.risk_level]}
+                {o.risk_reasons?.length > 0 && ` · ${o.risk_reasons.join(",")}`}
+              </span>
+              {o.duplicate_of && (
+                <span className="border border-temp-warm px-1.5 py-0.5 text-temp-warm">
+                  可能重复 {((o.similarity_score ?? 0) * 100).toFixed(0)}%
+                </span>
+              )}
               <span className="border border-border px-1.5 py-0.5">证据 {o.evidence_level ?? "—"}</span>
               <span className="border border-border px-1.5 py-0.5">
                 置信度 {(Number(o.confidence) || 0).toFixed(2)}
@@ -121,17 +159,9 @@ function ObsAdmin() {
               <span className="ml-auto">{new Date(o.created_at).toLocaleString("zh-CN")}</span>
             </div>
 
-            {/* AI summary */}
-            {o.summary && (
-              <p className="mt-3 font-serif text-base leading-relaxed">{o.summary}</p>
-            )}
+            {o.summary && <p className="mt-3 font-serif text-base leading-relaxed">{o.summary}</p>}
+            {o.cleaned_content && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{o.cleaned_content}</p>}
 
-            {/* Cleaned content */}
-            {o.cleaned_content && (
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{o.cleaned_content}</p>
-            )}
-
-            {/* Extracted facts */}
             {o.facts?.length > 0 && (
               <div className="mt-3 border-l-2 border-accent/40 pl-3">
                 <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">提取事实</div>
@@ -141,7 +171,6 @@ function ObsAdmin() {
               </div>
             )}
 
-            {/* Tags */}
             <div className="mt-4">
               <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">标签（点击编辑）</div>
               <div className="flex flex-wrap gap-1.5">
@@ -157,7 +186,6 @@ function ObsAdmin() {
               </div>
             </div>
 
-            {/* Evidence editor */}
             <div className="mt-3 flex items-center gap-2 text-xs">
               <span className="text-muted-foreground">证据等级：</span>
               {(["A", "B", "C", "D"] as const).map((ev) => (
@@ -168,33 +196,35 @@ function ObsAdmin() {
               ))}
             </div>
 
-            {/* Raw */}
             <details className="mt-3 text-xs text-muted-foreground">
               <summary className="cursor-pointer">原文 · 场景 · 链接</summary>
               <div className="mt-2 space-y-1">
                 <div><strong>原文：</strong>{o.content}</div>
                 {o.scene && <div><strong>场景：</strong>{o.scene}</div>}
-                {o.screenshot_url && (
-                  <div><strong>截图：</strong>
-                    <a href={o.screenshot_url} target="_blank" rel="noreferrer" className="underline">{o.screenshot_url}</a>
-                  </div>
-                )}
-                {o.reference_url && (
-                  <div><strong>参考：</strong>
-                    <a href={o.reference_url} target="_blank" rel="noreferrer" className="underline">{o.reference_url}</a>
-                  </div>
-                )}
+                {o.screenshot_url && <div><strong>截图：</strong><a href={o.screenshot_url} target="_blank" rel="noreferrer" className="underline">{o.screenshot_url}</a></div>}
+                {o.reference_url && <div><strong>参考：</strong><a href={o.reference_url} target="_blank" rel="noreferrer" className="underline">{o.reference_url}</a></div>}
+                {o.rejection_reason && <div><strong>驳回原因：</strong>{REJECTION_REASONS.find(r => r.value === o.rejection_reason)?.label}</div>}
               </div>
             </details>
 
-            {/* Actions */}
-            <div className="mt-4 flex flex-wrap gap-2">
-              {filter === "pending" && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {filter === "pending" && rejectFor !== o.id && (
                 <>
-                  <button onClick={() => act(o.id, o.object_id, "approve")} disabled={busy === o.id}
+                  <button onClick={() => onApprove(o.id, o.object_id)} disabled={busy === o.id}
                     className="border border-foreground bg-foreground px-4 py-1.5 text-xs text-background hover:bg-accent">通过</button>
-                  <button onClick={() => act(o.id, o.object_id, "reject")} disabled={busy === o.id}
-                    className="border border-border px-4 py-1.5 text-xs hover:border-foreground">拒绝</button>
+                  <button onClick={() => setRejectFor(o.id)} disabled={busy === o.id}
+                    className="border border-border px-4 py-1.5 text-xs hover:border-foreground">驳回…</button>
+                </>
+              )}
+              {rejectFor === o.id && (
+                <>
+                  <select value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
+                    className="border border-border bg-background px-2 py-1 text-xs">
+                    {REJECTION_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}（{r.rep}）</option>)}
+                  </select>
+                  <button onClick={() => onReject(o.id)} disabled={busy === o.id}
+                    className="border border-destructive bg-destructive/10 px-4 py-1.5 text-xs text-destructive">确认驳回</button>
+                  <button onClick={() => setRejectFor(null)} className="text-xs text-muted-foreground hover:text-foreground">取消</button>
                 </>
               )}
               <button onClick={() => onRegen(o.id)} disabled={busy === o.id}

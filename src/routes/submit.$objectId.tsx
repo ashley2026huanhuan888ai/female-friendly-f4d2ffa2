@@ -57,7 +57,10 @@ function SubmitPage() {
           reference_url: form.reference_url || null,
         },
       });
-      toast.success(`提交成功！AI 判定证据等级 ${res.evidence_level}，待管理员审核`);
+      const msg = res.status === "approved"
+        ? "已自动通过！(您是可信用户)"
+        : `已提交，等待审核 · 证据 ${res.evidence_level} · 风险 ${res.risk_level}`;
+      toast.success(msg);
       navigate({ to: "/objects/$id", params: { id: objectId } });
     } catch (err: any) {
       toast.error(err.message || "提交失败");
@@ -75,6 +78,7 @@ function SubmitPage() {
         <div className="mt-6 border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">
           请客观描述你观察到的现象。AI 会自动清洗内容、识别标签、判定证据等级。
           <strong className="text-foreground"> 攻击性、辱骂性内容会被标记为 D 级并不参与温度计算。</strong>
+          <div className="mt-2">提交频率限制：同一对象 24 小时内 1 条；全平台 24 小时内最多 3 条。</div>
         </div>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-6">

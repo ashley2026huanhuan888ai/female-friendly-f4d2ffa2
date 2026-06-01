@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 export function SiteLayout({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [rep, setRep] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -15,13 +16,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       const { data } = await supabase.auth.getUser();
       setEmail(data.user?.email ?? null);
       if (data.user) {
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.user.id);
+        const [{ data: roles }, { data: prof }] = await Promise.all([
+          supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+          supabase.from("profiles").select("reputation").eq("id", data.user.id).maybeSingle(),
+        ]);
         setIsAdmin(!!roles?.some((r) => r.role === "admin"));
+        setRep(prof?.reputation ?? null);
       } else {
-        setIsAdmin(false);
+        setIsAdmin(false); setRep(null);
       }
     };
     load();
@@ -60,12 +62,17 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             )}
             {email ? (
-              <button
-                onClick={signOut}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                退出 · {email.split("@")[0]}
-              </button>
+              <>
+                {rep !== null && (
+                  <span className="text-xs text-muted-foreground" title="信誉值">信誉 {rep}</span>
+                )}
+                <button
+                  onClick={signOut}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  退出 · {email.split("@")[0]}
+                </button>
+              </>
             ) : (
               <Link
                 to="/login"

@@ -1,92 +1,90 @@
-# 女性体验温度 V1 实施计划
+# Admin Governance System V1
 
-构建一个由用户观察、AI 分析驱动的女性体验观察平台。第一版聚焦核心闭环：浏览对象 → 提交观察 → AI 分析生成温度 → 管理员审核发布。
+为平台构建治理系统，保证观察数据质量、AI 分析有效性，防止刷屏/攻击/广告/情绪污染。
 
----
+## 1. 数据库变更（一次 migration）
 
-## 一、设计方向
+### observations 表扩展
+- `risk_level` enum(low/medium/high) 默认 low
+- `risk_reasons` jsonb 默认 `[]`（AI 检测到的风险点：abuse/ad/spam/duplicate/extreme...）
+- `rejection_reason` enum：too_short / no_facts / pure_emotion / duplicate / advertisement / personal_attack / defamation / off_topic
+- `duplicate_of` uuid 可空（指向相似观察）
+- `similarity_score` numeric 可空
+- 状态枚举补齐：draft / pending / approved / rejected / archived（当前已有 pending/approved/rejected，新增 draft/archived）
 
-**风格**：极简学术 / 媒体观察平台。白底、大量留白、高级灰、深色衬线标题 + 无衬线正文。完全规避粉色、卡通、社媒风。参考 Apple / Notion / Linear / 学术研究机构。
+### profiles 表扩展
+- `reputation` int 默认 50
+- `reputation_level` 由 reputation 推导（视图或前端计算）：new_user(<50) / trusted_user(>=80) / contributor(>=150) / research_contributor(>=300)
+- `auto_approve` bool 默认 false（reputation >= 80 自动置 true，通过 trigger）
 
-**视觉系统**（写入 `src/styles.css` 设计令牌）：
-- 背景 `oklch(0.99 0 0)`，前景近黑 `oklch(0.18 0 0)`
-- 高级灰层级：muted / border / subtle
-- 单一强调色：深朱红 `oklch(0.55 0.18 25)`（用于高温警示和关键 CTA）
-- 温度计渐变：冷青 → 暖灰 → 朱红
-- 字体：标题 `Instrument Serif`，正文 `Inter`
-- 圆角小（4–8px），阴影克制
+### 新表 audit_logs
+- id, actor_id, action（text）, target_type（object/observation/request/user）, target_id, before jsonb, after jsonb, reason text, created_at
 
-**温度可视化**：垂直温度计 + 数字读数 + 区间色带（20–28 舒适青、29–40 中灰、41–60 暖橙、61–80 砖红、81–100 深红）。
+### 新表 reputation_events
+- id, user_id, delta int, reason text, observation_id 可空, created_at
 
----
+### 新函数 / 触发器
+- `public.check_user_submit_limit(user_id, object_id)` security definer：返回是否超出 24h 限制（同用户 3 条 / 同用户对同对象 1 条）
+- `apply_reputation_delta(user_id, delta, reason, obs_id)` security definer
+- trigger：reputation 更新后自动更新 auto_approve
+- objects 表新增 `merged_into uuid`（合并到另一对象）、`hidden bool`（隐藏不删）
 
-## 二、技术栈
+### RLS
+- audit_logs：仅 admin 读
+- reputation_events：用户读自己 + admin 全读
+- profiles：用户可读自己的 reputation
 
-按平台规范使用 **TanStack Start + Lovable Cloud (Supabase)**（非用户文档中的 Next.js/Vercel；Lovable 上 TanStack Start 等价能力且无需切换）。Tailwind v4 + shadcn/ui。AI 通过 **Lovable AI Gateway** 调用 `google/gemini-2.5-pro`（替代 DeepSeek，更稳定且无需用户配密钥）。
+## 2. 服务端（server functions）
 
----
+`src/lib/api/platform.functions.ts` 扩展：
 
-## 三、数据库 Schema
+- `submitObservation`：
+  - 先调 `check_user_submit_limit`，超限抛错
+  - AI 第一步：风险审查（输出 risk_level + risk_reasons + 是否建议直接 reject）
+  - 简单文本相似度检测（pg_trgm 或简单 JS：与同对象近 30 天内 approved 观察对比 trigram，>=0.8 标 duplicate_of）
+  - 之后再走原有 facts/tags/evidence 提取
+  - 如果用户 `auto_approve=true` 且 risk=low 且非 duplicate：直接 status=approved，并自动 recompute 温度
+  - 否则 status=pending
+  - 写 reputation_events（提交本身不加分）
+- `reviewObservation({id, decision: approve|reject, rejection_reason?, admin_note?, tags?, evidence_level?, impact_score?})`：
+  - 写 audit_log
+  - 调 reputation delta（approve +5，附 reference_url +10；reject -10；ad -20；attack -30）
+- `mergeObjects({source_id, target_id})`、`freezeObject`、`hideObject`、`deleteObject`、`updateObjectCategory`：admin only，每个写 audit_log
+- `getAdminAnalytics()`：返回近 30 天新增数、通过率、高风险数、对象增长、温度变化、Top 对象/用户
 
-| 表 | 关键字段 |
-|---|---|
-| `profiles` | id (FK auth.users), email, created_at |
-| `user_roles` | user_id, role (enum: admin/user) |
-| `objects` | id, name, type (enum), description, temperature, ai_summary, top_tags(jsonb), status(published/pending), created_at |
-| `object_requests` | id, requested_name, requested_type, requester_id, status, admin_note |
-| `observations` | id, object_id, user_id, content, scene, screenshot_url, reference_url, status(pending/approved/rejected), evidence_level, tags(jsonb), cleaned_content, created_at |
-| `analysis_logs` | id, object_id, snapshot(jsonb), generated_at |
+## 3. 前端
 
-枚举：`object_type`、`evidence_level (A/B/C/D)`、`feminist_tag`（10 个一级标签）、`app_role`。
+### Admin 增强
+- `/admin/observations`：新增筛选（状态/风险等级），列展示 AI 风险等级 + 重复标记，行点击展开 AI Review Panel（原始内容 / facts / tags / evidence / impact / risk / 温度贡献预估），按钮组：通过 / 驳回（选择原因）/ 修改标签证据
+- `/admin/objects`：新增合并 / 冻结 / 隐藏 / 删除 / 改分类
+- `/admin/analytics`：新页签 Dashboard（数字卡片 + 简单趋势）
+- `/admin/audit`：审计日志列表
+- `/admin/users`：用户信誉列表（搜索、手动调整）
 
-启用 RLS：访客可读 published 对象 / approved 观察；登录用户可提交；管理员通过 `has_role()` security definer 函数判定。
+### 用户端
+- 提交页：提示 24h 限额；信誉徽章显示在导航栏（登录后）
+- 被驳回观察在「我的观察」可见驳回原因（保留入口或简单提示）
 
----
+## 4. 技术细节
 
-## 四、页面（路由）
+- 相似度：启用 `pg_trgm` 扩展，新增 GIN 索引 `observations(cleaned_content)`，submit 时 `SELECT id, similarity(cleaned_content, $1) FROM observations WHERE object_id=$2 AND status='approved' ORDER BY 2 DESC LIMIT 1`
+- AI 风险审查：单独 prompt，要求 JSON `{risk_level, reasons[], suggested_action}`，模型 `google/gemini-2.5-flash`
+- 审计：每个 admin 写操作统一通过 helper `writeAuditLog(actor, action, target, before, after, reason)`
+- 不开发：多管理员等级、专家审核员、社区志愿审核员（V2）
 
-- `/` 首页：搜索 + 热门对象 + 最新观察 + 温度排行榜
-- `/objects` 全部对象（筛选 / 排序 / 搜索）
-- `/objects/$id` 对象详情（温度计 + AI 总结 + 标签 + 观察列表 + 提交按钮）
-- `/submit/$objectId` 提交观察
-- `/request-object` 「我希望评估 XXX」
-- `/discussions` 热门讨论
-- `/about` 关于项目
-- `/login` 邮箱验证码登录（Supabase magic link）
-- `/admin` 管理后台（对象 / 评论 / 申请 / AI 分析 / 温度 子模块，由 `_authenticated` + has_role('admin') 守卫）
+## 5. 文件清单（新增/修改）
+- migration（1 个）
+- `src/lib/api/platform.functions.ts`（扩展）
+- `src/lib/api/governance.functions.ts`（新，admin 操作）
+- `src/lib/reputation.ts`（信誉等级常量）
+- `src/routes/admin.observations.tsx`（重写）
+- `src/routes/admin.objects.tsx`（增强）
+- `src/routes/admin.analytics.tsx`（新）
+- `src/routes/admin.audit.tsx`（新）
+- `src/routes/admin.users.tsx`（新）
+- `src/components/admin/AIReviewPanel.tsx`（新）
+- `src/routes/admin.tsx`（加导航 tab）
+- `src/routes/submit.$objectId.tsx`（加限额提示）
+- `src/components/SiteLayout.tsx`（导航显示信誉）
 
-## 五、AI 工作流
-
-`analyze-observation` server function：
-1. 清洗内容 → 2. 提取事实描述 → 3. 识别 10 类标签 → 4. 判断证据等级 A/B/C/D → 5. D 级丢弃。
-返回结构化 JSON（tool calling）写入 observation。
-
-`recompute-temperature` server function（管理员触发或审核通过后自动）：聚合该对象所有 approved 且非 D 级观察 → 加权（A=1.0, B=0.6, C=0.3，标签多样性加成）→ 让 AI 生成总结 + 温度 20–100。写回 `objects` 并记录 `analysis_logs`。
-
-**评论数量不直接影响温度**：使用归一化加权平均 + 标签集中度，而非求和。
-
-## 六、硬规则保障
-
-- 普通用户 UI 中无「创建对象」按钮；只能选择已有对象或走 `/request-object`
-- 全站无点赞 / 点踩 / 评分 / 投票组件
-- 温度逻辑文档化在 `src/lib/temperature.ts`，仅 AI 输出可写入
-
-## 七、第一版交付范围
-
-✅ 设计系统 + 全部前台页面（含温度计组件、对象卡、观察卡）
-✅ 数据库 + RLS + 管理员角色
-✅ 邮箱 magic link 登录
-✅ 提交观察 + AI 分析 server function
-✅ 管理后台：对象管理 / 评论审核 / 对象申请审核 / 重新生成温度
-✅ Seed 数据：3 个示例对象 + 若干观察便于演示
-❌ AI 日报 / 周报 / 趋势分析 / 年度榜单（按需求预留，不开发）
-
----
-
-## 八、技术细节备注
-
-- 使用 `createServerFn` + `requireSupabaseAuth` 中间件
-- AI 调用全部在 server function 内，密钥不出后端
-- 管理员审核通过自动触发温度重算
-- 温度计组件用 SVG + CSS 渐变，避免依赖图表库
-- 所有颜色、字体、间距通过 `src/styles.css` 设计令牌统一管理
+确认后开始实施。
