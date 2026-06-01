@@ -9,6 +9,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [rep, setRep] = useState<number | null>(null);
+  const [unread, setUnread] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -16,20 +17,24 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       const { data } = await supabase.auth.getUser();
       setEmail(data.user?.email ?? null);
       if (data.user) {
-        const [{ data: roles }, { data: prof }] = await Promise.all([
+        const [{ data: roles }, { data: prof }, { count }] = await Promise.all([
           supabase.from("user_roles").select("role").eq("user_id", data.user.id),
           supabase.from("profiles").select("reputation").eq("id", data.user.id).maybeSingle(),
+          supabase.from("notifications" as never).select("id", { count: "exact", head: true })
+            .eq("user_id", data.user.id).is("read_at", null),
         ]);
         setIsAdmin(!!roles?.some((r) => r.role === "admin"));
         setRep(prof?.reputation ?? null);
+        setUnread(count ?? 0);
       } else {
-        setIsAdmin(false); setRep(null);
+        setIsAdmin(false); setRep(null); setUnread(0);
       }
     };
     load();
     const { data: sub } = supabase.auth.onAuthStateChange(() => load());
     return () => sub.subscription.unsubscribe();
   }, []);
+
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -46,37 +51,31 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               Female Experience Temperature
             </span>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm md:flex">
-            <Link to="/objects" className="text-muted-foreground hover:text-foreground">
-              全部对象
-            </Link>
-            <Link to="/archive" className="text-muted-foreground hover:text-foreground">
-              案例档案库
-            </Link>
-            <Link to="/knowledge" className="text-muted-foreground hover:text-foreground">
-              知识引擎
-            </Link>
-            <Link to="/discussions" className="text-muted-foreground hover:text-foreground">
-              热门讨论
-            </Link>
-            <Link to="/about" className="text-muted-foreground hover:text-foreground">
-              关于
-            </Link>
+          <nav className="hidden items-center gap-6 text-sm md:flex">
+            <Link to="/feed" className="text-muted-foreground hover:text-foreground">观察流</Link>
+            <Link to="/objects" className="text-muted-foreground hover:text-foreground">全部对象</Link>
+            <Link to="/topics" className="text-muted-foreground hover:text-foreground">热议议题</Link>
+            <Link to="/archive" className="text-muted-foreground hover:text-foreground">案例库</Link>
+            <Link to="/knowledge" className="text-muted-foreground hover:text-foreground">知识引擎</Link>
+            <Link to="/about" className="text-muted-foreground hover:text-foreground">关于</Link>
             {isAdmin && (
-              <Link to="/admin" className="text-accent hover:text-accent/80">
-                管理后台
-              </Link>
+              <Link to="/admin" className="text-accent hover:text-accent/80">管理后台</Link>
             )}
             {email ? (
               <>
+                <Link to="/me" className="relative text-muted-foreground hover:text-foreground">
+                  我的
+                  {unread > 0 && (
+                    <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
+                </Link>
                 {rep !== null && (
                   <span className="text-xs text-muted-foreground" title="信誉值">信誉 {rep}</span>
                 )}
-                <button
-                  onClick={signOut}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  退出 · {email.split("@")[0]}
+                <button onClick={signOut} className="text-muted-foreground hover:text-foreground">
+                  退出
                 </button>
               </>
             ) : (
@@ -88,6 +87,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             )}
           </nav>
+
         </div>
       </header>
 

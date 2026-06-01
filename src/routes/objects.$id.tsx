@@ -9,7 +9,9 @@ import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
 import { HeatSources } from "@/components/HeatSources";
 import { TemperatureTimeline } from "@/components/TemperatureTimeline";
 import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
+import { FollowButton } from "@/components/FollowButton";
 import { OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
+
 
 export const Route = createFileRoute("/objects/$id")({
   component: ObjectDetail,
@@ -86,7 +88,7 @@ function ObjectDetail() {
               </div>
             )}
 
-            <div className="mt-10">
+            <div className="mt-10 flex flex-wrap items-center gap-3">
               <Link
                 to="/submit/$objectId"
                 params={{ objectId: id }}
@@ -94,7 +96,9 @@ function ObjectDetail() {
               >
                 提交观察 →
               </Link>
+              <FollowButton objectId={id} />
             </div>
+
           </div>
 
           <div className="flex flex-col items-center md:items-end">
