@@ -31,6 +31,9 @@ function ObjectDetail() {
   const [obj, setObj] = useState<any>(null);
   const [obs, setObs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expl, setExpl] = useState<{ breakdown: any; object: any } | null>(null);
+  const [showExpl, setShowExpl] = useState(false);
+  const fetchExpl = useServerFn(getTemperatureExplanation);
 
   useEffect(() => {
     (async () => {
@@ -42,8 +45,9 @@ function ObjectDetail() {
         .order("created_at", { ascending: false }).limit(50);
       setObs(o ?? []);
       setLoading(false);
+      fetchExpl({ data: { object_id: id } }).then((d) => setExpl(d as never)).catch(() => {});
     })();
-  }, [id]);
+  }, [id, fetchExpl]);
 
   if (loading) return <SiteLayout><div className="container-prose py-32 text-center text-muted-foreground">加载中…</div></SiteLayout>;
   if (!obj) return <SiteLayout><div className="container-prose py-32 text-center">对象不存在</div></SiteLayout>;
