@@ -92,14 +92,14 @@ const ObjectsIdRoute = ObjectsIdRouteImport.update({
   getParentRoute: () => ObjectsRoute,
 } as any)
 const ArchiveEvidenceRoute = ArchiveEvidenceRouteImport.update({
-  id: '/evidence',
-  path: '/evidence',
-  getParentRoute: () => ArchiveRoute,
+  id: '/archive/evidence',
+  path: '/archive/evidence',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ArchiveCaseCodeRoute = ArchiveCaseCodeRouteImport.update({
-  id: '/$caseCode',
-  path: '/$caseCode',
-  getParentRoute: () => ArchiveRoute,
+  id: '/archive/$caseCode',
+  path: '/archive/$caseCode',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -286,6 +286,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ObjectsRoute: typeof ObjectsRouteWithChildren
   RequestObjectRoute: typeof RequestObjectRoute
+  ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
+  ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
   ArchiveIndexRoute: typeof ArchiveIndexRoute
 }
@@ -378,17 +380,17 @@ declare module '@tanstack/react-router' {
     }
     '/archive/evidence': {
       id: '/archive/evidence'
-      path: '/evidence'
+      path: '/archive/evidence'
       fullPath: '/archive/evidence'
       preLoaderRoute: typeof ArchiveEvidenceRouteImport
-      parentRoute: typeof ArchiveRoute
+      parentRoute: typeof rootRouteImport
     }
     '/archive/$caseCode': {
       id: '/archive/$caseCode'
-      path: '/$caseCode'
+      path: '/archive/$caseCode'
       fullPath: '/archive/$caseCode'
       preLoaderRoute: typeof ArchiveCaseCodeRouteImport
-      parentRoute: typeof ArchiveRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/users': {
       id: '/admin/users'
@@ -486,19 +488,11 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ObjectsRoute: ObjectsRouteWithChildren,
   RequestObjectRoute: RequestObjectRoute,
+  ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
+  ArchiveEvidenceRoute: ArchiveEvidenceRoute,
   SubmitObjectIdRoute: SubmitObjectIdRoute,
   ArchiveIndexRoute: ArchiveIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
