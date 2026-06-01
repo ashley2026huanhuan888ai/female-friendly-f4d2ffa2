@@ -173,6 +173,55 @@ async function assertAdmin(userId: string) {
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
+async function writeAuditLog(
+  actor: string, action: string, target_type: string, target_id: string | null,
+  before: unknown, after: unknown, reason?: string | null,
+) {
+  await supabaseAdmin.from("audit_logs").insert({
+    actor_id: actor, action, target_type, target_id,
+    before: before as never, after: after as never, reason: reason ?? null,
+  });
+}
+
+// 内部温度重算（用于自动通过 / 审核通过后调用，无权限检查）
+async function recomputeObjectInternal(object_id: string): Promise<number | null> {
+  const { data: obj } = await supabaseAdmin
+    .from("objects").select("id, name, frozen").eq("id", object_id).single();
+  if (!obj || obj.frozen) return null;
+  const { data: obs } = await supabaseAdmin
+    .from("observations")
+    .select("summary, cleaned_content, content, evidence_level, tags, impact_score")
+    .eq("object_id", object_id).eq("status", "approved");
+  const list = (obs ?? []).map((o) => ({
+    summary: o.summary || o.cleaned_content || o.content?.slice(0, 80) || "",
+    evidence_level: (o.evidence_level ?? "C") as string,
+    tags: (o.tags as string[]) ?? [],
+    impact_score: Number(o.impact_score) || 0,
+  }));
+  if (list.length === 0) {
+    await supabaseAdmin.from("objects").update({
+      temperature: 24, ai_summary: "暂无足够观察生成总结。", top_tags: [], observation_count: 0,
+    }).eq("id", object_id);
+    return 24;
+  }
+  const temperature = computeTemperature(list.map((o) => o.impact_score));
+  let summary = "";
+  let top_tags: { tag: string; count: number }[] = [];
+  let evidence_distribution = { A: 0, B: 0, C: 0, D: 0 };
+  try {
+    const r = await callAIObjectSummary(obj.name, list);
+    summary = r.summary; top_tags = r.top_tags; evidence_distribution = r.evidence_distribution;
+  } catch { /* tolerate AI failure */ }
+  await supabaseAdmin.from("objects").update({
+    temperature, ai_summary: summary || null, top_tags,
+    observation_count: list.filter((o) => o.evidence_level !== "D").length,
+  }).eq("id", object_id);
+  await supabaseAdmin.from("analysis_logs").insert({
+    object_id, snapshot: { temperature, top_tags, evidence_distribution, obs_count: list.length },
+  });
+  return temperature;
+}
+
 // ===== AI 风险审查 =====
 async function callAIRiskCheck(content: string): Promise<{
   risk_level: "low" | "medium" | "high";
