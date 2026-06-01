@@ -9,6 +9,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [rep, setRep] = useState<number | null>(null);
+  const [unread, setUnread] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -16,20 +17,24 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       const { data } = await supabase.auth.getUser();
       setEmail(data.user?.email ?? null);
       if (data.user) {
-        const [{ data: roles }, { data: prof }] = await Promise.all([
+        const [{ data: roles }, { data: prof }, { count }] = await Promise.all([
           supabase.from("user_roles").select("role").eq("user_id", data.user.id),
           supabase.from("profiles").select("reputation").eq("id", data.user.id).maybeSingle(),
+          supabase.from("notifications" as never).select("id", { count: "exact", head: true })
+            .eq("user_id", data.user.id).is("read_at", null),
         ]);
         setIsAdmin(!!roles?.some((r) => r.role === "admin"));
         setRep(prof?.reputation ?? null);
+        setUnread(count ?? 0);
       } else {
-        setIsAdmin(false); setRep(null);
+        setIsAdmin(false); setRep(null); setUnread(0);
       }
     };
     load();
     const { data: sub } = supabase.auth.onAuthStateChange(() => load());
     return () => sub.subscription.unsubscribe();
   }, []);
+
 
   const signOut = async () => {
     await supabase.auth.signOut();
