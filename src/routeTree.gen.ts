@@ -13,12 +13,15 @@ import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as ObjectsRouteImport } from './routes/objects'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
+import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
 import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
+import { Route as ArchiveEvidenceRouteImport } from './routes/archive.evidence'
+import { Route as ArchiveCaseCodeRouteImport } from './routes/archive.$caseCode'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
 import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
@@ -44,6 +47,11 @@ const LoginRoute = LoginRouteImport.update({
 const DiscussionsRoute = DiscussionsRouteImport.update({
   id: '/discussions',
   path: '/discussions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArchiveRoute = ArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -75,6 +83,16 @@ const ObjectsIdRoute = ObjectsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ObjectsRoute,
+} as any)
+const ArchiveEvidenceRoute = ArchiveEvidenceRouteImport.update({
+  id: '/evidence',
+  path: '/evidence',
+  getParentRoute: () => ArchiveRoute,
+} as any)
+const ArchiveCaseCodeRoute = ArchiveCaseCodeRouteImport.update({
+  id: '/$caseCode',
+  path: '/$caseCode',
+  getParentRoute: () => ArchiveRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -111,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/archive': typeof ArchiveRouteWithChildren
   '/discussions': typeof DiscussionsRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
@@ -121,6 +140,8 @@ export interface FileRoutesByFullPath {
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/archive/$caseCode': typeof ArchiveCaseCodeRoute
+  '/archive/evidence': typeof ArchiveEvidenceRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -128,6 +149,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/archive': typeof ArchiveRouteWithChildren
   '/discussions': typeof DiscussionsRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
@@ -138,6 +160,8 @@ export interface FileRoutesByTo {
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/archive/$caseCode': typeof ArchiveCaseCodeRoute
+  '/archive/evidence': typeof ArchiveEvidenceRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin': typeof AdminIndexRoute
@@ -147,6 +171,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/archive': typeof ArchiveRouteWithChildren
   '/discussions': typeof DiscussionsRoute
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
@@ -157,6 +182,8 @@ export interface FileRoutesById {
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/archive/$caseCode': typeof ArchiveCaseCodeRoute
+  '/archive/evidence': typeof ArchiveEvidenceRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -167,6 +194,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/archive'
     | '/discussions'
     | '/login'
     | '/objects'
@@ -177,6 +205,8 @@ export interface FileRouteTypes {
     | '/admin/observations'
     | '/admin/requests'
     | '/admin/users'
+    | '/archive/$caseCode'
+    | '/archive/evidence'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin/'
@@ -184,6 +214,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/archive'
     | '/discussions'
     | '/login'
     | '/objects'
@@ -194,6 +225,8 @@ export interface FileRouteTypes {
     | '/admin/observations'
     | '/admin/requests'
     | '/admin/users'
+    | '/archive/$caseCode'
+    | '/archive/evidence'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin'
@@ -202,6 +235,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/archive'
     | '/discussions'
     | '/login'
     | '/objects'
@@ -212,6 +246,8 @@ export interface FileRouteTypes {
     | '/admin/observations'
     | '/admin/requests'
     | '/admin/users'
+    | '/archive/$caseCode'
+    | '/archive/evidence'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin/'
@@ -221,6 +257,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ArchiveRoute: typeof ArchiveRouteWithChildren
   DiscussionsRoute: typeof DiscussionsRoute
   LoginRoute: typeof LoginRoute
   ObjectsRoute: typeof ObjectsRouteWithChildren
@@ -256,6 +293,13 @@ declare module '@tanstack/react-router' {
       path: '/discussions'
       fullPath: '/discussions'
       preLoaderRoute: typeof DiscussionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/archive': {
+      id: '/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof ArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -299,6 +343,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/objects/$id'
       preLoaderRoute: typeof ObjectsIdRouteImport
       parentRoute: typeof ObjectsRoute
+    }
+    '/archive/evidence': {
+      id: '/archive/evidence'
+      path: '/evidence'
+      fullPath: '/archive/evidence'
+      preLoaderRoute: typeof ArchiveEvidenceRouteImport
+      parentRoute: typeof ArchiveRoute
+    }
+    '/archive/$caseCode': {
+      id: '/archive/$caseCode'
+      path: '/$caseCode'
+      fullPath: '/archive/$caseCode'
+      preLoaderRoute: typeof ArchiveCaseCodeRouteImport
+      parentRoute: typeof ArchiveRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -367,6 +425,19 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ArchiveRouteChildren {
+  ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
+  ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
+}
+
+const ArchiveRouteChildren: ArchiveRouteChildren = {
+  ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
+  ArchiveEvidenceRoute: ArchiveEvidenceRoute,
+}
+
+const ArchiveRouteWithChildren =
+  ArchiveRoute._addFileChildren(ArchiveRouteChildren)
+
 interface ObjectsRouteChildren {
   ObjectsIdRoute: typeof ObjectsIdRoute
 }
@@ -382,6 +453,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  ArchiveRoute: ArchiveRouteWithChildren,
   DiscussionsRoute: DiscussionsRoute,
   LoginRoute: LoginRoute,
   ObjectsRoute: ObjectsRouteWithChildren,
