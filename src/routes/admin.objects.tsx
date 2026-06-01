@@ -55,29 +55,59 @@ function ObjectsAdmin() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-              <th className="py-3">名称</th><th>类型</th><th className="text-right">温度</th><th className="text-right">观察</th><th></th>
+              <th className="py-3">名称</th><th>类型</th><th className="text-right">温度</th><th className="text-right">观察</th><th className="text-right">操作</th>
             </tr>
           </thead>
           <tbody>
             {items.map((o) => (
-              <tr key={o.id} className="border-b border-border">
-                <td className="py-3">{o.name}</td>
+              <tr key={o.id} className="border-b border-border align-top">
+                <td className="py-3">
+                  {o.name}
+                  {o.frozen && <span className="ml-2 border border-accent px-1.5 py-0.5 text-[10px] text-accent">冻结</span>}
+                </td>
                 <td className="text-muted-foreground">{OBJECT_TYPE_LABELS[o.type]}</td>
                 <td className="text-right tabular-nums">{Number(o.temperature).toFixed(0)}°</td>
                 <td className="text-right tabular-nums text-muted-foreground">{o.observation_count}</td>
-                <td className="text-right">
-                  <button
-                    disabled={busy === o.id}
-                    onClick={async () => {
-                      setBusy(o.id);
-                      try { const r = await recompute({ data: { object_id: o.id } }); toast.success(`温度 ${r.temperature.toFixed(0)}°`); reload(); }
-                      catch (err: any) { toast.error(err.message); }
-                      finally { setBusy(null); }
-                    }}
-                    className="border border-border px-3 py-1 text-xs hover:border-foreground disabled:opacity-50"
-                  >
-                    {busy === o.id ? "AI…" : "重算温度"}
-                  </button>
+                <td className="space-y-1 py-3 text-right">
+                  <div className="flex flex-wrap justify-end gap-1.5">
+                    <button
+                      disabled={busy === o.id || o.frozen}
+                      onClick={async () => {
+                        setBusy(o.id);
+                        try { const r = await recompute({ data: { object_id: o.id } }); toast.success(`温度 ${r.temperature.toFixed(0)}°`); reload(); }
+                        catch (err: any) { toast.error(err.message); }
+                        finally { setBusy(null); }
+                      }}
+                      className="border border-border px-3 py-1 text-xs hover:border-foreground disabled:opacity-40"
+                    >
+                      {busy === o.id ? "AI…" : "重算"}
+                    </button>
+                    <button
+                      disabled={busy === o.id}
+                      onClick={async () => {
+                        try { await freeze({ data: { object_id: o.id, frozen: !o.frozen } }); toast.success(o.frozen ? "已解冻" : "已冻结"); reload(); }
+                        catch (err: any) { toast.error(err.message); }
+                      }}
+                      className="border border-border px-3 py-1 text-xs hover:border-foreground"
+                    >{o.frozen ? "解冻" : "冻结"}</button>
+                  </div>
+                  <div className="flex justify-end gap-1.5">
+                    <input
+                      type="number" min={20} max={100} placeholder="手动温度"
+                      value={manualTemp[o.id] ?? ""}
+                      onChange={(e) => setManualTemp({ ...manualTemp, [o.id]: e.target.value })}
+                      className="w-24 border border-border bg-background px-2 py-1 text-xs"
+                    />
+                    <button
+                      onClick={async () => {
+                        const v = Number(manualTemp[o.id]);
+                        if (!v || v < 20 || v > 100) return toast.error("温度需在 20-100");
+                        try { await recompute({ data: { object_id: o.id, manual_temperature: v } }); toast.success("已设置"); setManualTemp({ ...manualTemp, [o.id]: "" }); reload(); }
+                        catch (err: any) { toast.error(err.message); }
+                      }}
+                      className="border border-border px-3 py-1 text-xs hover:border-foreground"
+                    >设定</button>
+                  </div>
                 </td>
               </tr>
             ))}
