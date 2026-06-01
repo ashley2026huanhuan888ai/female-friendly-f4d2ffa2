@@ -207,7 +207,7 @@ async function recomputeObjectInternal(object_id: string): Promise<number | null
   const temperature = computeTemperature(list.map((o) => o.impact_score));
   let summary = "";
   let top_tags: { tag: string; count: number }[] = [];
-  let evidence_distribution = { A: 0, B: 0, C: 0, D: 0 };
+  let evidence_distribution: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
   try {
     const r = await callAIObjectSummary(obj.name, list);
     summary = r.summary; top_tags = r.top_tags; evidence_distribution = r.evidence_distribution;
