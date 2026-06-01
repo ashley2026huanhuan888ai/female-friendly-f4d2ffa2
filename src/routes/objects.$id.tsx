@@ -1,9 +1,14 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
 import { ObjectTimeline } from "@/components/ObjectTimeline";
+import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
+import { HeatSources } from "@/components/HeatSources";
+import { TemperatureTimeline } from "@/components/TemperatureTimeline";
+import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
 import { OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
 
 export const Route = createFileRoute("/objects/$id")({
@@ -26,6 +31,9 @@ function ObjectDetail() {
   const [obj, setObj] = useState<any>(null);
   const [obs, setObs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expl, setExpl] = useState<{ breakdown: any; object: any } | null>(null);
+  const [showExpl, setShowExpl] = useState(false);
+  const fetchExpl = useServerFn(getTemperatureExplanation);
 
   useEffect(() => {
     (async () => {
@@ -37,8 +45,9 @@ function ObjectDetail() {
         .order("created_at", { ascending: false }).limit(50);
       setObs(o ?? []);
       setLoading(false);
+      fetchExpl({ data: { object_id: id } }).then((d) => setExpl(d as never)).catch(() => {});
     })();
-  }, [id]);
+  }, [id, fetchExpl]);
 
   if (loading) return <SiteLayout><div className="container-prose py-32 text-center text-muted-foreground">加载中…</div></SiteLayout>;
   if (!obj) return <SiteLayout><div className="container-prose py-32 text-center">对象不存在</div></SiteLayout>;
@@ -93,9 +102,33 @@ function ObjectDetail() {
             <div className="mt-4 text-right text-xs text-muted-foreground">
               共 {obj.observation_count} 条已审核观察
             </div>
+            <button
+              onClick={() => setShowExpl((v) => !v)}
+              className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {showExpl ? "收起" : "为什么是这个温度？"}
+            </button>
           </div>
         </div>
       </section>
+
+      {showExpl && (
+        <section className="border-b border-border bg-card/40 py-12">
+          <div className="container-prose space-y-8">
+            <TemperatureBreakdown data={expl?.breakdown ?? null} />
+            <HeatSources
+              heat={obj.heat_sources ?? []}
+              cooling={obj.cooling_sources ?? []}
+            />
+            <div>
+              <h3 className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">温度变化时间线</h3>
+              <div className="mt-4">
+                <TemperatureTimeline objectId={id} limit={30} />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-16">
         <div className="container-prose">
