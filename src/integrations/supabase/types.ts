@@ -79,6 +79,104 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_cases: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          featured: boolean
+          id: string
+          polarity: Database["public"]["Enums"]["case_polarity"]
+          principles: Json
+          source_url: string | null
+          status: Database["public"]["Enums"]["case_status"]
+          summary: string
+          tags: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          featured?: boolean
+          id?: string
+          polarity: Database["public"]["Enums"]["case_polarity"]
+          principles?: Json
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["case_status"]
+          summary: string
+          tags?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          featured?: boolean
+          id?: string
+          polarity?: Database["public"]["Enums"]["case_polarity"]
+          principles?: Json
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["case_status"]
+          summary?: string
+          tags?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      knowledge_tags: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          merged_into: string | null
+          name_en: string | null
+          name_zh: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          merged_into?: string | null
+          name_en?: string | null
+          name_zh: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          merged_into?: string | null
+          name_en?: string | null
+          name_zh?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_tags_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "knowledge_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       object_requests: {
         Row: {
           admin_note: string | null
@@ -179,16 +277,19 @@ export type Database = {
           admin_note: string | null
           archive_category: string | null
           case_code: string | null
+          cases_cited: Json
           cleaned_content: string | null
           confidence: number
           content: string
           created_at: string
           duplicate_of: string | null
           evidence_level: Database["public"]["Enums"]["evidence_level"] | null
+          explanation: string | null
           facts: Json
           id: string
           impact_score: number
           object_id: string
+          principles_matched: Json
           reference_url: string | null
           rejection_reason:
             | Database["public"]["Enums"]["rejection_reason"]
@@ -208,16 +309,19 @@ export type Database = {
           admin_note?: string | null
           archive_category?: string | null
           case_code?: string | null
+          cases_cited?: Json
           cleaned_content?: string | null
           confidence?: number
           content: string
           created_at?: string
           duplicate_of?: string | null
           evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          explanation?: string | null
           facts?: Json
           id?: string
           impact_score?: number
           object_id: string
+          principles_matched?: Json
           reference_url?: string | null
           rejection_reason?:
             | Database["public"]["Enums"]["rejection_reason"]
@@ -237,16 +341,19 @@ export type Database = {
           admin_note?: string | null
           archive_category?: string | null
           case_code?: string | null
+          cases_cited?: Json
           cleaned_content?: string | null
           confidence?: number
           content?: string
           created_at?: string
           duplicate_of?: string | null
           evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          explanation?: string | null
           facts?: Json
           id?: string
           impact_score?: number
           object_id?: string
+          principles_matched?: Json
           reference_url?: string | null
           rejection_reason?:
             | Database["public"]["Enums"]["rejection_reason"]
@@ -271,6 +378,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      principles: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          name: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -373,6 +516,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      case_polarity: "positive" | "negative" | "controversial"
+      case_status: "draft" | "published" | "archived"
       evidence_level: "A" | "B" | "C" | "D"
       object_status: "published" | "draft"
       object_type:
@@ -529,6 +674,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      case_polarity: ["positive", "negative", "controversial"],
+      case_status: ["draft", "published", "archived"],
       evidence_level: ["A", "B", "C", "D"],
       object_status: ["published", "draft"],
       object_type: [
