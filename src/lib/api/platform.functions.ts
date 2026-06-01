@@ -8,8 +8,8 @@ import {
   TAG_WEIGHTS,
   EVIDENCE_STRENGTH,
   computeImpact,
-  computeTemperature,
 } from "@/lib/temperature";
+import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
