@@ -177,6 +177,8 @@ export type Database = {
       observations: {
         Row: {
           admin_note: string | null
+          archive_category: string | null
+          case_code: string | null
           cleaned_content: string | null
           confidence: number
           content: string
@@ -204,6 +206,8 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          archive_category?: string | null
+          case_code?: string | null
           cleaned_content?: string | null
           confidence?: number
           content: string
@@ -231,6 +235,8 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          archive_category?: string | null
+          case_code?: string | null
           cleaned_content?: string | null
           confidence?: number
           content?: string
@@ -354,6 +360,7 @@ export type Database = {
         Args: { _object: string; _user: string }
         Returns: Json
       }
+      derive_archive_category: { Args: { _type: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
