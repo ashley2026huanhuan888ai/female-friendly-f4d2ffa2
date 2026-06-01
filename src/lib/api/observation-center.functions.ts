@@ -77,8 +77,9 @@ export const getHomeSummary = createServerFn({ method: "GET" })
     const heatIds = sorted.slice(0, 5).map(([id]) => id);
     const coolIds = [...sorted].reverse().slice(0, 5).filter(([, v]) => v < 0).map(([id]) => id);
     const obsIds = [...new Set((latestObs.data ?? []).map((o) => o.object_id))];
+    const todayObjIds = [...new Set(((todayEvents.data ?? []) as Array<{ object_id: string }>).map((e) => e.object_id))];
 
-    const allIds = [...new Set([...heatIds, ...coolIds, ...obsIds])];
+    const allIds = [...new Set([...heatIds, ...coolIds, ...obsIds, ...todayObjIds])];
     const { data: objs } = allIds.length
       ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", allIds)
       : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
@@ -89,8 +90,16 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       return o ? { ...o, delta_7d: Math.round((byObj.get(id) ?? 0) * 10) / 10 } : null;
     }).filter(Boolean);
 
+    const todayWithObj = ((todayEvents.data ?? []) as Array<{
+      object_id: string; delta: number; temperature_after: number; reason: string; created_at: string;
+    }>).slice(0, 8).map((e) => ({
+      ...e,
+      before: Math.round((Number(e.temperature_after) - Number(e.delta)) * 10) / 10,
+      object: oMap.get(e.object_id) ?? null,
+    }));
+
     return {
-      today_events: (todayEvents.data ?? []).slice(0, 8),
+      today_events: todayWithObj,
       today_events_count: (todayEvents.data ?? []).length,
       heating: pack(heatIds),
       cooling: pack(coolIds),
@@ -101,6 +110,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       })),
     };
   });
+
 
 // ===== 趋势话题（按标签） =====
 
