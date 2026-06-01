@@ -88,7 +88,7 @@ function ObjectDetail() {
               </div>
             )}
 
-            <div className="mt-10">
+            <div className="mt-10 flex flex-wrap items-center gap-3">
               <Link
                 to="/submit/$objectId"
                 params={{ objectId: id }}
@@ -96,7 +96,9 @@ function ObjectDetail() {
               >
                 提交观察 →
               </Link>
+              <FollowButton objectId={id} />
             </div>
+
           </div>
 
           <div className="flex flex-col items-center md:items-end">
