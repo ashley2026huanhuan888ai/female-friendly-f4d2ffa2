@@ -1,9 +1,14 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
 import { ObjectTimeline } from "@/components/ObjectTimeline";
+import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
+import { HeatSources } from "@/components/HeatSources";
+import { TemperatureTimeline } from "@/components/TemperatureTimeline";
+import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
 import { OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
 
 export const Route = createFileRoute("/objects/$id")({
