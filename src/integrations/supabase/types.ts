@@ -81,6 +81,7 @@ export type Database = {
           ai_summary: string | null
           created_at: string
           description: string | null
+          frozen: boolean
           id: string
           name: string
           observation_count: number
@@ -94,6 +95,7 @@ export type Database = {
           ai_summary?: string | null
           created_at?: string
           description?: string | null
+          frozen?: boolean
           id?: string
           name: string
           observation_count?: number
@@ -107,6 +109,7 @@ export type Database = {
           ai_summary?: string | null
           created_at?: string
           description?: string | null
+          frozen?: boolean
           id?: string
           name?: string
           observation_count?: number
@@ -122,15 +125,19 @@ export type Database = {
         Row: {
           admin_note: string | null
           cleaned_content: string | null
+          confidence: number
           content: string
           created_at: string
           evidence_level: Database["public"]["Enums"]["evidence_level"] | null
+          facts: Json
           id: string
+          impact_score: number
           object_id: string
           reference_url: string | null
           scene: string | null
           screenshot_url: string | null
           status: Database["public"]["Enums"]["observation_status"]
+          summary: string | null
           tags: Json
           updated_at: string
           user_id: string
@@ -138,15 +145,19 @@ export type Database = {
         Insert: {
           admin_note?: string | null
           cleaned_content?: string | null
+          confidence?: number
           content: string
           created_at?: string
           evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          facts?: Json
           id?: string
+          impact_score?: number
           object_id: string
           reference_url?: string | null
           scene?: string | null
           screenshot_url?: string | null
           status?: Database["public"]["Enums"]["observation_status"]
+          summary?: string | null
           tags?: Json
           updated_at?: string
           user_id: string
@@ -154,15 +165,19 @@ export type Database = {
         Update: {
           admin_note?: string | null
           cleaned_content?: string | null
+          confidence?: number
           content?: string
           created_at?: string
           evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          facts?: Json
           id?: string
+          impact_score?: number
           object_id?: string
           reference_url?: string | null
           scene?: string | null
           screenshot_url?: string | null
           status?: Database["public"]["Enums"]["observation_status"]
+          summary?: string | null
           tags?: Json
           updated_at?: string
           user_id?: string
