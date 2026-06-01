@@ -490,6 +490,74 @@ export const freezeObject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     await supabaseAdmin.from("objects").update({ frozen: data.frozen }).eq("id", data.object_id);
+    await writeAuditLog(context.userId, data.frozen ? "freeze" : "unfreeze", "object", data.object_id, null, null);
+    return { ok: true };
+  });
+
+// ===== 隐藏 / 显示对象 =====
+export const hideObject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ object_id: z.string().uuid(), hidden: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    await supabaseAdmin.from("objects")
+      .update({ hidden: data.hidden, status: data.hidden ? "hidden" : "published" } as never)
+      .eq("id", data.object_id);
+    await writeAuditLog(context.userId, data.hidden ? "hide" : "show", "object", data.object_id, null, null);
+    return { ok: true };
+  });
+
+// ===== 删除对象（admin）=====
+export const deleteObject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ object_id: z.string().uuid(), reason: z.string().max(500).optional() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { data: before } = await supabaseAdmin.from("objects").select("*").eq("id", data.object_id).single();
+    await supabaseAdmin.from("observations").delete().eq("object_id", data.object_id);
+    await supabaseAdmin.from("objects").delete().eq("id", data.object_id);
+    await writeAuditLog(context.userId, "delete", "object", data.object_id, before, null, data.reason ?? null);
+    return { ok: true };
+  });
+
+// ===== 合并对象（将 source 的观察迁移至 target，source 标记 merged_into）=====
+export const mergeObjects = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      source_id: z.string().uuid(), target_id: z.string().uuid(), reason: z.string().max(500).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    if (data.source_id === data.target_id) throw new Error("源对象与目标相同");
+    await supabaseAdmin.from("observations").update({ object_id: data.target_id }).eq("object_id", data.source_id);
+    await supabaseAdmin.from("objects").update({ merged_into: data.target_id, hidden: true, status: "hidden" } as never)
+      .eq("id", data.source_id);
+    await writeAuditLog(context.userId, "merge", "object", data.source_id,
+      { source_id: data.source_id }, { target_id: data.target_id }, data.reason ?? null);
+    await recomputeObjectInternal(data.target_id).catch(() => {});
+    return { ok: true };
+  });
+
+// ===== 修改对象分类 =====
+export const updateObjectCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      object_id: z.string().uuid(),
+      type: z.enum(["brand", "product", "service", "organization", "film", "game", "show", "event"]).optional(),
+      category: z.string().max(80).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const patch: Record<string, unknown> = {};
+    if (data.type) patch.type = data.type;
+    if (data.category !== undefined) patch.category = data.category || null;
+    if (!Object.keys(patch).length) return { ok: true };
+    await supabaseAdmin.from("objects").update(patch as never).eq("id", data.object_id);
+    await writeAuditLog(context.userId, "update_category", "object", data.object_id, null, patch);
     return { ok: true };
   });
 
@@ -500,21 +568,107 @@ export const reviewObservation = createServerFn({ method: "POST" })
     z.object({
       id: z.string().uuid(),
       action: z.enum(["approve", "reject"]),
+      rejection_reason: z.enum(["too_short","no_facts","pure_emotion","duplicate","advertisement","personal_attack","defamation","off_topic"]).optional(),
       note: z.string().max(500).optional(),
     }).parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { data: before } = await supabaseAdmin.from("observations")
+      .select("user_id, object_id, status, reference_url").eq("id", data.id).single();
+    if (!before) throw new Error("观察不存在");
+    if (data.action === "reject" && !data.rejection_reason) throw new Error("驳回需选择原因");
     const status = data.action === "approve" ? "approved" : "rejected";
-    const { data: updated, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("observations")
-      .update({ status, admin_note: data.note ?? null })
-      .eq("id", data.id)
-      .select("object_id")
-      .single();
+      .update({
+        status, admin_note: data.note ?? null,
+        rejection_reason: data.action === "reject" ? data.rejection_reason : null,
+      } as never)
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { object_id: updated.object_id };
+
+    // 信誉变更
+    let delta = 0; let reason = "review";
+    if (data.action === "approve") {
+      delta = before.reference_url ? 10 : 5; reason = "approved";
+    } else {
+      const map: Record<string, number> = {
+        advertisement: -20, personal_attack: -30, defamation: -30,
+        too_short: -10, no_facts: -10, pure_emotion: -10, duplicate: -10, off_topic: -10,
+      };
+      delta = map[data.rejection_reason!] ?? -10;
+      reason = data.rejection_reason!;
+    }
+    await supabaseAdmin.rpc("apply_reputation_delta", {
+      _user: before.user_id, _delta: delta, _reason: reason, _obs: data.id,
+    });
+
+    await writeAuditLog(context.userId, `review_${data.action}`, "observation", data.id,
+      { status: before.status }, { status, rejection_reason: data.rejection_reason }, data.note ?? null);
+
+    if (data.action === "approve") {
+      void recomputeObjectInternal(before.object_id).catch(() => {});
+    }
+    return { object_id: before.object_id };
   });
+
+// ===== 调整用户信誉（admin）=====
+export const adjustReputation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      user_id: z.string().uuid(),
+      delta: z.number().int().min(-100).max(100),
+      reason: z.string().min(1).max(200),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    await supabaseAdmin.rpc("apply_reputation_delta", {
+      _user: data.user_id, _delta: data.delta, _reason: `admin_adjust:${data.reason}`, _obs: null,
+    });
+    await writeAuditLog(context.userId, "adjust_reputation", "user", data.user_id, null, { delta: data.delta }, data.reason);
+    return { ok: true };
+  });
+
+// ===== Admin Analytics =====
+export const getAdminAnalytics = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+    const [obs30, approved30, high30, objCount, topObj, topUsers] = await Promise.all([
+      supabaseAdmin.from("observations").select("id, status, created_at, risk_level", { count: "exact" }).gte("created_at", since),
+      supabaseAdmin.from("observations").select("id", { count: "exact", head: true }).gte("created_at", since).eq("status", "approved"),
+      supabaseAdmin.from("observations").select("id", { count: "exact", head: true }).gte("created_at", since).eq("risk_level", "high"),
+      supabaseAdmin.from("objects").select("id", { count: "exact", head: true }),
+      supabaseAdmin.from("objects").select("id, name, temperature, observation_count").order("observation_count", { ascending: false }).limit(5),
+      supabaseAdmin.from("profiles").select("id, email, display_name, reputation").order("reputation", { ascending: false }).limit(5),
+    ]);
+    const total30 = obs30.count ?? 0;
+    const approveRate = total30 > 0 ? Math.round(((approved30.count ?? 0) / total30) * 100) : 0;
+    return {
+      observations_30d: total30,
+      approve_rate: approveRate,
+      high_risk_30d: high30.count ?? 0,
+      objects_total: objCount.count ?? 0,
+      top_objects: topObj.data ?? [],
+      top_users: topUsers.data ?? [],
+    };
+  });
+
+// ===== 审计日志列表 =====
+export const listAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data } = await supabaseAdmin
+      .from("audit_logs").select("*").order("created_at", { ascending: false }).limit(200);
+    return data ?? [];
+  });
+
+
 
 // ===== 管理员从申请创建对象 =====
 export const createObject = createServerFn({ method: "POST" })
