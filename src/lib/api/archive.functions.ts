@@ -127,7 +127,7 @@ export const getCaseDetail = createServerFn({ method: "POST" })
       supabaseAdmin
         .from("observations")
         .select("id, case_code, summary, evidence_level, created_at, objects(name)")
-        .eq("archive_category", row.archive_category).eq("status", "approved").neq("id", row.id)
+        .eq("archive_category", row.archive_category ?? "其他案例").eq("status", "approved").neq("id", row.id)
         .order("created_at", { ascending: false }).limit(6),
     ]);
 
