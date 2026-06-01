@@ -244,10 +244,13 @@ async function recomputeObjectInternal(object_id: string): Promise<number | null
   if (list.length === 0) {
     await supabaseAdmin.from("objects").update({
       temperature: 24, ai_summary: "暂无足够观察生成总结。", top_tags: [], observation_count: 0,
-    }).eq("id", object_id);
+      heat_sources: [] as never, cooling_sources: [] as never,
+    } as never).eq("id", object_id);
     return 24;
   }
-  const temperature = computeTemperature(list.map((o) => o.impact_score));
+  // 使用温度智能引擎重算（写入 temperature_events 与 heat/cooling sources）
+  const eng = await recomputeObjectWithEngine(object_id, "observation_approved", null, null);
+  const temperature = eng?.temperature ?? 24;
   let summary = "";
   let top_tags: { tag: string; count: number }[] = [];
   let evidence_distribution: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
@@ -256,7 +259,7 @@ async function recomputeObjectInternal(object_id: string): Promise<number | null
     summary = r.summary; top_tags = r.top_tags; evidence_distribution = r.evidence_distribution;
   } catch { /* tolerate AI failure */ }
   await supabaseAdmin.from("objects").update({
-    temperature, ai_summary: summary || null, top_tags,
+    ai_summary: summary || null, top_tags,
     observation_count: list.filter((o) => o.evidence_level !== "D").length,
   }).eq("id", object_id);
   await supabaseAdmin.from("analysis_logs").insert({
