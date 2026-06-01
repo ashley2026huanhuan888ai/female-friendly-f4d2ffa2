@@ -65,9 +65,10 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         .eq("status", "published")
         .order("created_at", { ascending: false }).limit(5),
       supabaseAdmin.from("observations")
-        .select("id, object_id, summary, tags, evidence_level, created_at")
+        .select("id, object_id, summary, evidence_level, created_at")
         .eq("status", "approved")
         .order("created_at", { ascending: false }).limit(8),
+
     ]);
 
     const events7d = (recentEvents.data ?? []) as Array<{ object_id: string; delta: number }>;
