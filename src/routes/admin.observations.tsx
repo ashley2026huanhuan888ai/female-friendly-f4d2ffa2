@@ -2,42 +2,99 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { reviewObservation, recomputeTemperature } from "@/lib/api/platform.functions";
+import {
+  reviewObservation,
+  recomputeTemperature,
+  regenerateObservation,
+  updateObservation,
+  deleteObservation,
+} from "@/lib/api/platform.functions";
+import { FEMINIST_TAGS, TAG_WEIGHTS, EVIDENCE_STRENGTH } from "@/lib/temperature";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/observations")({
   component: ObsAdmin,
 });
 
+type Obs = {
+  id: string;
+  object_id: string;
+  content: string;
+  scene: string | null;
+  screenshot_url: string | null;
+  reference_url: string | null;
+  cleaned_content: string | null;
+  facts: string[];
+  summary: string | null;
+  evidence_level: "A" | "B" | "C" | "D" | null;
+  tags: string[];
+  confidence: number;
+  impact_score: number;
+  status: string;
+  created_at: string;
+  objects: { id: string; name: string } | null;
+};
+
 function ObsAdmin() {
   const review = useServerFn(reviewObservation);
   const recompute = useServerFn(recomputeTemperature);
-  const [items, setItems] = useState<any[]>([]);
+  const regen = useServerFn(regenerateObservation);
+  const update = useServerFn(updateObservation);
+  const del = useServerFn(deleteObservation);
+
+  const [items, setItems] = useState<Obs[]>([]);
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected">("pending");
+  const [busy, setBusy] = useState<string | null>(null);
 
   const reload = () =>
-    supabase.from("observations")
+    supabase
+      .from("observations")
       .select("*, objects(id,name)")
       .eq("status", filter)
       .order("created_at", { ascending: false })
       .limit(100)
-      .then(({ data }) => setItems(data ?? []));
+      .then(({ data }) => setItems((data ?? []) as unknown as Obs[]));
   useEffect(() => { reload(); }, [filter]);
 
   const act = async (id: string, objectId: string, action: "approve" | "reject") => {
     try {
+      setBusy(id);
       await review({ data: { id, action } });
       toast.success(action === "approve" ? "已通过" : "已拒绝");
-      if (action === "approve") {
-        recompute({ data: { object_id: objectId } }).catch(() => {});
-      }
+      if (action === "approve") recompute({ data: { object_id: objectId } }).catch(() => {});
       reload();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
+  };
+
+  const onRegen = async (id: string) => {
+    try { setBusy(id); await regen({ data: { id } }); toast.success("已重新分析"); reload(); }
+    catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
+  };
+
+  const toggleTag = async (o: Obs, tag: string) => {
+    const next = o.tags.includes(tag) ? o.tags.filter((t) => t !== tag) : [...o.tags, tag];
+    try { setBusy(o.id); await update({ data: { id: o.id, tags: next } }); reload(); }
+    catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
+  };
+
+  const setEvidence = async (o: Obs, ev: "A" | "B" | "C" | "D") => {
+    try { setBusy(o.id); await update({ data: { id: o.id, evidence_level: ev } }); reload(); }
+    catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
+  };
+
+  const onDelete = async (id: string) => {
+    if (!confirm("删除此观察？此操作不可撤销")) return;
+    try { setBusy(id); await del({ data: { id } }); toast.success("已删除"); reload(); }
+    catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
   };
 
   return (
     <div className="container-prose py-12">
-      <h1 className="font-serif text-3xl">观察审核</h1>
+      <h1 className="font-serif text-3xl">观察审核 · AI 分析面板</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        贡献分 = Σ(标签权重) × 证据强度 × 置信度。D 级不参与计算。
+      </p>
+
       <div className="mt-6 flex gap-2 text-sm">
         {(["pending", "approved", "rejected"] as const).map((s) => (
           <button key={s} onClick={() => setFilter(s)}
@@ -47,36 +104,111 @@ function ObsAdmin() {
         ))}
       </div>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-8 space-y-6">
         {items.map((o) => (
           <article key={o.id} className="border border-border bg-card p-5">
+            {/* Header */}
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">{o.objects?.name}</span>
+              <span className="font-medium text-foreground">{o.objects?.name ?? "—"}</span>
               <span>·</span>
               <span className="border border-border px-1.5 py-0.5">证据 {o.evidence_level ?? "—"}</span>
-              {(o.tags as string[])?.map((t) => <span key={t} className="text-accent">#{t}</span>)}
+              <span className="border border-border px-1.5 py-0.5">
+                置信度 {(Number(o.confidence) || 0).toFixed(2)}
+              </span>
+              <span className="border border-accent px-1.5 py-0.5 text-accent">
+                贡献分 {Number(o.impact_score) || 0}
+              </span>
               <span className="ml-auto">{new Date(o.created_at).toLocaleString("zh-CN")}</span>
             </div>
-            {o.cleaned_content && (
-              <p className="mt-3 text-sm leading-relaxed">{o.cleaned_content}</p>
+
+            {/* AI summary */}
+            {o.summary && (
+              <p className="mt-3 font-serif text-base leading-relaxed">{o.summary}</p>
             )}
-            <details className="mt-2 text-xs text-muted-foreground">
+
+            {/* Cleaned content */}
+            {o.cleaned_content && (
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{o.cleaned_content}</p>
+            )}
+
+            {/* Extracted facts */}
+            {o.facts?.length > 0 && (
+              <div className="mt-3 border-l-2 border-accent/40 pl-3">
+                <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">提取事实</div>
+                <ul className="space-y-0.5 text-sm">
+                  {o.facts.map((f, i) => <li key={i}>· {f}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {/* Tags */}
+            <div className="mt-4">
+              <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">标签（点击编辑）</div>
+              <div className="flex flex-wrap gap-1.5">
+                {FEMINIST_TAGS.map((t) => {
+                  const on = o.tags.includes(t);
+                  return (
+                    <button key={t} onClick={() => toggleTag(o, t)} disabled={busy === o.id}
+                      className={`border px-2 py-0.5 text-xs ${on ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:border-foreground"}`}>
+                      {t} · w{TAG_WEIGHTS[t]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Evidence editor */}
+            <div className="mt-3 flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">证据等级：</span>
+              {(["A", "B", "C", "D"] as const).map((ev) => (
+                <button key={ev} onClick={() => setEvidence(o, ev)} disabled={busy === o.id}
+                  className={`border px-2 py-0.5 ${o.evidence_level === ev ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground"}`}>
+                  {ev} · ×{EVIDENCE_STRENGTH[ev]}
+                </button>
+              ))}
+            </div>
+
+            {/* Raw */}
+            <details className="mt-3 text-xs text-muted-foreground">
               <summary className="cursor-pointer">原文 · 场景 · 链接</summary>
               <div className="mt-2 space-y-1">
                 <div><strong>原文：</strong>{o.content}</div>
                 {o.scene && <div><strong>场景：</strong>{o.scene}</div>}
-                {o.screenshot_url && <div><strong>截图：</strong><a href={o.screenshot_url} target="_blank" className="underline">{o.screenshot_url}</a></div>}
-                {o.reference_url && <div><strong>参考：</strong><a href={o.reference_url} target="_blank" className="underline">{o.reference_url}</a></div>}
+                {o.screenshot_url && (
+                  <div><strong>截图：</strong>
+                    <a href={o.screenshot_url} target="_blank" rel="noreferrer" className="underline">{o.screenshot_url}</a>
+                  </div>
+                )}
+                {o.reference_url && (
+                  <div><strong>参考：</strong>
+                    <a href={o.reference_url} target="_blank" rel="noreferrer" className="underline">{o.reference_url}</a>
+                  </div>
+                )}
               </div>
             </details>
-            {filter === "pending" && (
-              <div className="mt-4 flex gap-2">
-                <button onClick={() => act(o.id, o.object_id, "approve")}
-                  className="border border-foreground bg-foreground px-4 py-1.5 text-xs text-background hover:bg-accent">通过</button>
-                <button onClick={() => act(o.id, o.object_id, "reject")}
-                  className="border border-border px-4 py-1.5 text-xs hover:border-foreground">拒绝</button>
-              </div>
-            )}
+
+            {/* Actions */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {filter === "pending" && (
+                <>
+                  <button onClick={() => act(o.id, o.object_id, "approve")} disabled={busy === o.id}
+                    className="border border-foreground bg-foreground px-4 py-1.5 text-xs text-background hover:bg-accent">通过</button>
+                  <button onClick={() => act(o.id, o.object_id, "reject")} disabled={busy === o.id}
+                    className="border border-border px-4 py-1.5 text-xs hover:border-foreground">拒绝</button>
+                </>
+              )}
+              <button onClick={() => onRegen(o.id)} disabled={busy === o.id}
+                className="border border-border px-4 py-1.5 text-xs hover:border-foreground">
+                {busy === o.id ? "处理中…" : "重新分析"}
+              </button>
+              {filter === "approved" && (
+                <button onClick={() => recompute({ data: { object_id: o.object_id } }).then(() => toast.success("已重算温度"))}
+                  disabled={busy === o.id}
+                  className="border border-border px-4 py-1.5 text-xs hover:border-foreground">重算对象温度</button>
+              )}
+              <button onClick={() => onDelete(o.id)} disabled={busy === o.id}
+                className="ml-auto border border-destructive/40 px-4 py-1.5 text-xs text-destructive hover:bg-destructive/5">删除</button>
+            </div>
           </article>
         ))}
         {items.length === 0 && <p className="py-12 text-center text-sm text-muted-foreground">无记录</p>}
