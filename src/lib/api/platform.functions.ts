@@ -269,8 +269,10 @@ export const updateObservation = createServerFn({ method: "POST" })
     const ev = data.evidence_level ?? cur.evidence_level ?? "C";
     const conf = data.confidence ?? Number(cur.confidence) ?? 0.7;
     const impact = computeImpact(tags, ev, conf);
-    const patch: Record<string, unknown> = { tags, evidence_level: ev, confidence: conf, impact_score: impact };
-    if (data.summary !== undefined) patch.summary = data.summary;
+    const patch = {
+      tags, evidence_level: ev, confidence: conf, impact_score: impact,
+      ...(data.summary !== undefined ? { summary: data.summary } : {}),
+    };
     const { error } = await supabaseAdmin.from("observations").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true, impact_score: impact };
