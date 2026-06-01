@@ -19,9 +19,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
 import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
 import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const RequestObjectRoute = RequestObjectRouteImport.update({
   id: '/request-object',
@@ -73,6 +76,11 @@ const ObjectsIdRoute = ObjectsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ObjectsRoute,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminRequestsRoute = AdminRequestsRouteImport.update({
   id: '/requests',
   path: '/requests',
@@ -88,6 +96,16 @@ const AdminObjectsRoute = AdminObjectsRouteImport.update({
   path: '/objects',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -97,9 +115,12 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -111,9 +132,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin': typeof AdminIndexRoute
@@ -127,9 +151,12 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/objects': typeof ObjectsRouteWithChildren
   '/request-object': typeof RequestObjectRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/audit': typeof AdminAuditRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
   '/admin/requests': typeof AdminRequestsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -144,9 +171,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/objects'
     | '/request-object'
+    | '/admin/analytics'
+    | '/admin/audit'
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
+    | '/admin/users'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin/'
@@ -158,9 +188,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/objects'
     | '/request-object'
+    | '/admin/analytics'
+    | '/admin/audit'
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
+    | '/admin/users'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin'
@@ -173,9 +206,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/objects'
     | '/request-object'
+    | '/admin/analytics'
+    | '/admin/audit'
     | '/admin/objects'
     | '/admin/observations'
     | '/admin/requests'
+    | '/admin/users'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/admin/'
@@ -264,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ObjectsIdRouteImport
       parentRoute: typeof ObjectsRoute
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/requests': {
       id: '/admin/requests'
       path: '/requests'
@@ -285,20 +328,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminObjectsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminAuditRoute: typeof AdminAuditRoute
   AdminObjectsRoute: typeof AdminObjectsRoute
   AdminObservationsRoute: typeof AdminObservationsRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminAuditRoute: AdminAuditRoute,
   AdminObjectsRoute: AdminObjectsRoute,
   AdminObservationsRoute: AdminObservationsRoute,
   AdminRequestsRoute: AdminRequestsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -328,3 +391,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
