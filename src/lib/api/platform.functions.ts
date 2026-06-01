@@ -453,7 +453,10 @@ export const regenerateObservation = createServerFn({ method: "POST" })
       tags: a.tags,
       confidence: a.confidence,
       impact_score: impact,
-    }).eq("id", data.id);
+      principles_matched: a.principles_matched ?? [],
+      cases_cited: a.cases_cited ?? [],
+      explanation: a.explanation ?? null,
+    } as never).eq("id", data.id);
     return { ok: true, evidence_level: a.evidence_level, tags: a.tags, impact_score: impact };
   });
 
