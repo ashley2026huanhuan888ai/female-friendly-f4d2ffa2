@@ -463,66 +463,22 @@ export const recomputeTemperature = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-
-    const { data: obj } = await supabaseAdmin
-      .from("objects").select("id, name, frozen").eq("id", data.object_id).single();
-    if (!obj) throw new Error("对象不存在");
-
-    // 管理员手动温度覆盖
     if (data.manual_temperature !== undefined) {
+      const { data: before } = await supabaseAdmin
+        .from("objects").select("temperature").eq("id", data.object_id).single();
       await supabaseAdmin.from("objects").update({ temperature: data.manual_temperature })
         .eq("id", data.object_id);
       await supabaseAdmin.from("analysis_logs").insert({
         object_id: data.object_id,
         snapshot: { manual: true, temperature: data.manual_temperature },
       });
+      await writeAuditLog(context.userId, "manual_temperature", "object", data.object_id,
+        before, { temperature: data.manual_temperature }, "管理员手动覆盖");
       return { temperature: data.manual_temperature };
     }
-
-    if (obj.frozen) throw new Error("该对象温度已冻结");
-
-    const { data: obs } = await supabaseAdmin
-      .from("observations")
-      .select("summary, cleaned_content, content, evidence_level, tags, impact_score")
-      .eq("object_id", data.object_id)
-      .eq("status", "approved");
-
-    const list = (obs ?? []).map((o) => ({
-      summary: o.summary || o.cleaned_content || o.content?.slice(0, 80) || "",
-      evidence_level: (o.evidence_level ?? "C") as string,
-      tags: (o.tags as string[]) ?? [],
-      impact_score: Number(o.impact_score) || 0,
-    }));
-
-    if (list.length === 0) {
-      await supabaseAdmin.from("objects").update({
-        temperature: 24, ai_summary: "暂无足够观察生成总结。",
-        top_tags: [], observation_count: 0,
-      }).eq("id", data.object_id);
-      return { temperature: 24 };
-    }
-
-    const temperature = computeTemperature(list.map((o) => o.impact_score));
-    const result = await callAIObjectSummary(obj.name, list);
-
-    await supabaseAdmin.from("objects").update({
-      temperature,
-      ai_summary: result.summary,
-      top_tags: result.top_tags,
-      observation_count: list.filter((o) => o.evidence_level !== "D").length,
-    }).eq("id", data.object_id);
-
-    await supabaseAdmin.from("analysis_logs").insert({
-      object_id: data.object_id,
-      snapshot: {
-        temperature,
-        top_tags: result.top_tags,
-        evidence_distribution: result.evidence_distribution,
-        obs_count: list.length,
-      },
-    });
-
-    return { temperature, summary: result.summary };
+    const t = await recomputeObjectInternal(data.object_id);
+    if (t === null) throw new Error("对象不存在或已冻结");
+    return { temperature: t };
   });
 
 // ===== 冻结 / 解冻对象温度 =====
