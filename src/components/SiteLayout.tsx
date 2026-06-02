@@ -5,11 +5,16 @@ import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
 
-const NAV_LINKS = [
+const PRIMARY_NAV = [
+  { to: "/objects", label: "对象" },
   { to: "/feed", label: "观察流" },
-  { to: "/objects", label: "全部对象" },
+  { to: "/request-object", label: "申请对象" },
+] as const;
+
+const SECONDARY_NAV = [
   { to: "/topics", label: "热议议题" },
   { to: "/archive", label: "案例库" },
+  { to: "/archive/evidence", label: "证据库" },
   { to: "/knowledge", label: "知识引擎" },
   { to: "/about", label: "关于" },
 ] as const;
@@ -20,6 +25,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const [, setRep] = useState<number | null>(null);
   const [unread, setUnread] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -68,11 +74,39 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
           {/* 桌面端主导航 */}
           <nav className="hidden items-center gap-6 text-sm md:flex">
-            {NAV_LINKS.map((l) => (
+            {PRIMARY_NAV.map((l) => (
               <Link key={l.to} to={l.to} className="text-muted-foreground hover:text-foreground">
                 {l.label}
               </Link>
             ))}
+            <div
+              className="relative"
+              onMouseEnter={() => setMoreOpen(true)}
+              onMouseLeave={() => setMoreOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setMoreOpen((v) => !v)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-expanded={moreOpen}
+              >
+                更多 ▾
+              </button>
+              {moreOpen && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-44 border border-border bg-paper py-1 shadow-md">
+                  {SECONDARY_NAV.map((l) => (
+                    <Link
+                      key={l.to}
+                      to={l.to}
+                      onClick={() => setMoreOpen(false)}
+                      className="block px-4 py-2 text-sm text-muted-foreground hover:bg-card hover:text-foreground"
+                    >
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* 右侧账号区（桌面） */}
@@ -133,11 +167,21 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         {menuOpen && (
           <div className="border-t border-border bg-paper md:hidden">
             <nav className="container-prose flex flex-col py-2 text-sm">
-              {NAV_LINKS.map((l) => (
+              {PRIMARY_NAV.map((l) => (
                 <Link
                   key={l.to}
                   to={l.to}
                   className="border-b border-border/50 py-3 text-foreground"
+                >
+                  {l.label}
+                </Link>
+              ))}
+              <div className="border-b border-border/50 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">更多</div>
+              {SECONDARY_NAV.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className="border-b border-border/50 py-3 pl-3 text-sm text-muted-foreground"
                 >
                   {l.label}
                 </Link>
@@ -186,12 +230,21 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       )}
 
       <footer className="mt-32 border-t border-border py-12">
-        <div className="container-prose flex flex-col gap-4 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
-          <div>
-            <span className="font-serif text-sm text-foreground">女性友好体验测评</span>
-            <span className="ml-3">观察 · 分析 · 不审判</span>
+        <div className="container-prose space-y-6 text-xs text-muted-foreground">
+          <nav className="flex flex-wrap gap-x-5 gap-y-2">
+            {[...PRIMARY_NAV, ...SECONDARY_NAV].map((l) => (
+              <Link key={l.to} to={l.to} className="hover:text-foreground">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <span className="font-serif text-sm text-foreground">女性友好体验测评</span>
+              <span className="ml-3">观察 · 分析 · 不审判</span>
+            </div>
+            <div>本平台不进行法律意义上的事实认定，不进行道德审判。</div>
           </div>
-          <div>本平台不进行法律意义上的事实认定，不进行道德审判。</div>
         </div>
       </footer>
       <Toaster position="top-center" theme="light" />

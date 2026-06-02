@@ -1,11 +1,12 @@
 import * as React from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { requestObject } from "@/lib/api/platform.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { LoginPrompt } from "@/components/LoginPrompt";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/request-object")({
@@ -26,14 +27,11 @@ function RequestPage() {
 
   if (authed === false) {
     return (
-      <SiteLayout>
-        <div className="container-prose py-32 text-center">
-          <h1 className="font-serif text-3xl">需要登录</h1>
-          <Link to="/login" search={{ redirect: "/request-object" }} className="mt-6 inline-block border border-foreground px-5 py-2.5 text-sm hover:bg-foreground hover:text-background">
-            前往登录
-          </Link>
-        </div>
-      </SiteLayout>
+      <LoginPrompt
+        title="登录后申请测评对象"
+        body="登录后可以提交你希望被测评的品牌、产品、影视作品或服务。"
+        redirect="/request-object"
+      />
     );
   }
 

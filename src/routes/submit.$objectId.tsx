@@ -1,10 +1,11 @@
 import * as React from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { submitObservation } from "@/lib/api/platform.functions";
+import { LoginPrompt } from "@/components/LoginPrompt";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/submit/$objectId")({
@@ -30,15 +31,11 @@ function SubmitPage() {
 
   if (authed === false) {
     return (
-      <SiteLayout>
-        <div className="container-prose py-32 text-center">
-          <h1 className="font-serif text-3xl">需要登录</h1>
-          <p className="mt-3 text-sm text-muted-foreground">提交观察前请先登录。</p>
-          <Link to="/login" search={{ redirect: `/submit/${objectId}` }} className="mt-6 inline-block border border-foreground px-5 py-2.5 text-sm hover:bg-foreground hover:text-background">
-            前往登录
-          </Link>
-        </div>
-      </SiteLayout>
+      <LoginPrompt
+        title="登录后提交观察"
+        body="登录用于防止刷屏和保护观察质量。你登录后会自动回到当前提交页面。"
+        redirect={`/submit/${objectId}`}
+      />
     );
   }
 

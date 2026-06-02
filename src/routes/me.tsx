@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
+import { LoginPrompt } from "@/components/LoginPrompt";
 import { Thermometer } from "@/components/Thermometer";
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/me")({
 function MePage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [tab, setTab] = useState<"watch" | "obs" | "notif">("watch");
   const fetchDash = useServerFn(getMyDashboard);
   const markRead = useServerFn(markNotificationsRead);
@@ -25,7 +27,8 @@ function MePage() {
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { window.location.href = "/login"; return; }
+      if (!u.user) { setAuthed(false); setLoading(false); return; }
+      setAuthed(true);
       fetchDash().then((d) => setData(d)).finally(() => setLoading(false));
     })();
   }, [fetchDash]);
@@ -35,6 +38,16 @@ function MePage() {
     toast.success("已全部标记为已读");
     fetchDash().then((d) => setData(d));
   };
+
+  if (authed === false) {
+    return (
+      <LoginPrompt
+        title="登录后查看个人观察台"
+        body="你可以查看关注对象、提交记录和提醒。"
+        redirect="/me"
+      />
+    );
+  }
 
   if (loading || !data) return <SiteLayout><div className="container-prose py-32 text-center text-muted-foreground">加载中…</div></SiteLayout>;
 
