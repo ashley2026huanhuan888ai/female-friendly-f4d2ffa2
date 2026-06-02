@@ -69,7 +69,7 @@ function Index() {
                 查看观察流
               </Link>
               <Link to="/request-object" className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground">
-                申请评估对象
+                增加新测评对象
               </Link>
             </div>
           </div>
