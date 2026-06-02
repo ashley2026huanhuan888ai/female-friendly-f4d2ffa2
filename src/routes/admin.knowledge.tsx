@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   listPrinciples, upsertPrinciple, deletePrinciple,
   listTags, upsertTag, mergeTag,
-  listCases, upsertCase, deleteCase,
+  listCases, listAllCasesAdmin, upsertCase, deleteCase,
   getKnowledgeOverview,
   type Principle, type KTag, type KCase,
 } from "@/lib/api/knowledge.functions";
