@@ -153,7 +153,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 {isAdmin ? "管理后台" : "管理入口"}
               </Link>
             )}
-            {email ? (
+            {!authReady ? (
+              <span className="text-muted-foreground">同步中…</span>
+            ) : email ? (
               <>
                 <Link to="/me" className="relative text-muted-foreground hover:text-foreground">
                   我的
@@ -179,7 +181,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
           {/* 移动端：登录/注册 + 汉堡 */}
           <div className="flex items-center gap-2 md:hidden">
-            {!email && (
+            {!authReady ? null : !email && (
               <Link
                 to="/login"
                 className="border border-foreground/80 px-2.5 py-1 text-xs text-foreground"
@@ -187,7 +189,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 登录 / 注册
               </Link>
             )}
-            {email && (
+            {authReady && email && (
               <Link to="/me" className="relative text-xs text-muted-foreground">
                 我的
                 {unread > 0 && (
@@ -253,7 +255,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   管理入口
                 </Link>
               )}
-              {email ? (
+              {!authReady ? (
+                <div className="py-3 text-muted-foreground">同步登录状态中…</div>
+              ) : email ? (
                 <>
                   <Link to="/me" className="border-b border-border/50 py-3 text-foreground">
                     我的{unread > 0 ? `（${unread > 99 ? "99+" : unread}）` : ""}
