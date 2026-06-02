@@ -9,7 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 const PRIMARY_NAV = [
   { to: "/objects", label: "对象" },
   { to: "/feed", label: "观察流" },
-  { to: "/request-object", label: "申请对象" },
+  { to: "/request-object", label: "增加\n新测评\n对象" },
 ] as const;
 
 const SECONDARY_NAV = [
