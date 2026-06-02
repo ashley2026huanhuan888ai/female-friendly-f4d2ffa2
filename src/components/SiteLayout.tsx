@@ -167,11 +167,21 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         {menuOpen && (
           <div className="border-t border-border bg-paper md:hidden">
             <nav className="container-prose flex flex-col py-2 text-sm">
-              {NAV_LINKS.map((l) => (
+              {PRIMARY_NAV.map((l) => (
                 <Link
                   key={l.to}
                   to={l.to}
                   className="border-b border-border/50 py-3 text-foreground"
+                >
+                  {l.label}
+                </Link>
+              ))}
+              <div className="border-b border-border/50 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">更多</div>
+              {SECONDARY_NAV.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className="border-b border-border/50 py-3 pl-3 text-sm text-muted-foreground"
                 >
                   {l.label}
                 </Link>
