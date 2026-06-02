@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { BANDS } from "@/lib/temperature";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // ===== 信息流 =====
@@ -53,7 +54,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
     const since24h = new Date(Date.now() - 86400_000).toISOString();
     const since7d = new Date(Date.now() - 7 * 86400_000).toISOString();
 
-    const [todayEvents, recentEvents, latestCases, latestObs, newestObjs] = await Promise.all([
+    const [todayEvents, recentEvents, latestCases, latestObs, newestObjs, allObjTemps] = await Promise.all([
       supabaseAdmin.from("temperature_events" as never)
         .select("object_id, delta, temperature_after, reason, created_at")
         .gte("created_at", since24h)
@@ -73,6 +74,9 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         .select("id, name, type, temperature, observation_count, created_at")
         .eq("status", "published").eq("hidden", false)
         .order("created_at", { ascending: false }).limit(8),
+      supabaseAdmin.from("objects")
+        .select("temperature")
+        .eq("status", "published").eq("hidden", false),
     ]);
 
     const events7d = (recentEvents.data ?? []) as Array<{ object_id: string; delta: number }>;
@@ -103,6 +107,18 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       object: oMap.get(e.object_id) ?? null,
     }));
 
+    const temps = (allObjTemps.data ?? []) as Array<{ temperature: number }>;
+    const bandCounts = BANDS.map((b) => ({
+      band: b.band,
+      range: `${b.range[0]}–${b.range[1]}°`,
+      label: b.label,
+      color: b.color,
+      count: temps.filter((t) => {
+        const v = Number(t.temperature);
+        return v >= b.range[0] && v <= b.range[1];
+      }).length,
+    }));
+
     return {
       today_events: todayWithObj,
       today_events_count: (todayEvents.data ?? []).length,
@@ -114,6 +130,8 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         object: oMap.get(o.object_id) ?? null,
       })),
       newest_objects: newestObjs.data ?? [],
+      band_counts: bandCounts,
+      total_objects: temps.length,
     };
   });
 

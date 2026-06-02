@@ -9,7 +9,7 @@ export interface BandInfo {
 }
 
 export const BANDS: BandInfo[] = [
-  { band: "comfort", label: "舒适区", color: "var(--temp-cool)", range: [20, 28] },
+  { band: "comfort", label: "女性友好", color: "var(--temp-cool)", range: [20, 28] },
   { band: "minor", label: "轻微争议", color: "var(--temp-neutral)", range: [29, 40] },
   { band: "notable", label: "明显争议", color: "var(--temp-warm)", range: [41, 60] },
   { band: "high", label: "高温争议", color: "var(--temp-hot)", range: [61, 80] },
