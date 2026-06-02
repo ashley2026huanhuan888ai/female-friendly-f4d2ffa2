@@ -36,6 +36,12 @@ function LoginPage() {
     if (ready && user) navigate({ to: safeRedirect, replace: true });
   }, [ready, user, navigate, safeRedirect]);
 
+  useEffect(() => {
+    if (consumeExpiredNotice()) {
+      toast.info("登录状态已过期，请重新登录。");
+    }
+  }, []);
+
   const PASSWORD_MIN_LENGTH = 8;
   const passwordValid = password.length >= PASSWORD_MIN_LENGTH;
 
