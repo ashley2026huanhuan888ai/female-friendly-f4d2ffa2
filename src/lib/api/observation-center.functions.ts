@@ -107,6 +107,18 @@ export const getHomeSummary = createServerFn({ method: "GET" })
       object: oMap.get(e.object_id) ?? null,
     }));
 
+    const temps = (allObjTemps.data ?? []) as Array<{ temperature: number }>;
+    const bandCounts = BANDS.map((b) => ({
+      band: b.band,
+      range: `${b.range[0]}–${b.range[1]}°`,
+      label: b.label,
+      color: b.color,
+      count: temps.filter((t) => {
+        const v = Number(t.temperature);
+        return v >= b.range[0] && v <= b.range[1];
+      }).length,
+    }));
+
     return {
       today_events: todayWithObj,
       today_events_count: (todayEvents.data ?? []).length,
@@ -118,6 +130,8 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         object: oMap.get(o.object_id) ?? null,
       })),
       newest_objects: newestObjs.data ?? [],
+      band_counts: bandCounts,
+      total_objects: temps.length,
     };
   });
 
