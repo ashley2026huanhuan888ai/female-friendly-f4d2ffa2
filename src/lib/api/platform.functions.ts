@@ -247,7 +247,7 @@ async function writeAuditLog(
   });
 }
 
-// 内部温度重算（用于自动通过 / 审核通过后调用，无权限检查）
+// 内部温度重算（薄包装：唯一温度入口是 recomputeObjectWithEngine）
 async function recomputeObjectInternal(object_id: string): Promise<number | null> {
   const { data: obj } = await supabaseAdmin
     .from("objects").select("id, name, frozen").eq("id", object_id).single();
@@ -262,16 +262,21 @@ async function recomputeObjectInternal(object_id: string): Promise<number | null
     tags: (o.tags as string[]) ?? [],
     impact_score: Number(o.impact_score) || 0,
   }));
-  if (list.length === 0) {
-    await supabaseAdmin.from("objects").update({
-      temperature: 24, ai_summary: "暂无足够观察生成总结。", top_tags: [], observation_count: 0,
-      heat_sources: [] as never, cooling_sources: [] as never,
-    } as never).eq("id", object_id);
-    return 24;
-  }
-  // 使用温度智能引擎重算（写入 temperature_events 与 heat/cooling sources）
+
+  // 始终走统一引擎（处理 0 观察的 unmeasured 状态、规则地板、事件写入）
   const eng = await recomputeObjectWithEngine(object_id, "observation_approved", null, null);
-  const temperature = eng?.temperature ?? 24;
+  const temperature = eng?.temperature ?? null;
+
+  if (list.length === 0) {
+    // 0 观察：清空总结，不写温度
+    await supabaseAdmin.from("objects").update({
+      ai_summary: "暂无足够观察生成总结。",
+      top_tags: [] as never,
+      observation_count: 0,
+    } as never).eq("id", object_id);
+    return temperature;
+  }
+
   let summary = "";
   let top_tags: { tag: string; count: number }[] = [];
   let evidence_distribution: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
@@ -537,28 +542,22 @@ export const recomputeTemperature = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { data: before } = await supabaseAdmin
+      .from("objects").select("temperature").eq("id", data.object_id).single();
+    // 唯一入口；手动温度作为 admin floor 传入，规则地板永远不被绕过
+    const r = await recomputeObjectWithEngine(
+      data.object_id,
+      data.manual_temperature !== undefined ? "manual_admin" : "recompute",
+      null, context.userId,
+      { adminMinimum: data.manual_temperature ?? null },
+    );
+    if (!r) throw new Error("对象不存在或已冻结");
     if (data.manual_temperature !== undefined) {
-      const { data: before } = await supabaseAdmin
-        .from("objects").select("temperature").eq("id", data.object_id).single();
-      // 先重算以拿到 AI / 规则最低温度
-      const aiT = await recomputeObjectInternal(data.object_id);
-      const { data: cur } = await supabaseAdmin
-        .from("objects").select("temperature").eq("id", data.object_id).single();
-      const ruleAndAi = Number(cur?.temperature) || Number(aiT) || 24;
-      const finalT = Math.max(ruleAndAi, data.manual_temperature);
-      await supabaseAdmin.from("objects").update({ temperature: finalT })
-        .eq("id", data.object_id);
-      await supabaseAdmin.from("analysis_logs").insert({
-        object_id: data.object_id,
-        snapshot: { manual: true, admin_temperature: data.manual_temperature, ai_or_rule: ruleAndAi, final: finalT },
-      });
       await writeAuditLog(context.userId, "manual_temperature", "object", data.object_id,
-        before, { temperature: finalT, admin_input: data.manual_temperature }, "管理员手动覆盖（受规则最低温度约束）");
-      return { temperature: finalT };
+        before, { temperature: r.temperature, admin_input: data.manual_temperature },
+        "管理员手动覆盖（受规则最低温度约束）");
     }
-    const t = await recomputeObjectInternal(data.object_id);
-    if (t === null) throw new Error("对象不存在或已冻结");
-    return { temperature: t };
+    return { temperature: r.temperature };
   });
 
 // ===== 冻结 / 解冻对象温度 =====
@@ -855,13 +854,9 @@ async function ingestReasonAsObservation(
   } as never).select("id").single();
   if (error) throw new Error(error.message);
 
+  // 统一入口已处理规则地板；不再二次直接写 objects.temperature
   const result = await recomputeObjectWithEngine(object_id, "request_approval", null, actor_id);
-  let final = result?.temperature ?? rule.rule_minimum_temperature;
-  if (rule.rule_minimum_temperature > final) final = rule.rule_minimum_temperature;
-  if (final !== (result?.temperature ?? 0)) {
-    await supabaseAdmin.from("objects").update({ temperature: final } as never).eq("id", object_id);
-  }
-  return { observation_id: (ins as { id: string }).id, temperature: final };
+  return { observation_id: (ins as { id: string }).id, temperature: result?.temperature ?? rule.rule_minimum_temperature };
 }
 
 // ===== 管理员通过对象申请（完整流程：创建对象 + 写观察 + 重算温度） =====

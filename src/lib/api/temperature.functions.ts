@@ -1,10 +1,10 @@
-// 温度智能中心 —— 服务端函数
+// 温度智能中心 —— 服务端函数（平台唯一温度写入入口）
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runEngine, type EngineObservation, type TagMeta, type EngineResult } from "@/lib/temperature-engine";
-import { aggregateRuleMinimum } from "@/lib/temperature-rules";
+import { aggregateRuleMinimum, normalizeTags } from "@/lib/temperature-rules";
 
 async function assertAdmin(userId: string) {
   const { data: roles } = await supabaseAdmin
@@ -30,12 +30,15 @@ interface FullEngine extends EngineResult {
   delta: number;
 }
 
+// 平台唯一的温度写入入口。任何对 objects.temperature / heat_sources /
+// cooling_sources / temperature_events 的写入都必须经过这里。
 async function recomputeAndPersist(
   object_id: string,
   reason: string,
   actor_id: string | null,
   observation_id: string | null,
   extraCooling = 0,
+  adminMinimum: number | null = null,
 ): Promise<FullEngine | null> {
   const { data: obj } = await supabaseAdmin
     .from("objects").select("id, temperature, frozen, last_cooled_at").eq("id", object_id).single();
@@ -57,18 +60,47 @@ async function recomputeAndPersist(
     id: o.id,
     evidence_level: o.evidence_level,
     confidence: Number(o.confidence) || 0.7,
-    tags: Array.isArray(o.tags) ? (o.tags as string[]) : [],
+    tags: normalizeTags(Array.isArray(o.tags) ? (o.tags as string[]) : []),
     cases_cited: Array.isArray(o.cases_cited) ? (o.cases_cited as string[]) : [],
     created_at: o.created_at,
   }));
 
+  const before = Number(obj.temperature) || 20;
+
+  // approved observations = 0 → unmeasured，不写舒适默认值
+  if (observations.length === 0) {
+    await supabaseAdmin.from("objects").update({
+      heat_sources: [] as never,
+      cooling_sources: [] as never,
+      observation_count: 0,
+      // 不更新 temperature；UI 以 observation_count===0 显示"未测量/暂无温度"
+    } as never).eq("id", object_id);
+    return {
+      object_id,
+      before,
+      delta: 0,
+      temperature: before,
+      breakdown: {
+        base: 20, knowledge: 0, positive: 0, evidence: 0, case: 0,
+        trend: 0, diversity: 1, cooling: 0, active_count: 0, total_count: 0,
+        ai_temperature: before,
+        rule_minimum_temperature: 20,
+        triggered_rules: [],
+        has_regulatory_penalty: false,
+        unmeasured: true,
+      } as never,
+      heat_sources: [],
+      cooling_sources: [],
+    };
+  }
+
   const tagMap = await loadTagMap();
   const result = runEngine(observations, tagMap, { cooling: extraCooling });
 
-  // 严重标签 + 强证据 → 规则最低温度（AI 不能压低）
+  // 强证据 / 严重标签 → 规则地板（AI、平均值、冷却都不能压低）
   const ruleAgg = aggregateRuleMinimum(
     rawRows.map((o) => ({
-      tags: Array.isArray(o.tags) ? (o.tags as string[]) : [],
+      tags: normalizeTags(Array.isArray(o.tags) ? (o.tags as string[]) : []),
       evidence_level: o.evidence_level,
       content: o.content,
       summary: o.summary,
@@ -76,15 +108,20 @@ async function recomputeAndPersist(
     })),
   );
   const aiTemperature = result.temperature;
-  const finalTemperature = Math.max(aiTemperature, ruleAgg.rule_minimum_temperature);
+  const ruleMinimum = ruleAgg.rule_minimum_temperature;
+  const adminMin = adminMinimum ?? 0;
+  // final = max(ai, rule, admin)。cooling 已计入 aiTemperature，永远不能突破 ruleMinimum。
+  const finalTemperature = Math.max(aiTemperature, ruleMinimum, adminMin);
   result.temperature = finalTemperature;
-  // 把规则信息塞进 breakdown 便于管理端展示
-  (result.breakdown as unknown as Record<string, unknown>).ai_temperature = aiTemperature;
-  (result.breakdown as unknown as Record<string, unknown>).rule_minimum_temperature = ruleAgg.rule_minimum_temperature;
-  (result.breakdown as unknown as Record<string, unknown>).triggered_rules = ruleAgg.triggered_rules;
-  (result.breakdown as unknown as Record<string, unknown>).has_regulatory_penalty = ruleAgg.has_regulatory_penalty;
 
-  const before = Number(obj.temperature) || 24;
+  const bd = result.breakdown as unknown as Record<string, unknown>;
+  bd.ai_temperature = aiTemperature;
+  bd.rule_minimum_temperature = ruleMinimum;
+  bd.triggered_rules = ruleAgg.triggered_rules;
+  bd.has_regulatory_penalty = ruleAgg.has_regulatory_penalty;
+  if (adminMin) bd.admin_minimum = adminMin;
+  bd.unmeasured = false;
+
   const delta = Math.round((finalTemperature - before) * 10) / 10;
 
   await supabaseAdmin.from("objects").update({
@@ -95,12 +132,11 @@ async function recomputeAndPersist(
     ...(extraCooling !== 0 ? { last_cooled_at: new Date().toISOString() } : {}),
   } as never).eq("id", object_id);
 
-  // 仅在温度有变化时写入事件，避免噪声
-  if (delta !== 0 || extraCooling !== 0 || ruleAgg.rule_minimum_temperature > 20) {
+  if (delta !== 0 || extraCooling !== 0 || ruleMinimum > 20 || adminMin > 0) {
     await supabaseAdmin.from("temperature_events" as never).insert({
       object_id, observation_id,
       delta, temperature_after: finalTemperature,
-      reason: ruleAgg.rule_minimum_temperature > aiTemperature ? `${reason}+rule_min` : reason,
+      reason: ruleMinimum > aiTemperature ? `${reason}+rule_min` : reason,
       breakdown: result.breakdown as never,
       actor_id,
     } as never);
@@ -109,14 +145,18 @@ async function recomputeAndPersist(
   return { ...result, object_id, before, delta };
 }
 
-// 暴露给 platform.functions.ts 使用（内部调用，不做权限检查）
+// 暴露给 platform.functions.ts / bulk-import.functions.ts 使用（无权限检查）
 export async function recomputeObjectWithEngine(
   object_id: string,
   reason: string,
   observation_id: string | null = null,
   actor_id: string | null = null,
+  opts: { extraCooling?: number; adminMinimum?: number | null } = {},
 ) {
-  return recomputeAndPersist(object_id, reason, actor_id, observation_id, 0);
+  return recomputeAndPersist(
+    object_id, reason, actor_id, observation_id,
+    opts.extraCooling ?? 0, opts.adminMinimum ?? null,
+  );
 }
 
 // ====== Server functions ======
@@ -167,7 +207,7 @@ export const getTemperatureTimeline = createServerFn({ method: "GET" })
     return events ?? [];
   });
 
-// 批量自然降温：30 天未更新且无新观察的对象 → -1..-3 度
+// 批量自然降温：30 天未更新且无新观察的对象 → -1..-3 度（但永不突破规则地板）
 export const runCoolingCycle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -215,7 +255,6 @@ export const getTemperatureDashboard = createServerFn({ method: "GET" })
         .limit(500),
     ]);
 
-    // 计算 30 天内升温 / 降温最快
     const byObj = new Map<string, number>();
     for (const e of (recentEvents.data ?? []) as Array<{ object_id: string; delta: number }>) {
       byObj.set(e.object_id, (byObj.get(e.object_id) ?? 0) + Number(e.delta));

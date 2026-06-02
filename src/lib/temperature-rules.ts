@@ -1,16 +1,34 @@
 // 严重标签 + 强证据 → 最低温度安全网（规则刚性，AI 不能覆盖）
-// 公式：final_temperature = max(ai_temperature, rule_minimum_temperature, admin_temperature?)
+// final_temperature = max(ai_temperature, rule_minimum_temperature, admin_temperature?)
+//
+// 本文件是平台唯一的"强证据/严重标签 → 温度地板"事实来源。
+// 任何监管/法律/严重标签关键词必须在这里维护，禁止在其它文件里另写一套。
 
 export type EvidenceLevel = "A" | "B" | "C" | "D";
 
-// 监管处罚关键词 → 命中后 evidence_level 视为 A
-const REGULATORY_PATTERNS = [
-  "监管处罚", "市监", "市场监管", "市监局", "法院判决", "判决书", "官方通报",
-  "行政处罚", "处罚告知", "立案查处", "立案", "罚款", "处罚决定",
+// ===== 法律 / 监管 / 司法 强证据关键词（唯一来源）=====
+// 命中其中任一关键词 → 视为 A 级证据，且 rule_minimum_temperature >= 90。
+export const LEGAL_REGULATORY_PATTERNS: readonly string[] = [
+  // 法院 / 司法
+  "法院判决", "判决书", "判决", "司法裁判", "裁判文书",
+  "违法事实成立", "违法事实", "明确法律责任", "法律责任",
+  "民事判决", "刑事判决", "公益诉讼",
+  // 仲裁
+  "劳动仲裁", "仲裁裁决", "仲裁",
+  // 行政 / 监管
+  "行政处罚", "监管处罚", "处罚决定书", "处罚决定", "处罚告知书", "处罚告知",
+  "市监", "市监局", "市场监管", "市场监管局", "监管局",
+  "网信办", "工商局", "检察院",
+  // 处罚措施
+  "罚款", "罚单", "没收", "责令整改", "约谈",
+  // 立案 / 调查
+  "立案查处", "立案调查", "立案",
+  // 通报
+  "官方通报", "通报批评",
 ];
 
-// 严重标签 → 最低温度（A 级证据下）
-// key 为标签 name_zh，与 knowledge_tags 一致
+// 严重标签 → 最低温度（A 级证据下）。key 为标签 name_zh，与 knowledge_tags 一致。
+// 这些是"即使没有命中法律/监管，但有严重标签 + A 级证据"的次级地板。
 const SEVERE_TAG_MIN: Record<string, number> = {
   "性暴力暗示 / 迷奸语境": 85,
   "性羞辱": 75,
@@ -28,8 +46,79 @@ const SEVERE_TAG_MIN: Record<string, number> = {
   "伪女性友好": 45,
 };
 
-// 普通性别刻板印象（兜底 A 级）
+// 法律/监管强证据触发的最低温度（"女性友好风险温度计"的硬性产品规则）
+export const LEGAL_PENALTY_MIN_TEMPERATURE = 90;
+
+// A 级证据 + 任何性别刻板印象类标签的兜底地板
 const STEREOTYPE_BASE_MIN = 45;
+
+// ===== 标签规范化（消除空格 / 全角半角 / 斜杠 / 大小写 / 英文别名 差异）=====
+
+// 英文/旧标签 → canonical name_zh
+const TAG_ALIASES: Record<string, string> = {
+  "objectification": "女性物化",
+  "objectify": "女性物化",
+  "male gaze": "男性凝视",
+  "male_gaze": "男性凝视",
+  "victim blaming": "受害者归因",
+  "victim_blaming": "受害者归因",
+  "body shaming": "身体羞辱",
+  "body_shaming": "身体羞辱",
+  "slut shaming": "性羞辱",
+  "slut_shaming": "性羞辱",
+  "rape culture": "性暴力暗示 / 迷奸语境",
+  "rape_culture": "性暴力暗示 / 迷奸语境",
+  "性暴力暗示": "性暴力暗示 / 迷奸语境",
+  "迷奸语境": "性暴力暗示 / 迷奸语境",
+  "性暴力暗示/迷奸语境": "性暴力暗示 / 迷奸语境",
+};
+
+function fold(s: string): string {
+  return s
+    .replace(/[\uFF01-\uFF5E]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0)) // 全角 → 半角
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+export function normalizeTag(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const folded = fold(String(raw));
+  // 别名映射
+  const alias = TAG_ALIASES[folded];
+  if (alias) return alias;
+  // 与 SEVERE_TAG_MIN keys 做 fold 比较
+  for (const canon of Object.keys(SEVERE_TAG_MIN)) {
+    if (fold(canon) === folded) return canon;
+    // 去掉所有空格和斜杠后再比一次
+    if (fold(canon).replace(/[\s/]/g, "") === folded.replace(/[\s/]/g, "")) return canon;
+  }
+  // 默认返回 trim 后的原值（保留中文）
+  return String(raw).trim();
+}
+
+export function normalizeTags(tags: Array<string | null | undefined> | null | undefined): string[] {
+  if (!Array.isArray(tags)) return [];
+  const out = new Set<string>();
+  for (const t of tags) {
+    const n = normalizeTag(t);
+    if (n) out.add(n);
+  }
+  return [...out];
+}
+
+// ===== 强证据识别（唯一函数）=====
+
+export function detectLegalPenalty(content?: string | null): boolean {
+  if (!content) return false;
+  return LEGAL_REGULATORY_PATTERNS.some((kw) => content.includes(kw));
+}
+
+// 兼容别名
+export const detectRegulatoryPenalty = detectLegalPenalty;
+export const detectEvidenceA = detectLegalPenalty;
+
+// ===== 规则地板计算 =====
 
 export interface RuleInput {
   tags: string[];
@@ -45,40 +134,41 @@ export interface RuleOutput {
   has_regulatory_penalty: boolean;
 }
 
-export function detectRegulatoryPenalty(content?: string | null): boolean {
-  if (!content) return false;
-  return REGULATORY_PATTERNS.some((kw) => content.includes(kw));
-}
-
 export function calculateRuleMinimumTemperature(input: RuleInput): RuleOutput {
-  const detected = input.has_regulatory_penalty || detectRegulatoryPenalty(input.observation_content);
-  // 监管命中 → 提升至 A
+  const detected =
+    input.has_regulatory_penalty === true || detectLegalPenalty(input.observation_content);
+
+  // 命中法律/监管强证据 → 强制 A 级
   const ev: EvidenceLevel = detected
     ? "A"
     : ((["A", "B", "C", "D"].includes(String(input.evidence_level))
         ? input.evidence_level
         : "C") as EvidenceLevel);
 
+  const normTags = normalizeTags(input.tags ?? []);
   const triggered: string[] = [];
   let min = 20;
 
-  // 仅 A 级证据触发硬性最低温度
+  // 1) 法律/监管强证据 → 硬地板 90°C（不依赖标签命中）
+  if (detected) {
+    min = LEGAL_PENALTY_MIN_TEMPERATURE;
+    triggered.push(`法律 / 监管强证据 → ≥${LEGAL_PENALTY_MIN_TEMPERATURE}°C`);
+  }
+
+  // 2) A 级证据 + 严重标签 → 次级地板
   if (ev === "A") {
     let hitSevere = false;
-    for (const tag of input.tags ?? []) {
+    for (const tag of normTags) {
       const base = SEVERE_TAG_MIN[tag];
       if (base !== undefined) {
         hitSevere = true;
-        if (base > min) min = base;
-        triggered.push(`A 级证据 + ${tag} → ≥${base}°C`);
-        // 监管处罚 + 性暴力暗示 → 90
-        if (detected && tag === "性暴力暗示 / 迷奸语境" && min < 90) {
-          min = 90;
-          triggered.push("A 级证据 + 监管处罚 + 性暴力暗示 / 迷奸语境 → ≥90°C");
+        if (base > min) {
+          min = base;
+          triggered.push(`A 级证据 + ${tag} → ≥${base}°C`);
         }
       }
     }
-    if (!hitSevere && (input.tags?.length ?? 0) > 0) {
+    if (!hitSevere && normTags.length > 0 && min < STEREOTYPE_BASE_MIN) {
       min = STEREOTYPE_BASE_MIN;
       triggered.push(`A 级证据 + 性别刻板印象 → ≥${STEREOTYPE_BASE_MIN}°C`);
     }
@@ -117,8 +207,10 @@ export function aggregateRuleMinimum(
     });
     if (r.rule_minimum_temperature > best.rule_minimum_temperature) {
       best = r;
-    } else if (r.rule_minimum_temperature === best.rule_minimum_temperature && r.triggered_rules.length) {
-      // 合并触发说明，便于审计
+    } else if (
+      r.rule_minimum_temperature === best.rule_minimum_temperature &&
+      r.triggered_rules.length
+    ) {
       best = {
         ...best,
         triggered_rules: Array.from(new Set([...best.triggered_rules, ...r.triggered_rules])),

@@ -4,7 +4,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
-import { calculateRuleMinimumTemperature } from "@/lib/temperature-rules";
+import {
+  calculateRuleMinimumTemperature,
+  detectLegalPenalty,
+  LEGAL_REGULATORY_PATTERNS,
+} from "@/lib/temperature-rules";
 
 async function assertAdmin(userId: string) {
   const { data: roles } = await supabaseAdmin
@@ -14,11 +18,8 @@ async function assertAdmin(userId: string) {
 
 type ObjectType = "brand" | "product" | "service" | "organization" | "film" | "game" | "show" | "event";
 
-const REGULATORY_KW = [
-  "罚单", "处罚", "行政处罚", "市监局", "市场监管", "市监", "监管",
-  "官方通报", "约谈", "责令整改", "法院判决", "处罚决定书", "处罚告知书",
-  "立案查处", "立案", "罚款", "没收", "公益诉讼",
-];
+// 关键词唯一来源：temperature-rules.LEGAL_REGULATORY_PATTERNS
+const REGULATORY_KW = LEGAL_REGULATORY_PATTERNS;
 
 const VERIFIED_KW = ["决定书", "告知书", "http://", "https://", "公告", "通报", "判决"];
 
@@ -52,7 +53,7 @@ export function detectTags(text: string): string[] {
 }
 
 export function detectEvidenceA(text: string): boolean {
-  return REGULATORY_KW.some((kw) => text.includes(kw));
+  return detectLegalPenalty(text);
 }
 
 function detectVerified(text: string): "已验证线索" | "待补源" {
@@ -336,7 +337,7 @@ export const commitBulkImport = createServerFn({ method: "POST" })
               name: it.object_name,
               type: it.object_type,
               description: it.violation_summary?.slice(0, 500) ?? null,
-              temperature: 20, // 待测评，由 recompute 写入
+              // 不写温度默认值；统一入口稍后写入最终温度
             })
             .select("id")
             .single();
@@ -348,7 +349,6 @@ export const commitBulkImport = createServerFn({ method: "POST" })
           summary.updated_objects++;
         }
 
-        // 组装内容
         const contentParts = [
           it.year ? `年份：${it.year}` : null,
           it.regulatory_authority ? `监管/处罚机构：${it.regulatory_authority}` : null,
@@ -360,11 +360,6 @@ export const commitBulkImport = createServerFn({ method: "POST" })
           it.raw_block,
         ].filter(Boolean);
         const content = contentParts.join("\n");
-
-        // 当前温度
-        const { data: curObj } = await supabaseAdmin
-          .from("objects").select("temperature").eq("id", objectId!).single();
-        const current = curObj ? Number(curObj.temperature) : 20;
 
         const { error: oErr } = await supabaseAdmin.from("observations").insert({
           object_id: objectId!,
@@ -382,20 +377,12 @@ export const commitBulkImport = createServerFn({ method: "POST" })
         } as never);
         if (oErr) throw new Error(oErr.message);
 
-        // 重新计算温度（AI 引擎 + 规则最低）
-        const result = await recomputeObjectWithEngine(objectId!, "bulk_import", null, context.userId);
-
-        let final = result?.temperature ?? 24;
-        // 强制不降温：max(current, ai_or_rule, admin)
-        if (!created && current > final) {
-          final = current;
-        }
-        if (it.admin_temperature && it.admin_temperature > final) {
-          final = it.admin_temperature;
-        }
-        if (final !== (result?.temperature ?? 24)) {
-          await supabaseAdmin.from("objects").update({ temperature: final } as never).eq("id", objectId!);
-        }
+        // 唯一温度入口；admin_temperature 作为额外 floor 传入
+        const result = await recomputeObjectWithEngine(
+          objectId!, "bulk_import", null, context.userId,
+          { adminMinimum: it.admin_temperature ?? null },
+        );
+        const final = result?.temperature ?? null;
 
         if (it.source_status === "待补源") summary.need_source_supplement++;
         summary.imported++;
