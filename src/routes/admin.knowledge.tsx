@@ -228,7 +228,7 @@ function CasesPanel() {
   const [edit, setEdit] = useState<Partial<KCase> | null>(null);
   const [filter, setFilter] = useState<"all" | "positive" | "negative" | "controversial">("all");
 
-  const refresh = () => list({ data: { includeDrafts: true } }).then(setRows);
+  const refresh = () => list({ data: {} }).then(setRows);
   useEffect(() => { refresh(); tagsFn().then(setAllTags); principlesFn().then(setAllPrinciples); }, []);
 
   const filtered = filter === "all" ? rows : rows.filter((r) => r.polarity === filter);
