@@ -116,6 +116,7 @@ function ObjectsAdmin() {
                 onClick={() => wrap(o.id, () => setPreview({ data: { object_id: o.id, is_public_preview: !o.is_public_preview } }), o.is_public_preview ? "已取消公开预览" : "已设为公开预览")}
                 className="border border-border px-3 py-1 text-xs hover:border-foreground">
                 {o.is_public_preview ? "取消公开预览" : "设为公开预览"}
+              </button>
               <button disabled={busy === o.id}
                 onClick={() => {
                   if (!confirm(`删除对象「${o.name}」及其全部观察？不可撤销`)) return;
