@@ -83,7 +83,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
 
     const allIds = [...new Set([...heatIds, ...coolIds, ...obsIds, ...todayObjIds])];
     const { data: objs } = allIds.length
-      ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", allIds)
+      ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", allIds).eq("hidden", false).eq("status", "published")
       : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
     const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
