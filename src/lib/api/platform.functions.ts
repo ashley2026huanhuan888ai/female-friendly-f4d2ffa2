@@ -216,6 +216,25 @@ async function assertAdmin(userId: string) {
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
+export const getCurrentUserAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId, claims } = context;
+    const claimRecord = claims as Record<string, unknown>;
+    const { data: roles, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    if (roleError) throw new Error(roleError.message);
+    const roleList = roles?.map((r) => r.role) ?? [];
+    return {
+      userId,
+      email: typeof claimRecord.email === "string" ? claimRecord.email : null,
+      roles: roleList,
+      isAdmin: roleList.includes("admin"),
+    };
+  });
+
 async function writeAuditLog(
   actor: string, action: string, target_type: string, target_id: string | null,
   before: unknown, after: unknown, reason?: string | null,

@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
+import { getCurrentUserAccess } from "@/lib/api/platform.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 const PRIMARY_NAV = [
   { to: "/objects", label: "对象" },
@@ -27,29 +29,43 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const router = useRouter();
+  const getAccess = useServerFn(getCurrentUserAccess);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        if (!cancelled) { setEmail(null); setIsAdmin(false); setRep(null); setUnread(0); }
+        return;
+      }
       const { data } = await supabase.auth.getUser();
-      setEmail(data.user?.email ?? null);
-      if (data.user) {
-        const [{ data: roles }, { data: prof }, { count }] = await Promise.all([
-          supabase.from("user_roles").select("role").eq("user_id", data.user.id),
+      if (!data.user) {
+        if (!cancelled) { setEmail(null); setIsAdmin(false); setRep(null); setUnread(0); }
+        return;
+      }
+      try {
+        const [access, { data: prof }, { count }] = await Promise.all([
+          getAccess({}),
           supabase.from("profiles").select("reputation").eq("id", data.user.id).maybeSingle(),
           supabase.from("notifications" as never).select("id", { count: "exact", head: true })
             .eq("user_id", data.user.id).is("read_at", null),
         ]);
-        setIsAdmin(!!roles?.some((r) => r.role === "admin"));
+        if (cancelled) return;
+        setEmail(data.user.email ?? access.email);
+        setIsAdmin(access.isAdmin);
         setRep(prof?.reputation ?? null);
         setUnread(count ?? 0);
-      } else {
-        setIsAdmin(false); setRep(null); setUnread(0);
+      } catch {
+        if (!cancelled) { setEmail(data.user.email ?? null); setIsAdmin(false); setRep(null); setUnread(0); }
       }
     };
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      setTimeout(() => { void load(); }, 0);
+    });
+    return () => { cancelled = true; sub.subscription.unsubscribe(); };
+  }, [getAccess]);
 
   // 路由变化时关闭移动菜单
   useEffect(() => {
@@ -111,13 +127,25 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
           {/* 右侧账号区（桌面） */}
           <div className="hidden items-center gap-3 text-sm md:flex">
-            {isAdmin && (
-              <Link to="/admin" className="text-accent hover:text-accent/80">管理后台</Link>
+            {email && (
+              <Link to="/admin" className={isAdmin ? "text-accent hover:text-accent/80" : "text-muted-foreground hover:text-foreground"}>
+                {isAdmin ? "管理后台" : "管理入口"}
+              </Link>
             )}
             {email ? (
-              <button onClick={signOut} className="text-muted-foreground hover:text-foreground">
-                退出
-              </button>
+              <>
+                <Link to="/me" className="relative text-muted-foreground hover:text-foreground">
+                  我的
+                  {unread > 0 && (
+                    <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
+                </Link>
+                <button onClick={signOut} className="text-muted-foreground hover:text-foreground">
+                  退出
+                </button>
+              </>
             ) : (
               <Link
                 to="/login"
@@ -198,6 +226,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                     · 对象申请审核
                   </Link>
                 </>
+              )}
+              {email && !isAdmin && (
+                <Link to="/admin" className="border-b border-border/50 py-3 text-muted-foreground">
+                  管理入口
+                </Link>
               )}
               {email ? (
                 <>
