@@ -337,6 +337,22 @@ function SubmitPage() {
           只需写下你观察到的现象，其余由 AI 完成。
         </p>
 
+        {draftRestored && (
+          <div className="mt-6 flex items-center justify-between gap-3 border border-dashed border-border bg-card/60 p-3 text-xs">
+            <span className="text-muted-foreground">已恢复上次未提交的草稿。</span>
+            <button
+              type="button"
+              onClick={() => {
+                setContent(""); setScreenshotUrl(""); setReferenceUrl("");
+                clearDraft();
+              }}
+              className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              清空草稿
+            </button>
+          </div>
+        )}
+
         <form onSubmit={runSubmit} className="mt-10 space-y-6">
           <div>
             <label className="block text-sm font-medium">你观察到了什么？*</label>
