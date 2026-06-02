@@ -784,8 +784,6 @@ async function ingestReasonAsObservation(
   const text = reason.trim();
   if (!text) return { observation_id: null, temperature: null };
 
-  const { detectTags, detectEvidenceA } = await import("./bulk-import.functions");
-  const { calculateRuleMinimumTemperature } = await import("@/lib/temperature-rules");
 
   const tags = detectTags(text);
   const hasReg = detectEvidenceA(text);
