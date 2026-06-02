@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,7 +210,11 @@ function ObsAdmin() {
               {filter === "pending" && (
                 <input type="checkbox" className="mr-1" checked={selected.has(o.id)} onChange={() => toggleSel(o.id)} />
               )}
-              <span className="font-medium text-foreground">{o.objects?.name ?? "—"}</span>
+              {o.objects?.id ? (
+                <Link to="/objects/$id" params={{ id: o.objects.id }} target="_blank" className="font-medium text-foreground underline-offset-2 hover:underline">{o.objects.name}</Link>
+              ) : (
+                <span className="font-medium text-foreground">{o.objects?.name ?? "—"}</span>
+              )}
               <span>·</span>
               <span className={`border px-1.5 py-0.5 ${riskColor(o.risk_level)}`}>
                 风险 {RISK_LABEL[o.risk_level]}

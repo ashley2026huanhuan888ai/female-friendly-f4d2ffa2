@@ -108,7 +108,9 @@ function MePage() {
                   <li key={o.id} className="py-4">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
                       <StatusChip status={o.status} />
-                      <span>{o.object?.name ?? "—"}</span>
+                      {o.object?.id ? (
+                        <Link to="/objects/$id" params={{ id: o.object.id }} className="underline-offset-2 hover:underline">{o.object.name}</Link>
+                      ) : (<span>{o.object?.name ?? "—"}</span>)}
                       <span className="ml-auto">{new Date(o.created_at).toLocaleDateString("zh-CN")}</span>
                     </div>
                     <p className="mt-1 text-sm">{o.summary ?? "（暂无摘要）"}</p>

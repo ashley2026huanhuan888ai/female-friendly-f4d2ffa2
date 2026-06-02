@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { previewBulkImport, commitBulkImport } from "@/lib/api/bulk-import.functions";
@@ -179,7 +179,9 @@ function BulkImportPage() {
                       className="w-32 border-0 bg-transparent" />
                   </td>
                   <td className="border border-border px-2 py-1">
-                    {r.matched_object_name ?? "—"}
+                    {r.matched_object_id && r.matched_object_name ? (
+                      <Link to="/objects/$id" params={{ id: r.matched_object_id }} target="_blank" className="underline-offset-2 hover:underline">{r.matched_object_name}</Link>
+                    ) : (r.matched_object_name ?? "—")}
                     {r.match_confidence > 0 && <div className="text-muted-foreground">{r.match_confidence.toFixed(2)}</div>}
                   </td>
                   <td className="border border-border px-2 py-1">{r.year ?? "—"}</td>
@@ -228,7 +230,11 @@ function BulkImportPage() {
             <tbody>
               {summary.results.map((r, i) => (
                 <tr key={i}>
-                  <td className="border border-border px-2 py-1">{r.object_name}</td>
+                  <td className="border border-border px-2 py-1">
+                    {r.object_id ? (
+                      <Link to="/objects/$id" params={{ id: r.object_id }} target="_blank" className="underline-offset-2 hover:underline">{r.object_name}</Link>
+                    ) : r.object_name}
+                  </td>
                   <td className="border border-border px-2 py-1 font-mono">{r.final_temperature ?? "—"}</td>
                   <td className="border border-border px-2 py-1">{r.triggered_rules.join(" / ") || "—"}</td>
                   <td className="border border-border px-2 py-1">{r.evidence_level}</td>
