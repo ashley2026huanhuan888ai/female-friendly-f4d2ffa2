@@ -40,10 +40,9 @@ function Index() {
               Observatory · Est. 2026
             </div>
             <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-balance md:text-7xl">
-              持续观察<br />
-              <span className="text-accent">女性友好体验</span>的<br />变化。
+              持续观察<span className="text-accent">女性友好体验</span>的变化。
             </h1>
-            <p className="mt-8 max-w-xl text-base text-muted-foreground">
+            <p className="mt-8 max-w-2xl text-base text-muted-foreground">
               这里不是评分网站，是观察平台。我们记录每一次女性友好温度变化的来源——案例、证据、议题。
               <strong className="text-foreground">不做事实认定，不做道德审判。</strong>
             </p>
