@@ -5,11 +5,16 @@ import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
 
-const NAV_LINKS = [
+const PRIMARY_NAV = [
+  { to: "/objects", label: "对象" },
   { to: "/feed", label: "观察流" },
-  { to: "/objects", label: "全部对象" },
+  { to: "/request-object", label: "申请对象" },
+] as const;
+
+const SECONDARY_NAV = [
   { to: "/topics", label: "热议议题" },
   { to: "/archive", label: "案例库" },
+  { to: "/archive/evidence", label: "证据库" },
   { to: "/knowledge", label: "知识引擎" },
   { to: "/about", label: "关于" },
 ] as const;
