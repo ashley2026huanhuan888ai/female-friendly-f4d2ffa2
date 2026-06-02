@@ -6,6 +6,8 @@ import { FeedEventCard } from "@/components/FeedEventCard";
 import { Thermometer } from "@/components/Thermometer";
 import { BANDS, OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
+import { useAuth } from "@/components/AuthProvider";
+import { GuestPreviewList, GuestLoginPrompt, GUEST_NOTE } from "@/components/PreviewGate";
 
 export const Route = createFileRoute("/")({
   head: () => ({
