@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
+import { ObjectCard } from "@/components/ObjectCard";
 import { getTopicDetail } from "@/lib/api/observation-center.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 
@@ -69,20 +70,7 @@ function TopicDetail() {
             <h2 className="font-serif text-2xl">相关对象</h2>
             <div className="mt-6 grid gap-3 md:grid-cols-2">
               {data.related_objects.map((o: any) => (
-                <Link
-                  key={o.id}
-                  to="/objects/$id"
-                  params={{ id: o.id }}
-                  className="flex items-center justify-between border border-border bg-card p-4 hover:border-foreground/40"
-                >
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {OBJECT_TYPE_LABELS[o.type] ?? o.type}
-                    </div>
-                    <div className="mt-1 font-serif text-lg">{o.name}</div>
-                  </div>
-                  <Thermometer value={o.temperature} size="sm" showLabel={false} />
-                </Link>
+                <ObjectCard key={o.id} {...o} />
               ))}
             </div>
           </div>

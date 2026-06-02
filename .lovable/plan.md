@@ -1,135 +1,83 @@
 ## 目标
 
-暂停新功能，优先把“法律/监管强证据不得低温”的产品规则固化到代码里，并让所有温度写入路径经过同一个规则入口。
+整卡可点击 **不能以删内容为代价**。本次只做"审计 → 最小修复 → 信息恢复"，不做视觉重构。
 
-## 已定位的主要问题
+## 一、只读审计结果
 
-1. `src/lib/api/platform.functions.ts`
-   - `recomputeObjectInternal` 在 approved observations 为 0 时仍直接写入 `temperature: 24`，会制造“舒适/低温”的假状态。
-   - `recomputeTemperature` 的手动温度路径会先调用旧内部函数，再二次 `update({ temperature: finalT })`，属于绕过统一事件/解释链的直接写入。
-   - `ingestReasonAsObservation` 在 `recomputeObjectWithEngine` 之后又可能二次直接写 `objects.temperature`。
-   - `reviewObservation`、自动通过、合并对象、对象申请通过等都调用 `recomputeObjectInternal`，而该函数包含旧逻辑和 24°C 默认值。
+| 文件 | 卡片位置 | 现状 | 问题 |
+|---|---|---|---|
+| `src/components/ObjectCard.tsx` | `/objects` 列表唯一复用项 | 整张 `<Link>`，只有 type / name / ai_summary / observation_count / 温度 | **字段被精简**：缺 top_tags、heat/cooling 摘要、最新更新时间、关注/提交快捷操作 |
+| `src/components/FeedEventCard.tsx` | 首页"最新观察事件" | 整张 `<Link>` | 需确认是否还保留事件 delta、原因 |
+| `src/routes/index.tsx` L137-152 | 首页"新加入测评对象" | 行式 `<Link>`，仅温度+类型+名称+计数 | 信息精简但语义可接受 |
+| `src/routes/index.tsx` L286-305 `ColumnList` | 升温/降温榜 | 行式 `<Link>` | OK |
+| `src/routes/topics.$tag.tsx` L71-86 | 标签页"相关对象" | 整张 `<Link>` | 只有类型+名称+温度，**缺 ai_summary / tags / 观察数** |
+| `src/routes/me.tsx` L86, L122, L159 | 个人中心收藏/关注/通知 | 整张 `<Link>` | 需检查是否有内部按钮被剥离 |
+| `src/routes/discussions.tsx` L43 | 讨论列表 | 整张 `<Link>` | 同上 |
+| `src/routes/archive.$caseCode.tsx` L54 | 案例关联对象 | 行内 `<Link>`（文本链接） | OK |
+| `src/routes/objects.tsx` 搜索结果 | 复用 `ObjectCard` | — | 跟随 ObjectCard 修复 |
+| `src/routes/admin.objects.tsx` / `admin.observations.tsx` / `admin.bulk-import.tsx` | 后台表格 | 文本 `<Link>` | OK，无需改 |
 
-2. `src/lib/api/bulk-import.functions.ts`
-   - 自己维护一套 `REGULATORY_KW` / `detectEvidenceA`，与 `temperature-rules.ts` 的 `detectRegulatoryPenalty` 不一致。
-   - 新对象插入时写 `temperature: 20`，后续又在重算后可能二次 `update({ temperature: final })`。
-   - `let final = result?.temperature ?? 24` 仍保留 24°C fallback。
+**核心问题：**
+1. `ObjectCard` 被砍到只剩 5 个字段，导致 `/objects` 列表和搜索结果"内容变少"
+2. `topics.$tag.tsx` 相关对象卡是内联实现，没复用 `ObjectCard`，且也缺信息
+3. 几处页面（首页/me/discussions）已经是"整张 `<Link>`"，但因此无法承载内部按钮（关注、提交观察）—— 信息没删，但**操作按钮被剥离**
 
-3. `src/lib/temperature-rules.ts`
-   - 监管/法律关键词不完整：缺少劳动仲裁、司法裁判、违法事实成立、明确法律责任等。
-   - 当前规则只有“A 级证据 + 严重标签”才可能抬高到高温；如果有行政处罚/判决/罚款但标签没命中，最低温只可能是 45 或 20，不能满足“强证据至少 90°C”。
-   - tag 匹配为原始字符串精确匹配，空格、斜杠、英文别名、大小写都可能导致规则地板失效。
+## 二、修复方案（最小改动）
 
-4. `src/lib/temperature-engine.ts`
-   - 纯公式使用平均值，会把强证据放进平均分；虽然理论上后面有 rule floor，但 rule floor 当前识别不稳，所以会出现被平均值稀释。
-   - cooling 传入后参与基础计算，但最终必须始终 `max(calculated, ruleMinimum)`。
+### 1. 恢复 `ObjectCard` 字段
+扩展 props，可选渲染：
+- `top_tags?: {tag,count}[]` → 渲染前 3 个标签 chip
+- `heat_sources?` / `cooling_sources?` → 取首条作为"主要热源/降温源"一行摘要
+- `updated_at?` → 右下角相对时间
+- `showActions?: boolean` → 是否在卡片内显示「提交观察」「关注」操作
 
-5. `src/lib/temperature.ts` 与 UI
-   - `computeTemperature([])` 仍返回 24，虽然可能是旧兼容函数，但属于危险默认值。
-   - `bandOf` 只按数字算标签；UI 需要继续用 `observation_count === 0` 走 unmeasured，避免 0 观察对象显示低温。
+字段全部为可选，老调用点不传则不渲染，**不影响其他页面**。
 
-## 修复计划
+### 2. 整卡可点击但允许内部按钮（关键结构）
+当 `showActions=true` 时，改为方案 A：
+```tsx
+<article className="relative group ...">
+  <Link to="/objects/$id" params={{id}} className="absolute inset-0 z-0" aria-label={...} />
+  {/* 内容用 relative z-10，不拦截点击 */}
+  <div className="relative z-10 pointer-events-none">…文字内容…</div>
+  {/* 按钮用 relative z-20 + pointer-events-auto */}
+  <div className="relative z-20 pointer-events-auto flex gap-2">
+    <FollowButton .../>
+    <Link to="/submit/$objectId" .../>
+  </div>
+</article>
+```
+好处：彻底避开 `<a>` 嵌套 `<a>` 的非法结构；按钮无需 `stopPropagation`；键盘 Tab 仍能聚焦覆盖层的 `<Link>` 与按钮。
 
-### 1. 建立统一强证据与标签规范化模块
+当 `showActions=false`（默认）时保持现有整张 `<Link>` 结构，零回归。
 
-修改 `src/lib/temperature-rules.ts`：
+### 3. `topics.$tag.tsx` 改为复用 `ObjectCard`
+删除内联卡片 JSX，换成 `<ObjectCard {...o} />`，自动获得统一信息与交互。
 
-- 合并并导出唯一关键词来源：
-  - `LEGAL_REGULATORY_PATTERNS`
-  - `detectLegalPenalty`
-  - `detectRegulatoryPenalty` 作为别名/兼容导出
-  - `detectEvidenceA` 作为兼容导出，供批量导入与对象申请复用
-- 关键词覆盖：法院判决、司法裁判、劳动仲裁、行政处罚、监管处罚、罚款、立案调查/立案查处、处罚决定书、处罚告知书、官方通报、违法事实成立、明确法律责任、责令整改、约谈、没收、公益诉讼等。
-- 增加 `normalizeTag` / `normalizeTags`：
-  - trim
-  - lower-case
-  - 去除多余空格、全角/半角差异、斜杠差异
-  - 支持常见英文/中文别名映射到 canonical `knowledge_tags.name_zh`
-- 修改 `calculateRuleMinimumTemperature`：
-  - 只要文本命中法律/监管强证据，就把 effective evidence 视为 A。
-  - 只要存在法律/监管强证据，`rule_minimum_temperature >= 90`，不再依赖 severe tag 是否命中。
-  - severe tag 规则保留，但不能低于法律/监管 90 floor。
-- 修改 `aggregateRuleMinimum`：使用 normalize 后的 tags 和统一 legal detector。
+### 4. 数据补齐
+- `objects.tsx` 查询已经 `select *`，把 `top_tags / heat_sources / cooling_sources / updated_at` 透传给 `ObjectCard`
+- `topics.$tag.tsx` 服务端函数 `getTopic` 若未返回这些字段，补 select（在 build 模式确认后再改）
 
-### 2. 统一唯一温度计算入口
+### 5. 不动的部分
+- 首页行式列表（"新加入对象"、升降温榜）保持紧凑列表语义，不强行改成大卡片
+- 后台表格行不改
+- `archive` 文本链接不改
+- 不改视觉 token / 不重构样式
 
-修改 `src/lib/api/temperature.functions.ts`：
+## 三、验收
 
-- 将 `recomputeAndPersist` 作为唯一写 `objects.temperature` / `heat_sources` / `cooling_sources` / `temperature_events` 的入口。
-- approved observations 为 0 时：
-  - 不再写 24°C。
-  - 写 `observation_count: 0`、清空 heat/cooling sources。
-  - 可保留当前 temperature 字段不作为展示依据，或写入安全底值但 breakdown 标记 `unmeasured: true`；UI 仍按 `observation_count === 0` 显示“暂无温度”。
-  - 事件 reason 标记为 `unmeasured`，不制造“舒适区”解释。
-- 最终温度恒定为：
-  - `calculatedTemperature = runEngine(...).temperature`
-  - `ruleMinimum = aggregateRuleMinimum(...).rule_minimum_temperature`
-  - `finalTemperature = max(calculatedTemperature, ruleMinimum)`
-- cooling 只能影响 `calculatedTemperature`，不能突破 `ruleMinimum`。
-- 对相同输入重复 recompute 结果稳定，不因历史 `before` 或事件回放而下降。
+- `/objects` 列表卡片显示：类型 / 名称 / 摘要 / 标签 / 主要热源 / 观察数 / 温度
+- 标签页"相关对象"卡片与 `/objects` 一致
+- 搜索结果与 `/objects` 一致
+- 卡片任意空白区域点击 → 进对象详情
+- 卡片内「关注」「提交观察」按钮点击 → 只执行按钮动作，不跳转
+- 无嵌套 `<a>`（控制台无 hydration warning）
+- 移动端 888px 视口下信息不溢出
 
-### 3. 废弃平台旧温度写入路径
+## 四、不做的事
 
-修改 `src/lib/api/platform.functions.ts`：
-
-- 将 `recomputeObjectInternal` 改成薄包装：只调用 `recomputeObjectWithEngine`，再更新 `ai_summary/top_tags/analysis_logs`；不再直接写 `temperature: 24`。
-- `recomputeTemperature` 手动温度路径不再二次直接覆盖温度；改为通过统一入口拿到 rule floor 后，仅允许 admin temperature 作为额外 floor，最终仍由统一逻辑写入和记录事件。
-- `ingestReasonAsObservation` 不再重算后再次直接 `update temperature`。
-- `submitObservation` / `reviewObservation` / `mergeObjects` / `approveObjectRequest` 保持业务流程，但全部落到统一重算入口。
-- object request reason 的 evidence A 判断改用 `temperature-rules.ts` 导出的统一函数。
-
-### 4. 批量导入改用统一识别与重算
-
-修改 `src/lib/api/bulk-import.functions.ts`：
-
-- 删除本地 `REGULATORY_KW` 和本地 `detectEvidenceA`，改为从 `temperature-rules.ts` 导入。
-- 新对象不再写业务意义上的舒适默认温度；避免 `temperature: 20/24` 被误解为最终温度。
-- 删除 `result?.temperature ?? 24` fallback。
-- 删除重算后的二次直接 `update temperature`，如需 admin floor，走统一入口参数或统一 helper。
-
-### 5. UI / band 安全兜底
-
-修改必要 UI 文件：
-
-- 继续确保详情页、首页对象卡、列表卡在 `observation_count === 0` 时传 `unmeasured`，显示“待测评/暂无温度”。
-- 检查对象列表、话题页、个人页、档案页是否还有 0 观察却直接显示温度的地方；仅做最小必要修复，不重设计 UI。
-- `bandOf` 不改变已定义区间，但不让 unmeasured 走 band label。
-
-### 6. 新增自动化测试
-
-新增 Vitest 测试与必要测试脚本：
-
-- `src/lib/temperature-rules.test.ts`
-- `src/lib/temperature-engine.test.ts` 或统一测试文件
-
-覆盖 8 个用例：
-
-1. `行政处罚` + `罚款` + `处罚决定书` => final >= 90。
-2. `法院判决` + `违法事实成立` => final >= 90。
-3. 低风险观察后新增法律惩罚观察，重算不得下降，final >= 90。
-4. AI/基础分低风险时，法律强证据仍 final >= 90。
-5. cooling cycle 传入负值时，final 仍不低于 rule floor。
-6. approved observations 为 0 时，不返回/写入 24°C 舒适结论，应标记 unmeasured 或 observation_count=0。
-7. 同一输入重复 recompute 结果稳定。
-8. 中文标签、英文标签、大小写、空格、斜杠差异都能 normalize 到同一规则。
-
-### 7. 验证方式
-
-- 不运行 rebuild。
-- 运行针对新增测试的 `bunx vitest run ...`。
-- 用搜索确认：
-  - 不再存在危险 `temperature: 24` 写入路径。
-  - 不再存在多个监管关键词表。
-  - 所有温度写入都集中在 `temperature.functions.ts` 的统一入口。
-
-## 交付报告将包含
-
-1. 根因。
-2. 修改文件清单。
-3. 删除/废弃的错误路径。
-4. 当前唯一温度计算入口。
-5. 法律/监管强证据识别方式。
-6. 为什么 AI、平均值、冷却不会再压低强证据对象。
-7. 新增测试清单。
-8. 如果能从现有数据定位到该具体对象，会报告修复前后温度；否则说明需要对象名或 ID 才能给出精确值。
-9. 为什么修复后符合“女性友好风险温度计”的产品规则。
+- 不删任何现有字段
+- 不动温度计算 / 后端
+- 不重做后台
+- 不改首页布局
+- 不引入新依赖
