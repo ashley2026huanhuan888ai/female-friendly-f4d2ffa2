@@ -27,6 +27,7 @@ function ObjectsAdmin() {
   const del = useServerFn(deleteObject);
   const merge = useServerFn(mergeObjects);
   const updateCat = useServerFn(updateObjectCategory);
+  const setPreview = useServerFn(setObjectPublicPreview);
 
   const [items, setItems] = useState<Obj[]>([]);
   const [form, setForm] = useState({ name: "", type: "brand", description: "" });
