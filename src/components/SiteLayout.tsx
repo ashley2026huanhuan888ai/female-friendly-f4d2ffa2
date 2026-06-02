@@ -1,11 +1,10 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
-import { getCurrentUserAccess } from "@/lib/api/platform.functions";
-import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 
 const PRIMARY_NAV = [
   { to: "/objects", label: "对象" },
@@ -22,71 +21,10 @@ const SECONDARY_NAV = [
 ] as const;
 
 export function SiteLayout({ children }: { children: ReactNode }) {
-  const [email, setEmail] = useState<string | null>(null);
-  const [authReady, setAuthReady] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [, setRep] = useState<number | null>(null);
-  const [unread, setUnread] = useState(0);
+  const { ready: authReady, email, isAdmin, unread } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const router = useRouter();
-  const getAccess = useServerFn(getCurrentUserAccess);
-
-  useEffect(() => {
-    let cancelled = false;
-    const resetAccount = () => {
-      setEmail(null);
-      setIsAdmin(false);
-      setRep(null);
-      setUnread(0);
-      setAuthReady(true);
-    };
-    const load = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        if (!cancelled) resetAccount();
-        return;
-      }
-      if (!cancelled) {
-        setEmail(sessionData.session.user.email ?? "已登录");
-        setAuthReady(true);
-      }
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        if (!cancelled) resetAccount();
-        return;
-      }
-      if (!cancelled) setEmail(data.user.email ?? sessionData.session.user.email ?? "已登录");
-      try {
-        const [access, { data: prof }, { count }] = await Promise.all([
-          getAccess({}),
-          supabase.from("profiles").select("reputation").eq("id", data.user.id).maybeSingle(),
-          supabase.from("notifications" as never).select("id", { count: "exact", head: true })
-            .eq("user_id", data.user.id).is("read_at", null),
-        ]);
-        if (cancelled) return;
-        setEmail(data.user.email ?? access.email);
-        setIsAdmin(access.isAdmin);
-        setRep(prof?.reputation ?? null);
-        setUnread(count ?? 0);
-      } catch {
-        if (!cancelled) { setEmail(data.user.email ?? sessionData.session.user.email ?? "已登录"); setIsAdmin(false); setRep(null); setUnread(0); }
-      }
-    };
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelled) {
-        if (session?.user) {
-          setEmail(session.user.email ?? "已登录");
-          setAuthReady(true);
-        } else {
-          resetAccount();
-        }
-      }
-      setTimeout(() => { void load(); }, 0);
-    });
-    return () => { cancelled = true; sub.subscription.unsubscribe(); };
-  }, [getAccess]);
 
   // 路由变化时关闭移动菜单
   useEffect(() => {
