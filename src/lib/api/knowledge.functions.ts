@@ -89,7 +89,8 @@ export const getCase = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ code: z.string() }).parse(i))
   .handler(async ({ data }) => {
     const { data: row } = await supabaseAdmin
-      .from("knowledge_cases" as never).select("*").eq("code", data.code).maybeSingle();
+      .from("knowledge_cases" as never).select("*")
+      .eq("code", data.code).eq("status", "published").maybeSingle();
     return (row ?? null) as KCase | null;
   });
 

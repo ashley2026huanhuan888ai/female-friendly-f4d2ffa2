@@ -35,7 +35,8 @@ export const getObservationFeed = createServerFn({ method: "GET" })
     const { data: objs } = await supabaseAdmin
       .from("objects")
       .select("id, name, type, temperature")
-
+      .eq("hidden", false)
+      .eq("status", "published")
       .in("id", ids);
     const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
     return events.map((e) => ({
@@ -82,7 +83,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
 
     const allIds = [...new Set([...heatIds, ...coolIds, ...obsIds, ...todayObjIds])];
     const { data: objs } = allIds.length
-      ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", allIds)
+      ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", allIds).eq("hidden", false).eq("status", "published")
       : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
     const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
@@ -156,7 +157,7 @@ export const getTopicDetail = createServerFn({ method: "GET" })
     const obsRows = (obs.data ?? []) as Array<{ id: string; object_id: string; summary: string | null; evidence_level: string | null; created_at: string }>;
     const ids = [...new Set(obsRows.map((o) => o.object_id))];
     const { data: objs } = ids.length
-      ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", ids)
+      ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", ids).eq("hidden", false).eq("status", "published")
       : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
     const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
