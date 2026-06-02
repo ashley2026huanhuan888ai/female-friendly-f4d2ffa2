@@ -34,13 +34,8 @@ function LoginPage() {
     if (ready && user) navigate({ to: safeRedirect, replace: true });
   }, [ready, user, navigate, safeRedirect]);
 
-  const passwordRules = [
-    { ok: password.length >= 8, label: "至少 8 位" },
-    { ok: /[a-z]/.test(password), label: "包含小写字母" },
-    { ok: /[A-Z]/.test(password), label: "包含大写字母" },
-    { ok: /[0-9]/.test(password), label: "包含数字" },
-  ];
-  const passwordValid = passwordRules.every((r) => r.ok);
+  const PASSWORD_MIN_LENGTH = 8;
+  const passwordValid = password.length >= PASSWORD_MIN_LENGTH;
 
   const explainAuthError = (err: any): { title: string; hint: string; code: string; canResend?: boolean } => {
     const rawCode: string = err?.code || err?.error_code || "";
