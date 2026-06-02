@@ -31,7 +31,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
     setMenuOpen(false);
   }, [router.state.location.pathname]);
 
-  const { signOut: authSignOut } = useAuth();
   const signOut = async () => {
     await authSignOut();
     router.invalidate();
