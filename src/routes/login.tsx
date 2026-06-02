@@ -34,13 +34,8 @@ function LoginPage() {
     if (ready && user) navigate({ to: safeRedirect, replace: true });
   }, [ready, user, navigate, safeRedirect]);
 
-  const passwordRules = [
-    { ok: password.length >= 8, label: "至少 8 位" },
-    { ok: /[a-z]/.test(password), label: "包含小写字母" },
-    { ok: /[A-Z]/.test(password), label: "包含大写字母" },
-    { ok: /[0-9]/.test(password), label: "包含数字" },
-  ];
-  const passwordValid = passwordRules.every((r) => r.ok);
+  const PASSWORD_MIN_LENGTH = 8;
+  const passwordValid = password.length >= PASSWORD_MIN_LENGTH;
 
   const explainAuthError = (err: any): { title: string; hint: string; code: string; canResend?: boolean } => {
     const rawCode: string = err?.code || err?.error_code || "";
@@ -99,7 +94,7 @@ function LoginPage() {
     e.preventDefault();
     setErrorDetail(null);
     if (mode === "signup" && !passwordValid) {
-      setErrorDetail({ title: "密码不符合规则", hint: "请按下方提示设置密码。" });
+      setErrorDetail({ title: "密码至少需要 8 位", hint: "密码至少 8 位。建议包含字母和数字。" });
       return;
     }
     setPending(true);
@@ -193,14 +188,7 @@ function LoginPage() {
             value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
           {mode === "signup" && (
-            <ul className="space-y-1 rounded border border-border bg-card/50 p-3 text-xs">
-              <li className="mb-1 text-muted-foreground">密码规则：</li>
-              {passwordRules.map((r) => (
-                <li key={r.label} className={r.ok ? "text-foreground" : "text-muted-foreground"}>
-                  {r.ok ? "✓" : "○"} {r.label}
-                </li>
-              ))}
-            </ul>
+            <p className="text-xs text-muted-foreground">密码至少 8 位。建议包含字母和数字。</p>
           )}
           <button disabled={pending} className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50">
             {pending ? "处理中…" : mode === "signin" ? "登录" : "注册并登录"}
