@@ -14,17 +14,25 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const { redirect } = useSearch({ from: "/login" });
+  const safeRedirect = typeof redirect === "string" && redirect.startsWith("/") ? redirect : "/";
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate({ to: redirect });
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (mounted && data.user) navigate({ to: safeRedirect, replace: true });
     });
-    return () => sub.subscription.unsubscribe();
-  }, [navigate, redirect]);
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session) navigate({ to: safeRedirect, replace: true });
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [navigate, safeRedirect]);
 
   const passwordRules = [
     { ok: password.length >= 8, label: "至少 8 位" },
@@ -44,17 +52,21 @@ function LoginPage() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: `${window.location.origin}${redirect}` },
+          email: email.trim(), password,
+          options: { emailRedirectTo: `${window.location.origin}${safeRedirect}` },
         });
         if (error) throw error;
-        toast.success("注册成功，已自动登录");
+        toast.success("注册成功，请按邮件提示完成验证后登录");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
+        if (data.user) {
+          toast.success("登录成功");
+          navigate({ to: safeRedirect, replace: true });
+        }
       }
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(err.message === "Invalid login credentials" ? "邮箱或密码不正确，请检查密码是否完整。" : err.message);
     } finally {
       setPending(false);
     }
