@@ -6,6 +6,7 @@ import { FeedEventCard } from "@/components/FeedEventCard";
 import { Thermometer } from "@/components/Thermometer";
 import { BANDS, OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,6 +23,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [q, setQ] = useState("");
   const [summary, setSummary] = useState<any>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const fetchSummary = useServerFn(getHomeSummary);
 
   useEffect(() => {
@@ -29,6 +32,22 @@ function Index() {
       today_events: [], today_events_count: 0, heating: [], cooling: [], latest_cases: [], latest_observations: [],
     }));
   }, [fetchSummary]);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.auth.getUser();
+      setEmail(data.user?.email ?? null);
+      if (data.user) {
+        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
+        setIsAdmin(!!roles?.some((r: any) => r.role === "admin"));
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    load();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   return (
     <SiteLayout>
@@ -69,6 +88,28 @@ function Index() {
               <span>·</span>
               <Link to="/request-object" className="underline-offset-4 hover:underline">我希望评估某个对象</Link>
             </div>
+            {!email ? (
+              <div className="mt-6 flex items-center gap-3">
+                <Link
+                  to="/login"
+                  className="border border-foreground bg-foreground px-4 py-2 text-xs text-background hover:bg-accent"
+                >
+                  登录 / 注册
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-6 flex items-center gap-3 text-xs">
+                <span className="text-muted-foreground">已登录：{email}</span>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="border border-accent px-3 py-1.5 text-accent hover:bg-accent hover:text-background"
+                  >
+                    管理后台
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="border border-border bg-card p-6">
