@@ -299,20 +299,29 @@ function SubmitPage() {
               <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
             </details>
           )}
-          <div className="mt-6 flex gap-3">
+          <div className="mt-6 flex flex-wrap gap-3">
             <button
-              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
-              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background"
+              onClick={() => runAnalysis()}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
             >
-              返回对象页
+              一键重试分析
             </button>
             <button
               onClick={() => setPhase("idle")}
+              className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+            >
+              返回编辑 / 重新进入分析
+            </button>
+            <button
+              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
               className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
             >
-              再试一次
+              返回对象页
             </button>
           </div>
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            草稿已自动保存到本机浏览器，刷新或重新打开后会自动恢复。
+          </p>
         </div>
       </SiteLayout>
     );
