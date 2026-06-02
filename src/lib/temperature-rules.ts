@@ -199,7 +199,9 @@ export function aggregateRuleMinimum(
     has_regulatory_penalty: false,
   };
   for (const o of observations) {
-    const text = [o.content, o.summary, o.cleaned_content].filter(Boolean).join("\n");
+    // 强证据扫描覆盖：content / summary / cleaned_content / tags（标签中也可能直接命中法律/监管关键词）
+    const tagText = Array.isArray(o.tags) ? o.tags.join("\n") : "";
+    const text = [o.content, o.summary, o.cleaned_content, tagText].filter(Boolean).join("\n");
     const r = calculateRuleMinimumTemperature({
       tags: o.tags ?? [],
       evidence_level: o.evidence_level,
