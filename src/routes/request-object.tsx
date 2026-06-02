@@ -27,14 +27,11 @@ function RequestPage() {
 
   if (authed === false) {
     return (
-      <SiteLayout>
-        <div className="container-prose py-32 text-center">
-          <h1 className="font-serif text-3xl">需要登录</h1>
-          <Link to="/login" search={{ redirect: "/request-object" }} className="mt-6 inline-block border border-foreground px-5 py-2.5 text-sm hover:bg-foreground hover:text-background">
-            前往登录
-          </Link>
-        </div>
-      </SiteLayout>
+      <LoginPrompt
+        title="登录后申请测评对象"
+        body="登录后可以提交你希望被测评的品牌、产品、影视作品或服务。"
+        redirect="/request-object"
+      />
     );
   }
 
