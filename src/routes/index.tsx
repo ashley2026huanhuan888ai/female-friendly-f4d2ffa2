@@ -81,12 +81,16 @@ function Index() {
               />
               <button className="bg-foreground px-5 py-3 text-sm text-background hover:bg-accent">查询</button>
             </form>
-            <div className="mt-6 flex flex-wrap gap-4 text-xs text-muted-foreground">
-              <Link to="/feed" className="underline-offset-4 hover:underline">查看观察流 →</Link>
-              <span>·</span>
-              <Link to="/topics" className="underline-offset-4 hover:underline">热议议题</Link>
-              <span>·</span>
-              <Link to="/request-object" className="underline-offset-4 hover:underline">我希望评估某个对象</Link>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/objects" className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent">
+                浏览测评对象
+              </Link>
+              <Link to="/feed" className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground">
+                查看观察流
+              </Link>
+              <Link to="/request-object" className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground">
+                申请评估对象
+              </Link>
             </div>
           </div>
 
