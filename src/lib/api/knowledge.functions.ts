@@ -31,9 +31,10 @@ export type KCase = {
 export const listPrinciples = createServerFn({ method: "GET" })
   .handler(async () => {
     const { data } = await supabaseAdmin
-      .from("principles" as never).select("*").order("display_order");
+      .from("principles" as never).select("*").eq("active", true).order("display_order");
     return (data ?? []) as Principle[];
   });
+
 
 export const listTags = createServerFn({ method: "GET" })
   .handler(async () => {
