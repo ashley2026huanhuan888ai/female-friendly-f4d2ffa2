@@ -50,7 +50,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           {/* 桌面端主导航 */}
           <nav className="hidden items-center gap-6 text-sm md:flex">
             {PRIMARY_NAV.map((l) => (
-              <Link key={l.to} to={l.to} className="text-muted-foreground hover:text-foreground">
+              <Link key={l.to} to={l.to} className="whitespace-pre-line text-muted-foreground hover:text-foreground">
                 {l.label}
               </Link>
             ))}
