@@ -281,3 +281,68 @@ export const getTemperatureDashboard = createServerFn({ method: "GET" })
       top_cool_30d: topCool,
     };
   });
+
+// ===== 全库扫描 + 自动修复：违规对象（admin）=====
+// 违规定义：
+//   A) 有 approved 强证据但 temperature < 90
+//   B) 没有 approved 观察但 temperature !== 默认 (24) 之外的舒适值 → 不再写 24（引擎已处理），此处只报告
+// 扫描后对 A 类对象调用统一重算入口，复扫直到为 0 或两轮不变。
+export const scanAndFixTemperatures = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+
+    const findViolations = async (): Promise<{ legalLow: string[]; phantomComfort: string[] }> => {
+      const legalLow: string[] = [];
+      const phantomComfort: string[] = [];
+      const { data: objs } = await supabaseAdmin
+        .from("objects")
+        .select("id, temperature, observation_count, frozen, hidden")
+        .eq("frozen", false);
+      for (const o of (objs ?? []) as Array<{ id: string; temperature: number; observation_count: number }>) {
+        const { data: obs } = await supabaseAdmin
+          .from("observations")
+          .select("evidence_level, tags, content, summary, cleaned_content")
+          .eq("object_id", o.id).eq("status", "approved");
+        const list = (obs ?? []) as never as Array<{
+          evidence_level: string | null; tags: unknown;
+          content: string | null; summary: string | null; cleaned_content: string | null;
+        }>;
+        if (list.length === 0) {
+          if (Number(o.temperature) >= 22 && Number(o.temperature) <= 28) {
+            phantomComfort.push(o.id);
+          }
+          continue;
+        }
+        const rule = aggregateRuleMinimum(
+          list.map((x) => ({
+            tags: normalizeTags(Array.isArray(x.tags) ? (x.tags as string[]) : []),
+            evidence_level: x.evidence_level,
+            content: x.content, summary: x.summary, cleaned_content: x.cleaned_content,
+          })),
+        );
+        if (rule.has_regulatory_penalty && Number(o.temperature) < rule.rule_minimum_temperature) {
+          legalLow.push(o.id);
+        }
+      }
+      return { legalLow, phantomComfort };
+    };
+
+    const first = await findViolations();
+    let fixed = 0;
+    for (const id of first.legalLow) {
+      try {
+        await recomputeAndPersist(id, "backfill_scan", context.userId, null, 0);
+        fixed++;
+      } catch { /* ignore */ }
+    }
+    const after = await findViolations();
+    return {
+      initial_legal_low: first.legalLow.length,
+      initial_phantom_comfort: first.phantomComfort.length,
+      fixed,
+      remaining_legal_low: after.legalLow.length,
+      remaining_phantom_comfort: after.phantomComfort.length,
+      remaining_ids: after.legalLow,
+    };
+  });

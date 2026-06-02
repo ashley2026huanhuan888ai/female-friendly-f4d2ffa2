@@ -7,6 +7,7 @@ import {
   recomputeObjectTemperature,
   runCoolingCycle,
   getTemperatureExplanation,
+  scanAndFixTemperatures,
 } from "@/lib/api/temperature.functions";
 import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
 import { HeatSources } from "@/components/HeatSources";
@@ -24,6 +25,7 @@ function TemperatureCenter() {
   const recompute = useServerFn(recomputeObjectTemperature);
   const cool = useServerFn(runCoolingCycle);
   const fetchExpl = useServerFn(getTemperatureExplanation);
+  const scan = useServerFn(scanAndFixTemperatures);
 
   const [data, setData] = useState<{
     top_hot: Row[]; controversial: Row[]; top_heat_30d: Row[]; top_cool_30d: Row[];
@@ -75,18 +77,35 @@ function TemperatureCenter() {
             每一次温度变化都有依据 · 可追溯 · 可解释 · 可复核
           </p>
         </div>
-        <button
-          onClick={async () => {
-            setBusy(true);
-            try { const r = await cool({}); toast.success(`本轮自然冷却完成：${(r as { cooled: number }).cooled} 个对象`); load(); }
-            catch (e) { toast.error((e as Error).message); }
-            finally { setBusy(false); }
-          }}
-          disabled={busy}
-          className="border border-foreground px-4 py-2 text-xs hover:bg-foreground hover:text-background disabled:opacity-50"
-        >
-          运行 30 天自然冷却周期
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={async () => {
+              setBusy(true);
+              try {
+                const r = await scan({}) as { initial_legal_low: number; fixed: number; remaining_legal_low: number; remaining_phantom_comfort: number };
+                toast.success(`扫描完成：违规 ${r.initial_legal_low} → 修复 ${r.fixed} → 剩余 ${r.remaining_legal_low}（异常舒适 ${r.remaining_phantom_comfort}）`);
+                load();
+              } catch (e) { toast.error((e as Error).message); }
+              finally { setBusy(false); }
+            }}
+            disabled={busy}
+            className="border border-foreground px-4 py-2 text-xs hover:bg-foreground hover:text-background disabled:opacity-50"
+          >
+            扫描并修复违规温度
+          </button>
+          <button
+            onClick={async () => {
+              setBusy(true);
+              try { const r = await cool({}); toast.success(`本轮自然冷却完成：${(r as { cooled: number }).cooled} 个对象`); load(); }
+              catch (e) { toast.error((e as Error).message); }
+              finally { setBusy(false); }
+            }}
+            disabled={busy}
+            className="border border-foreground px-4 py-2 text-xs hover:bg-foreground hover:text-background disabled:opacity-50"
+          >
+            运行 30 天自然冷却周期
+          </button>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2">

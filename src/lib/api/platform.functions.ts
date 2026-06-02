@@ -470,7 +470,7 @@ export const regenerateObservation = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     const { data: obs } = await supabaseAdmin
       .from("observations")
-      .select("content, scene, screenshot_url, reference_url, object_id")
+      .select("content, scene, screenshot_url, reference_url, object_id, status")
       .eq("id", data.id).single();
     if (!obs) throw new Error("观察不存在");
     const a = await callAIAnalyze(obs.content, obs.scene, obs.screenshot_url, obs.reference_url);
@@ -487,6 +487,10 @@ export const regenerateObservation = createServerFn({ method: "POST" })
       cases_cited: a.cases_cited ?? [],
       explanation: a.explanation ?? null,
     } as never).eq("id", data.id);
+    // 影响 approved 观察 → 自动重算对象温度
+    if (obs.status === "approved") {
+      void recomputeObjectInternal(obs.object_id).catch(() => {});
+    }
     return { ok: true, evidence_level: a.evidence_level, tags: a.tags, impact_score: impact };
   });
 
@@ -505,7 +509,7 @@ export const updateObservation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: cur } = await supabaseAdmin.from("observations")
-      .select("tags, evidence_level, confidence").eq("id", data.id).single();
+      .select("tags, evidence_level, confidence, status, object_id").eq("id", data.id).single();
     if (!cur) throw new Error("观察不存在");
     const tags = data.tags ?? (cur.tags as string[] ?? []);
     const ev = data.evidence_level ?? cur.evidence_level ?? "C";
@@ -517,6 +521,10 @@ export const updateObservation = createServerFn({ method: "POST" })
     };
     const { error } = await supabaseAdmin.from("observations").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    // 影响 approved 观察 → 自动重算对象温度
+    if (cur.status === "approved") {
+      void recomputeObjectInternal(cur.object_id).catch(() => {});
+    }
     return { ok: true, impact_score: impact };
   });
 
@@ -526,8 +534,14 @@ export const deleteObservation = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { data: before } = await supabaseAdmin.from("observations")
+      .select("status, object_id").eq("id", data.id).single();
     const { error } = await supabaseAdmin.from("observations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    // 若被删的是 approved 观察 → 自动重算对象
+    if (before?.status === "approved" && before.object_id) {
+      void recomputeObjectInternal(before.object_id).catch(() => {});
+    }
     return { ok: true };
   });
 
@@ -655,6 +669,7 @@ export const mergeObjects = createServerFn({ method: "POST" })
     await writeAuditLog(context.userId, "merge", "object", data.source_id,
       { source_id: data.source_id }, { target_id: data.target_id }, data.reason ?? null);
     await recomputeObjectInternal(data.target_id).catch(() => {});
+    await recomputeObjectInternal(data.source_id).catch(() => {});
     return { ok: true };
   });
 
@@ -725,7 +740,8 @@ export const reviewObservation = createServerFn({ method: "POST" })
     await writeAuditLog(context.userId, `review_${data.action}`, "observation", data.id,
       { status: before.status }, { status, rejection_reason: data.rejection_reason }, data.note ?? null);
 
-    if (data.action === "approve") {
+    // approve 后或"曾经 approved → reject"都需要重算
+    if (data.action === "approve" || before.status === "approved") {
       void recomputeObjectInternal(before.object_id).catch(() => {});
     }
     return { object_id: before.object_id };
