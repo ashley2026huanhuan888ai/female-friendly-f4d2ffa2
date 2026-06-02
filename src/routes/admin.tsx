@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
-import { claimFirstAdmin } from "@/lib/api/platform.functions";
+import { claimFirstAdmin, getCurrentUserAccess } from "@/lib/api/platform.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
@@ -14,20 +14,27 @@ export const Route = createFileRoute("/admin")({
 function AdminLayout() {
   const router = useRouter();
   const claim = useServerFn(claimFirstAdmin);
+  const getAccess = useServerFn(getCurrentUserAccess);
   const [state, setState] = useState<"loading" | "anon" | "user" | "admin">("loading");
 
   useEffect(() => {
+    let cancelled = false;
     const check = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) { if (!cancelled) setState("anon"); return; }
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return setState("anon");
-      const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
-      if (r?.some((x) => x.role === "admin")) setState("admin");
-      else setState("user");
+      if (!u.user) { if (!cancelled) setState("anon"); return; }
+      try {
+        const access = await getAccess({});
+        if (!cancelled) setState(access.isAdmin ? "admin" : "user");
+      } catch {
+        if (!cancelled) setState("user");
+      }
     };
     check();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => check());
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    const { data: sub } = supabase.auth.onAuthStateChange(() => { void check(); });
+    return () => { cancelled = true; sub.subscription.unsubscribe(); };
+  }, [getAccess]);
 
   if (state === "loading") return <SiteLayout><div className="container-prose py-32 text-center text-muted-foreground">加载中…</div></SiteLayout>;
   if (state === "anon") return (
