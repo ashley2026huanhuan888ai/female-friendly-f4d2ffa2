@@ -145,48 +145,86 @@ function Index() {
         </div>
       </section>
 
-      {/* 新增案例 + 最新AI观察 */}
-      <section className="py-16">
-        <div className="container-prose grid gap-10 md:grid-cols-2">
-          <div>
-            <h2 className="font-serif text-2xl">新增案例</h2>
-            <p className="text-xs text-muted-foreground">最近沉淀进知识库的案例。</p>
-            {summary?.latest_cases?.length ? (
-              <ul className="mt-6 divide-y divide-border border-y border-border">
-                {summary.latest_cases.map((c: any) => (
-                  <li key={c.code} className="py-4">
-                    <Link to="/archive/$caseCode" params={{ caseCode: c.code }} className="block hover:bg-card/60">
-                      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                        {c.code} · {c.polarity}
-                      </div>
-                      <div className="mt-1 font-serif">{c.title}</div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-6 text-sm text-muted-foreground">暂无新案例。</p>
-            )}
-          </div>
+      {/* 最新 AI 观察 */}
+      <section className="border-b border-border py-16">
+        <div className="container-prose">
+          <h2 className="font-serif text-2xl">最新 AI 观察</h2>
+          <p className="text-xs text-muted-foreground">AI 引擎对最新通过观察的结构化摘要。</p>
+          {summary?.latest_observations?.length ? (
+            <ul className="mt-6 grid gap-4 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0">
+              {summary.latest_observations.slice(0, 6).map((o: any) => (
+                <li key={o.id} className="py-4 md:border-b md:border-border">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {o.object?.name ?? "—"} · 证据 {o.evidence_level ?? "—"}
+                  </div>
+                  <p className="mt-1 text-sm">{o.summary ?? "（无摘要）"}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-6 text-sm text-muted-foreground">暂无观察。</p>
+          )}
+        </div>
+      </section>
 
-          <div>
-            <h2 className="font-serif text-2xl">最新 AI 观察</h2>
-            <p className="text-xs text-muted-foreground">AI 引擎对最新通过观察的结构化摘要。</p>
-            {summary?.latest_observations?.length ? (
-              <ul className="mt-6 divide-y divide-border border-y border-border">
-                {summary.latest_observations.slice(0, 6).map((o: any) => (
-                  <li key={o.id} className="py-4">
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {o.object?.name ?? "—"} · 证据 {o.evidence_level ?? "—"}
-                    </div>
-                    <p className="mt-1 text-sm">{o.summary ?? "（无摘要）"}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-6 text-sm text-muted-foreground">暂无观察。</p>
-            )}
+      {/* 提交 / 申请 CTA */}
+      <section className="border-b border-border bg-card/40 py-16">
+        <div className="container-prose grid gap-6 md:grid-cols-2">
+          <div className="border border-border bg-paper p-6">
+            <h3 className="font-serif text-xl">提交一次观察</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              看到值得记录的现象？在对象页提交一条观察，AI 会清洗内容并参与温度计算。
+            </p>
+            <Link to="/objects" className="mt-4 inline-block border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent">
+              选择对象 →
+            </Link>
           </div>
+          <div className="border border-border bg-paper p-6">
+            <h3 className="font-serif text-xl">申请评估对象</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              没找到你关心的品牌、影视或组织？提交申请，由管理员审核后纳入观察。
+            </p>
+            <Link to="/request-object" className="mt-4 inline-block border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground">
+              我希望评估… →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 知识库（次要） */}
+      <section className="py-12">
+        <div className="container-prose">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">研究区 · Secondary</div>
+          <h2 className="mt-2 font-serif text-xl text-muted-foreground">知识库与案例档案</h2>
+          <p className="mt-2 max-w-2xl text-xs text-muted-foreground">
+            知识库用于解释平台如何理解女性友好与性别偏见。新用户可以先从对象测评和观察提交开始。
+          </p>
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <Link to="/knowledge" className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">知识引擎</div>
+              <div className="mt-1 font-serif">原则与方法论</div>
+            </Link>
+            <Link to="/archive" className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">案例库</div>
+              <div className="mt-1 font-serif">沉淀过的典型案例</div>
+            </Link>
+            <Link to="/topics" className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40">
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">议题</div>
+              <div className="mt-1 font-serif">热议中的女性体验话题</div>
+            </Link>
+          </div>
+          {summary?.latest_cases?.length ? (
+            <ul className="mt-6 divide-y divide-border border-t border-border text-sm">
+              {summary.latest_cases.slice(0, 4).map((c: any) => (
+                <li key={c.code} className="py-3">
+                  <Link to="/archive/$caseCode" params={{ caseCode: c.code }} className="block text-muted-foreground hover:text-foreground">
+                    <span className="font-mono text-[10px] uppercase tracking-wider">{c.code}</span>
+                    <span className="ml-3 font-serif">{c.title}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       </section>
     </SiteLayout>
