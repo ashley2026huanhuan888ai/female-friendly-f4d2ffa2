@@ -31,8 +31,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
     setMenuOpen(false);
   }, [router.state.location.pathname]);
 
+  const { signOut: authSignOut } = useAuth();
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await authSignOut();
     router.invalidate();
   };
 
