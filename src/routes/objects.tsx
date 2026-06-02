@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { ObjectCard } from "@/components/ObjectCard";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { useAuth } from "@/components/AuthProvider";
+import { GuestPreviewList, GuestLoginPrompt, GUEST_NOTE } from "@/components/PreviewGate";
 
 export const Route = createFileRoute("/objects")({
   validateSearch: (s: Record<string, unknown>) => ({ q: (s.q as string) ?? "" }),
