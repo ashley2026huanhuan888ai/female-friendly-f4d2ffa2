@@ -113,6 +113,7 @@ function LoginPage() {
           options: { emailRedirectTo: `${window.location.origin}${safeRedirect}` },
         });
         if (error) throw error;
+        try { setRemember(remember); } catch { /* ignore storage failures */ }
         toast.success("注册成功，请按邮件提示完成验证后登录");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
