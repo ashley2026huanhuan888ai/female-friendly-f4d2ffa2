@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({ redirect: (s.redirect as string) || "/" }),
-  head: () => ({ meta: [{ title: "登录 · 女性体验温度" }] }),
+  head: () => ({ meta: [{ title: "登录 · 女性友好体验测评" }] }),
   component: LoginPage,
 });
 

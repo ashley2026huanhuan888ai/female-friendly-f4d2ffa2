@@ -8,8 +8,8 @@ import { FEMINIST_TAGS, OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
 export const Route = createFileRoute("/archive/")({
   head: () => ({
     meta: [
-      { title: "案例档案库 · 女性体验温度" },
-      { name: "description", content: "可检索、可研究的女性体验案例数据库。" },
+      { title: "案例档案库 · 女性友好体验测评" },
+      { name: "description", content: "可检索、可研究的女性友好体验案例数据库。" },
     ],
   }),
   component: ArchivePage,

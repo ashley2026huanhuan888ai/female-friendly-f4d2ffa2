@@ -8,7 +8,7 @@ import { getObservationFeed } from "@/lib/api/observation-center.functions";
 export const Route = createFileRoute("/feed")({
   head: () => ({
     meta: [
-      { title: "观察流 · 女性体验温度" },
+      { title: "观察流 · 女性友好体验测评" },
       { name: "description", content: "每一次温度变化的来源——升温、降温、新增案例。" },
     ],
   }),

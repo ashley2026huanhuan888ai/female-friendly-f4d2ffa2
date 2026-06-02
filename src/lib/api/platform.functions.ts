@@ -1,4 +1,4 @@
-// 女性体验温度 AI 引擎 V1
+// 女性友好体验测评 AI 引擎 V1
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -166,7 +166,7 @@ async function callAIObjectSummary(
     .slice(0, 5)
     .map(([tag, count]) => ({ tag, count }));
 
-  const sys = `你为「女性体验温度」平台生成对象级总结。中立、克制、不审判。
+  const sys = `你为「女性友好体验测评」平台生成对象级总结。中立、克制、不审判。
 禁止："厌女""恶心""有毒"等情绪化词汇。
 使用："观察显示""讨论集中于""反馈主要涉及"等表达。
 200 字以内，覆盖：主要议题分布、证据强度概览、是否存在系统性模式。`;

@@ -1,4 +1,4 @@
-// 女性体验档案库 V1 — 公开案例检索 / 详情 / 时间线
+// 女性友好体验档案库 V1 — 公开案例检索 / 详情 / 时间线
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";

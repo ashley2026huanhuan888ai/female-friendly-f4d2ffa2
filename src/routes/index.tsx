@@ -11,9 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "女性体验温度 · 观察平台" },
+      { title: "女性友好体验测评 · 观察平台" },
       { name: "description", content: "持续观察品牌、产品、影视、组织的女性体验。AI 引擎、可追溯温度、可解释变化。" },
-      { property: "og:title", content: "女性体验温度" },
+      { property: "og:title", content: "女性友好体验测评" },
       { property: "og:description", content: "观察 · 分析 · 不审判。" },
     ],
   }),
@@ -60,10 +60,10 @@ function Index() {
             </div>
             <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-balance md:text-7xl">
               持续观察<br />
-              <span className="text-accent">女性体验</span>的<br />变化。
+              <span className="text-accent">女性友好体验</span>的<br />变化。
             </h1>
             <p className="mt-8 max-w-xl text-base text-muted-foreground">
-              这里不是评分网站，是观察平台。我们记录每一次温度变化的来源——案例、证据、议题。
+              这里不是评分网站，是观察平台。我们记录每一次女性友好温度变化的来源——案例、证据、议题。
               <strong className="text-foreground">不做事实认定，不做道德审判。</strong>
             </p>
             <form

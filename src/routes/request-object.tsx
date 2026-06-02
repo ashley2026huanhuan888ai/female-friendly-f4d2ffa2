@@ -9,7 +9,7 @@ import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/request-object")({
-  head: () => ({ meta: [{ title: "我希望评估 · 女性体验温度" }] }),
+  head: () => ({ meta: [{ title: "我希望评估 · 女性友好体验测评" }] }),
   component: RequestPage,
 });
 

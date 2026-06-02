@@ -9,7 +9,7 @@ export const Route = createFileRoute("/objects")({
   validateSearch: (s: Record<string, unknown>) => ({ q: (s.q as string) ?? "" }),
   head: () => ({
     meta: [
-      { title: "全部对象 · 女性体验温度" },
+      { title: "全部对象 · 女性友好体验测评" },
       { name: "description", content: "浏览所有评估对象，按温度排序，按类型筛选。" },
     ],
   }),

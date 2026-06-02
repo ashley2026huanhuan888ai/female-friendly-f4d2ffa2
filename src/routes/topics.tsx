@@ -7,7 +7,7 @@ import { getTrendingTopics } from "@/lib/api/observation-center.functions";
 export const Route = createFileRoute("/topics")({
   head: () => ({
     meta: [
-      { title: "热议议题 · 女性体验温度" },
+      { title: "热议议题 · 女性友好体验测评" },
       { name: "description", content: "近期被持续观察的标签与议题。" },
     ],
   }),

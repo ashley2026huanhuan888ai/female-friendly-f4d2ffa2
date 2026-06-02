@@ -60,9 +60,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur">
         <div className="container-prose flex h-16 items-center justify-between gap-3">
           <Link to="/" className="flex items-baseline gap-3">
-            <span className="font-serif text-xl tracking-tight">女性体验温度</span>
+            <span className="font-serif text-xl tracking-tight">女性友好体验测评</span>
             <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground md:inline">
-              Female Experience Temperature
+              FEMALE EXPERIENCE ASSESSMENT
             </span>
           </Link>
 
@@ -188,7 +188,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <footer className="mt-32 border-t border-border py-12">
         <div className="container-prose flex flex-col gap-4 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           <div>
-            <span className="font-serif text-sm text-foreground">女性体验温度</span>
+            <span className="font-serif text-sm text-foreground">女性友好体验测评</span>
             <span className="ml-3">观察 · 分析 · 不审判</span>
           </div>
           <div>本平台不进行法律意义上的事实认定，不进行道德审判。</div>
