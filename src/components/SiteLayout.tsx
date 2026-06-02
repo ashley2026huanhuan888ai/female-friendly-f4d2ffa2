@@ -23,7 +23,7 @@ const SECONDARY_NAV = [
 export function SiteLayout({ children }: { children: ReactNode }) {
   const { ready: authReady, email, isAdmin, unread } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
+  
   const router = useRouter();
 
   // 路由变化时关闭移动菜单
