@@ -179,7 +179,9 @@ function BulkImportPage() {
                       className="w-32 border-0 bg-transparent" />
                   </td>
                   <td className="border border-border px-2 py-1">
-                    {r.matched_object_name ?? "—"}
+                    {r.matched_object_id && r.matched_object_name ? (
+                      <Link to="/objects/$id" params={{ id: r.matched_object_id }} target="_blank" className="underline-offset-2 hover:underline">{r.matched_object_name}</Link>
+                    ) : (r.matched_object_name ?? "—")}
                     {r.match_confidence > 0 && <div className="text-muted-foreground">{r.match_confidence.toFixed(2)}</div>}
                   </td>
                   <td className="border border-border px-2 py-1">{r.year ?? "—"}</td>
