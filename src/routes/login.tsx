@@ -94,7 +94,7 @@ function LoginPage() {
     e.preventDefault();
     setErrorDetail(null);
     if (mode === "signup" && !passwordValid) {
-      setErrorDetail({ title: "密码不符合规则", hint: "请按下方提示设置密码。" });
+      setErrorDetail({ title: "密码至少需要 8 位", hint: "密码至少 8 位。建议包含字母和数字。" });
       return;
     }
     setPending(true);
