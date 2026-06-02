@@ -42,8 +42,8 @@ function RequestPage() {
     setPending(true);
     try {
       await submit({ data: { requested_name: form.requested_name, requested_type: form.requested_type as any, reason: form.reason || undefined } });
-      toast.success("申请已提交，管理员会尽快审核");
-      navigate({ to: "/" });
+      toast.success("申请已提交。对象需管理员审核创建后才会出现在首页，可在「我的」页查看进度。");
+      navigate({ to: "/me" });
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -57,7 +57,7 @@ function RequestPage() {
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">提交申请</div>
         <h1 className="mt-3 font-serif text-4xl">我希望评估…</h1>
         <p className="mt-4 text-sm text-muted-foreground">
-          用户不能直接创建对象。请填写你希望加入观察的对象，由管理员审核后创建。
+          用户不能直接创建对象。请填写你希望加入观察的对象，<strong className="text-foreground">由管理员审核后才会出现在平台首页和列表中</strong>。审核通常需要 1–3 个工作日。
         </p>
 
         <form onSubmit={onSubmit} className="mt-10 space-y-6">

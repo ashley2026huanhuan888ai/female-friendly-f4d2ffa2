@@ -26,8 +26,20 @@ function LoginPage() {
     return () => sub.subscription.unsubscribe();
   }, [navigate, redirect]);
 
+  const passwordRules = [
+    { ok: password.length >= 8, label: "至少 8 位" },
+    { ok: /[a-z]/.test(password), label: "包含小写字母" },
+    { ok: /[A-Z]/.test(password), label: "包含大写字母" },
+    { ok: /[0-9]/.test(password), label: "包含数字" },
+  ];
+  const passwordValid = passwordRules.every((r) => r.ok);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === "signup" && !passwordValid) {
+      toast.error("密码不符合规则，请按下方提示设置");
+      return;
+    }
     setPending(true);
     try {
       if (mode === "signup") {
@@ -61,9 +73,19 @@ function LoginPage() {
           <input type="email" required placeholder="邮箱"
             value={email} onChange={(e) => setEmail(e.target.value)}
             className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
-          <input type="password" required minLength={6} placeholder="密码（至少 6 位）"
+          <input type="password" required placeholder="密码"
             value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
+          {mode === "signup" && (
+            <ul className="space-y-1 rounded border border-border bg-card/50 p-3 text-xs">
+              <li className="mb-1 text-muted-foreground">密码规则：</li>
+              {passwordRules.map((r) => (
+                <li key={r.label} className={r.ok ? "text-foreground" : "text-muted-foreground"}>
+                  {r.ok ? "✓" : "○"} {r.label}
+                </li>
+              ))}
+            </ul>
+          )}
           <button disabled={pending} className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50">
             {pending ? "处理中…" : mode === "signin" ? "登录" : "注册并登录"}
           </button>

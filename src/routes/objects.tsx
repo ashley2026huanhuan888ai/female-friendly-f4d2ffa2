@@ -18,6 +18,7 @@ export const Route = createFileRoute("/objects")({
 
 function AllObjects() {
   const { q: initialQ } = Route.useSearch();
+  const [qInput, setQInput] = useState(initialQ);
   const [q, setQ] = useState(initialQ);
   const [type, setType] = useState<string>("");
   const [sort, setSort] = useState<"temp" | "recent">("temp");
@@ -42,10 +43,13 @@ function AllObjects() {
             找不到？<Link to="/request-object" className="underline">提交评估申请</Link>
           </p>
 
-          <div className="mt-10 grid gap-3 md:grid-cols-[1fr_auto_auto]">
+          <form
+            onSubmit={(e) => { e.preventDefault(); setQ(qInput); }}
+            className="mt-10 grid gap-3 md:grid-cols-[1fr_auto_auto_auto]"
+          >
             <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
               placeholder="按名称搜索"
               className="border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-foreground"
             />
@@ -67,9 +71,16 @@ function AllObjects() {
               <option value="temp">温度从高到低</option>
               <option value="recent">最近更新</option>
             </select>
-          </div>
+            <button
+              type="submit"
+              className="border border-foreground bg-foreground px-5 py-2.5 text-sm text-background hover:bg-accent"
+            >
+              搜索
+            </button>
+          </form>
         </div>
       </section>
+
 
       <section className="py-12">
         <div className="container-prose">
