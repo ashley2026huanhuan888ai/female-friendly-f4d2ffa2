@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   createObject, recomputeTemperature, freezeObject,
   hideObject, deleteObject, mergeObjects, updateObjectCategory,
+  setObjectPublicPreview,
 } from "@/lib/api/platform.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { toast } from "sonner";
