@@ -748,7 +748,7 @@ export const listAuditLogs = createServerFn({ method: "GET" })
 
 
 
-// ===== 管理员从申请创建对象 =====
+// ===== 管理员从申请创建对象（保留为兼容入口） =====
 export const createObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -770,6 +770,130 @@ export const createObject = createServerFn({ method: "POST" })
       await supabaseAdmin.from("object_requests").update({ status: "approved" }).eq("id", data.request_id);
     }
     return { id: obj.id };
+  });
+
+// ===== 内部：从请求 reason 生成观察并重算温度 =====
+async function ingestReasonAsObservation(
+  object_id: string,
+  reason: string,
+  actor_id: string,
+  noteSuffix: string,
+): Promise<{ observation_id: string | null; temperature: number | null }> {
+  const text = reason.trim();
+  if (!text) return { observation_id: null, temperature: null };
+
+  const { detectTags, detectEvidenceA } = await import("./bulk-import.functions");
+  const { calculateRuleMinimumTemperature } = await import("@/lib/temperature-rules");
+
+  const tags = detectTags(text);
+  const hasReg = detectEvidenceA(text);
+  let evidence_level: "A" | "B" | "C" | "D";
+  if (hasReg) evidence_level = "A";
+  else if (text.length >= 40 || tags.length > 0) evidence_level = "B";
+  else evidence_level = "C";
+
+  const rule = calculateRuleMinimumTemperature({
+    tags, evidence_level, has_regulatory_penalty: hasReg, observation_content: text,
+  });
+
+  const summary = text.length > 80 ? text.slice(0, 78) + "…" : text;
+  const confidence = evidence_level === "A" ? 0.95 : evidence_level === "B" ? 0.8 : 0.6;
+  const source_status = hasReg ? "已验证线索" : "待补源";
+
+  const { data: ins, error } = await supabaseAdmin.from("observations").insert({
+    object_id,
+    user_id: actor_id,
+    content: text,
+    cleaned_content: text.slice(0, 1000),
+    summary,
+    evidence_level,
+    tags: tags as never,
+    confidence,
+    status: "approved",
+    admin_note: `对象申请通过 · ${noteSuffix}`,
+    source_status,
+    scene: "对象申请说明",
+  } as never).select("id").single();
+  if (error) throw new Error(error.message);
+
+  const result = await recomputeObjectWithEngine(object_id, "request_approval", null, actor_id);
+  let final = result?.temperature ?? rule.rule_minimum_temperature;
+  if (rule.rule_minimum_temperature > final) final = rule.rule_minimum_temperature;
+  if (final !== (result?.temperature ?? 0)) {
+    await supabaseAdmin.from("objects").update({ temperature: final } as never).eq("id", object_id);
+  }
+  return { observation_id: (ins as { id: string }).id, temperature: final };
+}
+
+// ===== 管理员通过对象申请（完整流程：创建对象 + 写观察 + 重算温度） =====
+export const approveObjectRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ request_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { data: req, error: rErr } = await supabaseAdmin
+      .from("object_requests").select("*").eq("id", data.request_id).single();
+    if (rErr || !req) throw new Error("申请不存在");
+    if (req.status !== "pending") throw new Error("该申请已处理");
+
+    const { data: obj, error: oErr } = await supabaseAdmin
+      .from("objects")
+      .insert({ name: req.requested_name, type: req.requested_type, description: req.reason ?? null })
+      .select("id").single();
+    if (oErr) throw new Error(oErr.message);
+
+    const reason = (req.reason ?? "").trim();
+    let observation_id: string | null = null;
+    let temperature: number | null = null;
+    if (reason) {
+      const r = await ingestReasonAsObservation(obj.id, reason, context.userId, "申请审批");
+      observation_id = r.observation_id;
+      temperature = r.temperature;
+    }
+
+    await supabaseAdmin.from("object_requests").update({ status: "approved" }).eq("id", data.request_id);
+    return { object_id: obj.id, observation_id, temperature };
+  });
+
+// ===== 历史回填：把已通过但无观察的申请补成观察 =====
+export const backfillApprovedRequests = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data: reqs } = await supabaseAdmin
+      .from("object_requests")
+      .select("id, requested_name, requested_type, reason")
+      .eq("status", "approved")
+      .not("reason", "is", null);
+
+    let scanned = 0, backfilled = 0, skipped = 0;
+    const details: Array<{ name: string; object_id: string | null; temperature: number | null; note?: string }> = [];
+
+    for (const r of (reqs ?? []) as Array<{ id: string; requested_name: string; requested_type: string; reason: string | null }>) {
+      scanned++;
+      const reason = (r.reason ?? "").trim();
+      if (!reason) { skipped++; continue; }
+      // 找对应对象（按名称精确匹配）
+      const { data: objs } = await supabaseAdmin
+        .from("objects").select("id, observation_count").eq("name", r.requested_name).limit(1);
+      const obj = (objs ?? [])[0] as { id: string; observation_count: number } | undefined;
+      if (!obj) { skipped++; details.push({ name: r.requested_name, object_id: null, temperature: null, note: "未找到对象" }); continue; }
+
+      // 去重：已有 admin_note 含「对象申请通过」的观察则跳过
+      const { data: existing } = await supabaseAdmin
+        .from("observations").select("id").eq("object_id", obj.id).ilike("admin_note", "对象申请通过%").limit(1);
+      if (existing && existing.length > 0) { skipped++; details.push({ name: r.requested_name, object_id: obj.id, temperature: null, note: "已存在观察" }); continue; }
+
+      try {
+        const res = await ingestReasonAsObservation(obj.id, reason, context.userId, "历史回填");
+        backfilled++;
+        details.push({ name: r.requested_name, object_id: obj.id, temperature: res.temperature });
+      } catch (e) {
+        skipped++;
+        details.push({ name: r.requested_name, object_id: obj.id, temperature: null, note: (e as Error).message });
+      }
+    }
+    return { scanned, backfilled, skipped, details };
   });
 
 // ===== 拒绝对象申请 =====
