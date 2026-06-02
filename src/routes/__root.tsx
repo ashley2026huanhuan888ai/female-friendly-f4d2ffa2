@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
-  Link,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
@@ -11,6 +10,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { BackToHome } from "@/components/BackToHome";
 
 function NotFoundComponent() {
   return (
@@ -21,9 +21,9 @@ function NotFoundComponent() {
         <p className="mt-3 text-sm text-muted-foreground">
           你要找的页面可能已被移除或链接有误。
         </p>
-        <Link to="/" className="mt-6 inline-block border border-foreground px-4 py-2 text-sm hover:bg-foreground hover:text-background">
-          返回首页
-        </Link>
+        <div className="mt-6 flex justify-center">
+          <BackToHome />
+        </div>
       </div>
     </div>
   );
