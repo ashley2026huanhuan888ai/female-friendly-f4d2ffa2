@@ -174,6 +174,35 @@ function ObsAdmin() {
         ))}
       </div>
 
+      {filter === "pending" && items.length > 0 && (
+        <div className="mt-4 border border-dashed border-border bg-muted/20 p-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <label className="flex items-center gap-1.5">
+              <input type="checkbox" checked={selected.size === items.length} onChange={toggleAll} />
+              <span>全选（已选 {selected.size}/{items.length}）</span>
+            </label>
+            <span className="ml-2 text-muted-foreground">驳回原因：</span>
+            <select value={batchReason} onChange={(e) => setBatchReason(e.target.value)}
+              className="border border-border bg-background px-2 py-1">
+              {REJECTION_REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}（{r.rep}）</option>)}
+            </select>
+            <input
+              type="text" value={batchNote} onChange={(e) => setBatchNote(e.target.value)}
+              placeholder="审核备注（可选，应用于全部选中项）"
+              className="min-w-[200px] flex-1 border border-border bg-background px-2 py-1"
+            />
+            <button onClick={() => runBatch("approve")} disabled={batchBusy || selected.size === 0}
+              className="border border-foreground bg-foreground px-3 py-1 text-background disabled:opacity-40">
+              批量通过
+            </button>
+            <button onClick={() => runBatch("reject")} disabled={batchBusy || selected.size === 0}
+              className="border border-destructive bg-destructive/10 px-3 py-1 text-destructive disabled:opacity-40">
+              批量驳回
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8 space-y-6">
         {items.map((o) => (
           <article key={o.id} className="border border-border bg-card p-5">
