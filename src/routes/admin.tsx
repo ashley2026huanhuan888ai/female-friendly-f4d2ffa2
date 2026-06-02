@@ -56,7 +56,7 @@ function AdminLayout() {
         </p>
         <button
           onClick={async () => {
-            try { await claim({}); toast.success("已成为管理员"); router.invalidate(); }
+            try { await claim({}); toast.success("已成为管理员"); setState("admin"); router.invalidate(); }
             catch (e) { toast.error((e as Error).message); }
           }}
           className="mt-6 border border-foreground bg-foreground px-5 py-2.5 text-sm text-background hover:bg-accent"
