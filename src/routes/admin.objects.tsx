@@ -74,7 +74,7 @@ function ObjectsAdmin() {
         {items.map((o) => (
           <div key={o.id} className="border border-border bg-card p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">{o.name}</span>
+              <Link to="/objects/$id" params={{ id: o.id }} target="_blank" className="font-medium underline-offset-2 hover:underline">{o.name}</Link>
               <select
                 value={o.type}
                 onChange={(e) => wrap(o.id, () => updateCat({ data: { object_id: o.id, type: e.target.value as never } }), "已更新类型")}
