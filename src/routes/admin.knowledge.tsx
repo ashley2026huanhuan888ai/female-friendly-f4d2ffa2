@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   listPrinciples, upsertPrinciple, deletePrinciple,
   listTags, upsertTag, mergeTag,
-  listCases, upsertCase, deleteCase,
+  listCases, listAllCasesAdmin, upsertCase, deleteCase,
   getKnowledgeOverview,
   type Principle, type KTag, type KCase,
 } from "@/lib/api/knowledge.functions";
@@ -216,7 +216,8 @@ function TagsPanel() {
 
 // ---------------- Cases ----------------
 function CasesPanel() {
-  const list = useServerFn(listCases);
+  const list = useServerFn(listAllCasesAdmin);
+
   const upsert = useServerFn(upsertCase);
   const del = useServerFn(deleteCase);
   const tagsFn = useServerFn(listTags);
@@ -227,7 +228,7 @@ function CasesPanel() {
   const [edit, setEdit] = useState<Partial<KCase> | null>(null);
   const [filter, setFilter] = useState<"all" | "positive" | "negative" | "controversial">("all");
 
-  const refresh = () => list({ data: { includeDrafts: true } }).then(setRows);
+  const refresh = () => list({ data: {} }).then(setRows);
   useEffect(() => { refresh(); tagsFn().then(setAllTags); principlesFn().then(setAllPrinciples); }, []);
 
   const filtered = filter === "all" ? rows : rows.filter((r) => r.polarity === filter);
