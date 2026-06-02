@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link, useRouter } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import { toast } from "sonner";
 import { followObject, unfollowObject, isFollowing } from "@/lib/api/observation-center.functions";
 
 export function FollowButton({ objectId }: { objectId: string }) {
-  const [signedIn, setSignedIn] = useState(false);
+  const { ready, user } = useAuth();
   const [following, setFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -16,21 +16,22 @@ export function FollowButton({ objectId }: { objectId: string }) {
   const router = useRouter();
 
   useEffect(() => {
+    if (!ready) return;
+    if (!user) { setLoading(false); return; }
+    let cancelled = false;
     (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) { setSignedIn(false); setLoading(false); return; }
-      setSignedIn(true);
       try {
         const r = await check({ data: { object_id: objectId } });
-        setFollowing(r.following);
-      } finally { setLoading(false); }
+        if (!cancelled) setFollowing(r.following);
+      } finally { if (!cancelled) setLoading(false); }
     })();
-  }, [objectId, check]);
+    return () => { cancelled = true; };
+  }, [ready, user, objectId, check]);
 
   if (loading) return null;
 
   const toggle = async () => {
-    if (!signedIn) {
+    if (!user) {
       setShowPrompt(true);
       return;
     }

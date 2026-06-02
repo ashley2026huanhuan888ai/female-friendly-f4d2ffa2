@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { LoginPrompt } from "@/components/LoginPrompt";
+import { useAuth } from "@/components/AuthProvider";
 import { submitObservation } from "@/lib/api/platform.functions";
 import { Thermometer } from "@/components/Thermometer";
 import { bandOf } from "@/lib/temperature";
@@ -33,8 +34,8 @@ function SubmitPage() {
   const { objectId } = Route.useParams();
   const navigate = useNavigate();
   const submit = useServerFn(submitObservation);
+  const { ready, user } = useAuth();
   const [obj, setObj] = useState<{ id: string; name: string; type: string; temperature: number | null } | null>(null);
-  const [authed, setAuthed] = useState<boolean | null>(null);
   const [content, setContent] = useState("");
   const [showOptional, setShowOptional] = useState(false);
   const [screenshot_url, setScreenshotUrl] = useState("");
@@ -53,7 +54,6 @@ function SubmitPage() {
 
   // 初次挂载：恢复草稿 + 拉对象/登录态
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
     supabase.from("objects").select("id,name,type,temperature").eq("id", objectId).maybeSingle()
       .then(({ data }) => setObj(data as any));
     try {
@@ -95,7 +95,7 @@ function SubmitPage() {
     setDraftRestored(false);
   };
 
-  if (authed === false) {
+  if (ready && !user) {
     return (
       <LoginPrompt
         title="登录后提交观察"
@@ -104,6 +104,8 @@ function SubmitPage() {
       />
     );
   }
+
+  if (!ready) return <SiteLayout><div className="container-prose py-32 text-center text-muted-foreground">同步登录状态中…</div></SiteLayout>;
 
   const runAnalysis = async () => {
     setPhase("analyzing");

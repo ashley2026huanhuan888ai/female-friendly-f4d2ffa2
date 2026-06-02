@@ -1,12 +1,12 @@
 import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { requestObject } from "@/lib/api/platform.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { LoginPrompt } from "@/components/LoginPrompt";
+import { useAuth } from "@/components/AuthProvider";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/request-object")({
@@ -17,15 +17,11 @@ export const Route = createFileRoute("/request-object")({
 function RequestPage() {
   const navigate = useNavigate();
   const submit = useServerFn(requestObject);
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const { ready, user } = useAuth();
   const [form, setForm] = useState({ requested_name: "", requested_type: "brand", reason: "" });
   const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
-  }, []);
-
-  if (authed === false) {
+  if (ready && !user) {
     return (
       <LoginPrompt
         title="登录后申请测评对象"
@@ -34,6 +30,8 @@ function RequestPage() {
       />
     );
   }
+
+  if (!ready) return <SiteLayout><div className="container-prose py-32 text-center text-muted-foreground">同步登录状态中…</div></SiteLayout>;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

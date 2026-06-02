@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { LoginPrompt } from "@/components/LoginPrompt";
+import { useAuth } from "@/components/AuthProvider";
 import { Thermometer } from "@/components/Thermometer";
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
@@ -19,19 +19,16 @@ export const Route = createFileRoute("/me")({
 function MePage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const { ready, user } = useAuth();
   const [tab, setTab] = useState<"watch" | "obs" | "notif">("watch");
   const fetchDash = useServerFn(getMyDashboard);
   const markRead = useServerFn(markNotificationsRead);
 
   useEffect(() => {
-    (async () => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { setAuthed(false); setLoading(false); return; }
-      setAuthed(true);
-      fetchDash().then((d) => setData(d)).finally(() => setLoading(false));
-    })();
-  }, [fetchDash]);
+    if (!ready) return;
+    if (!user) { setLoading(false); return; }
+    fetchDash().then((d) => setData(d)).finally(() => setLoading(false));
+  }, [ready, user, fetchDash]);
 
   const onMarkAll = async () => {
     await markRead({ data: {} });
@@ -39,7 +36,7 @@ function MePage() {
     fetchDash().then((d) => setData(d));
   };
 
-  if (authed === false) {
+  if (ready && !user) {
     return (
       <LoginPrompt
         title="登录后查看个人观察台"

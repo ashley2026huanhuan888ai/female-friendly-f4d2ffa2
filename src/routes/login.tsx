@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
+import { useAuth } from "@/components/AuthProvider";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -15,6 +16,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const { redirect } = useSearch({ from: "/login" });
   const safeRedirect = typeof redirect === "string" && redirect.startsWith("/") ? redirect : "/";
+  const { ready, user } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,26 +31,8 @@ function LoginPage() {
   }>(null);
 
   useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data: sessionData }) => {
-      if (!mounted || !sessionData.session) return;
-      supabase.auth.getUser().then(({ data }) => {
-        if (mounted && data.user) navigate({ to: safeRedirect, replace: true });
-      });
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (!session) return;
-      setTimeout(() => {
-        supabase.auth.getUser().then(({ data }) => {
-          if (data.user) navigate({ to: safeRedirect, replace: true });
-        });
-      }, 0);
-    });
-    return () => {
-      mounted = false;
-      sub.subscription.unsubscribe();
-    };
-  }, [navigate, safeRedirect]);
+    if (ready && user) navigate({ to: safeRedirect, replace: true });
+  }, [ready, user, navigate, safeRedirect]);
 
   const passwordRules = [
     { ok: password.length >= 8, label: "至少 8 位" },

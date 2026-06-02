@@ -1,8 +1,8 @@
 import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
+import { useAuth } from "@/components/AuthProvider";
 import { claimFirstAdmin, getCurrentUserAccess } from "@/lib/api/platform.functions";
 import { toast } from "sonner";
 
@@ -15,15 +15,15 @@ function AdminLayout() {
   const router = useRouter();
   const claim = useServerFn(claimFirstAdmin);
   const getAccess = useServerFn(getCurrentUserAccess);
+  const { ready, user, isAdmin } = useAuth();
   const [state, setState] = useState<"loading" | "anon" | "user" | "admin">("loading");
 
   useEffect(() => {
     let cancelled = false;
     const check = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) { if (!cancelled) setState("anon"); return; }
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { if (!cancelled) setState("anon"); return; }
+      if (!ready) return;
+      if (!user) { if (!cancelled) setState("anon"); return; }
+      if (isAdmin) { if (!cancelled) setState("admin"); return; }
       try {
         const access = await getAccess({});
         if (!cancelled) setState(access.isAdmin ? "admin" : "user");
@@ -32,11 +32,8 @@ function AdminLayout() {
       }
     };
     check();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      setTimeout(() => { void check(); }, 0);
-    });
-    return () => { cancelled = true; sub.subscription.unsubscribe(); };
-  }, [getAccess]);
+    return () => { cancelled = true; };
+  }, [ready, user, isAdmin, getAccess]);
 
   if (state === "loading") return <SiteLayout><div className="container-prose py-32 text-center text-muted-foreground">加载中…</div></SiteLayout>;
   if (state === "anon") return (
