@@ -4,7 +4,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
-import { calculateRuleMinimumTemperature } from "@/lib/temperature-rules";
+import {
+  calculateRuleMinimumTemperature,
+  detectLegalPenalty,
+  LEGAL_REGULATORY_PATTERNS,
+} from "@/lib/temperature-rules";
 
 async function assertAdmin(userId: string) {
   const { data: roles } = await supabaseAdmin
@@ -14,11 +18,8 @@ async function assertAdmin(userId: string) {
 
 type ObjectType = "brand" | "product" | "service" | "organization" | "film" | "game" | "show" | "event";
 
-const REGULATORY_KW = [
-  "罚单", "处罚", "行政处罚", "市监局", "市场监管", "市监", "监管",
-  "官方通报", "约谈", "责令整改", "法院判决", "处罚决定书", "处罚告知书",
-  "立案查处", "立案", "罚款", "没收", "公益诉讼",
-];
+// 关键词唯一来源：temperature-rules.LEGAL_REGULATORY_PATTERNS
+const REGULATORY_KW = LEGAL_REGULATORY_PATTERNS;
 
 const VERIFIED_KW = ["决定书", "告知书", "http://", "https://", "公告", "通报", "判决"];
 
