@@ -347,9 +347,9 @@ function SubmitPage() {
       <SiteLayout>
         <div className="container-prose max-w-2xl py-20">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">提示</div>
-          <h1 className="mt-3 font-serif text-2xl">分析暂时不可用</h1>
+          <h1 className="mt-3 font-serif text-2xl">提交失败</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            你的观察已经保存。管理员稍后可重新分析，结果会出现在对象页与「我的」页中。
+            网络或服务异常，观察未能保存。请重试。
           </p>
           {errorMsg && (
             <details className="mt-4 text-xs text-muted-foreground">
