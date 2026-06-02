@@ -73,10 +73,19 @@ function LoginPage() {
           <input type="email" required placeholder="邮箱"
             value={email} onChange={(e) => setEmail(e.target.value)}
             className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
-          <input type="password" required minLength={6} placeholder="密码（至少 6 位）"
+          <input type="password" required placeholder="密码"
             value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
-          <button disabled={pending} className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50">
+          {mode === "signup" && (
+            <ul className="space-y-1 rounded border border-border bg-card/50 p-3 text-xs">
+              <li className="mb-1 text-muted-foreground">密码规则：</li>
+              {passwordRules.map((r) => (
+                <li key={r.label} className={r.ok ? "text-foreground" : "text-muted-foreground"}>
+                  {r.ok ? "✓" : "○"} {r.label}
+                </li>
+              ))}
+            </ul>
+          )}
             {pending ? "处理中…" : mode === "signin" ? "登录" : "注册并登录"}
           </button>
         </form>
