@@ -88,28 +88,6 @@ function Index() {
               <span>·</span>
               <Link to="/request-object" className="underline-offset-4 hover:underline">我希望评估某个对象</Link>
             </div>
-            {!email ? (
-              <div className="mt-6 flex items-center gap-3">
-                <Link
-                  to="/login"
-                  className="border border-foreground bg-foreground px-4 py-2 text-xs text-background hover:bg-accent"
-                >
-                  登录 / 注册
-                </Link>
-              </div>
-            ) : (
-              <div className="mt-6 flex items-center gap-3 text-xs">
-                <span className="text-muted-foreground">已登录：{email}</span>
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    className="border border-accent px-3 py-1.5 text-accent hover:bg-accent hover:text-background"
-                  >
-                    管理后台
-                  </Link>
-                )}
-              </div>
-            )}
           </div>
 
           <div className="border border-border bg-card p-6">
