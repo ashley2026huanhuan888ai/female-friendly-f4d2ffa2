@@ -118,6 +118,7 @@ function LoginPage() {
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
+        try { setRemember(remember); } catch { /* ignore storage failures */ }
         if (!data.session) {
           setErrorDetail({
             title: "登录未建立会话",
