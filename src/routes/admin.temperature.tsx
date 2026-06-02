@@ -7,6 +7,7 @@ import {
   recomputeObjectTemperature,
   runCoolingCycle,
   getTemperatureExplanation,
+  scanAndFixTemperatures,
 } from "@/lib/api/temperature.functions";
 import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
 import { HeatSources } from "@/components/HeatSources";
