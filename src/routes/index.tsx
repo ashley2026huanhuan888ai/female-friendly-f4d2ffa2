@@ -23,6 +23,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [q, setQ] = useState("");
   const [summary, setSummary] = useState<any>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const fetchSummary = useServerFn(getHomeSummary);
 
   useEffect(() => {
@@ -30,6 +32,22 @@ function Index() {
       today_events: [], today_events_count: 0, heating: [], cooling: [], latest_cases: [], latest_observations: [],
     }));
   }, [fetchSummary]);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.auth.getUser();
+      setEmail(data.user?.email ?? null);
+      if (data.user) {
+        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
+        setIsAdmin(!!roles?.some((r: any) => r.role === "admin"));
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    load();
+    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   return (
     <SiteLayout>
