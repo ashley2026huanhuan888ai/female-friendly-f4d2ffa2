@@ -139,7 +139,13 @@ function SubmitPage() {
       setNewTemp((latest as any)?.temperature ?? obj?.temperature ?? null);
 
       clearDraft();
-      setPhase("done");
+      // AI 失败但观察已保存 → 进入 ai_failed 阶段，而非 error
+      if ((res as any)?.ai_failed) {
+        setErrorMsg((res as any)?.error ?? "AI 分析失败");
+        setPhase("ai_failed");
+      } else {
+        setPhase("done");
+      }
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
