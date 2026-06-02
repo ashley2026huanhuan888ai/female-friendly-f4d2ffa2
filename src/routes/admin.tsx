@@ -76,6 +76,7 @@ function AdminLayout() {
             { to: "/admin/knowledge", label: "知识引擎" },
             { to: "/admin/objects", label: "对象" },
             { to: "/admin/observations", label: "观察审核" },
+            { to: "/admin/bulk-import", label: "批量导入" },
             { to: "/admin/requests", label: "对象申请" },
             { to: "/admin/users", label: "用户信誉" },
             { to: "/admin/audit", label: "审计日志" },

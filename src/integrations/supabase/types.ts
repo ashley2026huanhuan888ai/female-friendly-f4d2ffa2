@@ -377,6 +377,7 @@ export type Database = {
           scene: string | null
           screenshot_url: string | null
           similarity_score: number | null
+          source_status: string | null
           status: Database["public"]["Enums"]["observation_status"]
           summary: string | null
           tags: Json
@@ -409,6 +410,7 @@ export type Database = {
           scene?: string | null
           screenshot_url?: string | null
           similarity_score?: number | null
+          source_status?: string | null
           status?: Database["public"]["Enums"]["observation_status"]
           summary?: string | null
           tags?: Json
@@ -441,6 +443,7 @@ export type Database = {
           scene?: string | null
           screenshot_url?: string | null
           similarity_score?: number | null
+          source_status?: string | null
           status?: Database["public"]["Enums"]["observation_status"]
           summary?: string | null
           tags?: Json

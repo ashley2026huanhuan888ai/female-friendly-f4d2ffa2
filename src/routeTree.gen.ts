@@ -33,6 +33,7 @@ import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
 import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
 import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
+import { Route as AdminBulkImportRouteImport } from './routes/admin.bulk-import'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
@@ -156,6 +157,11 @@ const AdminKnowledgeRoute = AdminKnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBulkImportRoute = AdminBulkImportRouteImport.update({
+  id: '/bulk-import',
+  path: '/bulk-import',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
+  '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
+    | '/admin/bulk-import'
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
+    | '/admin/bulk-import'
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
+    | '/admin/bulk-import'
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
@@ -525,6 +537,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminKnowledgeRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bulk-import': {
+      id: '/admin/bulk-import'
+      path: '/bulk-import'
+      fullPath: '/admin/bulk-import'
+      preLoaderRoute: typeof AdminBulkImportRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/audit': {
       id: '/admin/audit'
       path: '/audit'
@@ -545,6 +564,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminBulkImportRoute: typeof AdminBulkImportRoute
   AdminKnowledgeRoute: typeof AdminKnowledgeRoute
   AdminObjectsRoute: typeof AdminObjectsRoute
   AdminObservationsRoute: typeof AdminObservationsRoute
@@ -557,6 +577,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAuditRoute: AdminAuditRoute,
+  AdminBulkImportRoute: AdminBulkImportRoute,
   AdminKnowledgeRoute: AdminKnowledgeRoute,
   AdminObjectsRoute: AdminObjectsRoute,
   AdminObservationsRoute: AdminObservationsRoute,
