@@ -160,7 +160,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 <Link
                   key={l.to}
                   to={l.to}
-                  className="border-b border-border/50 py-3 text-foreground"
+                  className="whitespace-pre-line border-b border-border/50 py-3 text-foreground"
                 >
                   {l.label}
                 </Link>
