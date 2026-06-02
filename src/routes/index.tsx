@@ -26,7 +26,7 @@ function Index() {
 
   useEffect(() => {
     fetchSummary().then(setSummary).catch(() => setSummary({
-      today_events: [], today_events_count: 0, heating: [], cooling: [], latest_cases: [], latest_observations: [],
+      today_events: [], today_events_count: 0, heating: [], cooling: [], latest_cases: [], latest_observations: [], newest_objects: [],
     }));
   }, [fetchSummary]);
 
@@ -90,6 +90,40 @@ function Index() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* 新加入测评对象 */}
+      <section className="border-b border-border py-16">
+        <div className="container-prose">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-serif text-3xl">新加入测评对象</h2>
+            <Link to="/objects" className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
+              查看全部 →
+            </Link>
+          </div>
+          {summary?.newest_objects?.length ? (
+            <ul className="mt-8 grid gap-3 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0">
+              {summary.newest_objects.map((o: any) => (
+                <li key={o.id} className="md:border-b md:border-border">
+                  <Link to="/objects/$id" params={{ id: o.id }} className="flex items-center gap-3 py-3 hover:bg-card/60">
+                    <Thermometer value={o.temperature} size="sm" showLabel={false} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        {OBJECT_TYPE_LABELS[o.type] ?? o.type}
+                      </div>
+                      <div className="truncate font-serif">{o.name}</div>
+                    </div>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {o.observation_count ?? 0} 观察
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-6 text-sm text-muted-foreground">暂无对象。</p>
+          )}
         </div>
       </section>
 

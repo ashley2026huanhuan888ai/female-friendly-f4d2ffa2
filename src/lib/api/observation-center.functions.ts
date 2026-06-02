@@ -53,7 +53,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
     const since24h = new Date(Date.now() - 86400_000).toISOString();
     const since7d = new Date(Date.now() - 7 * 86400_000).toISOString();
 
-    const [todayEvents, recentEvents, latestCases, latestObs] = await Promise.all([
+    const [todayEvents, recentEvents, latestCases, latestObs, newestObjs] = await Promise.all([
       supabaseAdmin.from("temperature_events" as never)
         .select("object_id, delta, temperature_after, reason, created_at")
         .gte("created_at", since24h)
@@ -69,7 +69,10 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         .select("id, object_id, summary, evidence_level, created_at")
         .eq("status", "approved")
         .order("created_at", { ascending: false }).limit(8),
-
+      supabaseAdmin.from("objects")
+        .select("id, name, type, temperature, observation_count, created_at")
+        .eq("status", "published").eq("hidden", false)
+        .order("created_at", { ascending: false }).limit(8),
     ]);
 
     const events7d = (recentEvents.data ?? []) as Array<{ object_id: string; delta: number }>;
@@ -110,6 +113,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         ...o,
         object: oMap.get(o.object_id) ?? null,
       })),
+      newest_objects: newestObjs.data ?? [],
     };
   });
 
