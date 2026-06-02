@@ -26,7 +26,7 @@ function Index() {
 
   useEffect(() => {
     fetchSummary().then(setSummary).catch(() => setSummary({
-      today_events: [], today_events_count: 0, heating: [], cooling: [], latest_cases: [], latest_observations: [],
+      today_events: [], today_events_count: 0, heating: [], cooling: [], latest_cases: [], latest_observations: [], newest_objects: [],
     }));
   }, [fetchSummary]);
 
