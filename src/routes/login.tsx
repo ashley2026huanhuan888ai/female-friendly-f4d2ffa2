@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useAuth } from "@/components/AuthProvider";
 import { toast } from "sonner";
+import { setRemember, consumeExpiredNotice } from "@/lib/remember-login";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({ redirect: (s.redirect as string) || "/" }),
