@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [unread, setUnread] = useState(0);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const sessionUser = sessionData.session?.user ?? null;
     setUser(sessionUser);
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       setUnread(0);
     }
-  };
+  }, [getAccess]);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [refresh]);
 
   const value = useMemo<AuthContextValue>(() => ({
     ready,
