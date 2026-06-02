@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useAuth } from "@/components/AuthProvider";
 
 const PRIMARY_NAV = [
@@ -21,7 +21,7 @@ const SECONDARY_NAV = [
 ] as const;
 
 export function SiteLayout({ children }: { children: ReactNode }) {
-  const { ready: authReady, email, isAdmin, unread } = useAuth();
+  const { ready: authReady, email, isAdmin, unread, signOut: authSignOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   
   const router = useRouter();
@@ -32,7 +32,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   }, [router.state.location.pathname]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await authSignOut();
     router.invalidate();
   };
 

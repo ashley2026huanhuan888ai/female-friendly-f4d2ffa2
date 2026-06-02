@@ -3,6 +3,12 @@ import type { User } from "@supabase/supabase-js";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentUserAccess } from "@/lib/api/platform.functions";
+import {
+  clearRemember,
+  getRememberPref,
+  isRememberExpired,
+  markExpiredNotice,
+} from "@/lib/remember-login";
 
 type AuthContextValue = {
   ready: boolean;
@@ -11,9 +17,34 @@ type AuthContextValue = {
   isAdmin: boolean;
   unread: number;
   refresh: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+async function enforceExpiry(): Promise<boolean> {
+  // returns true if signed out due to expiry / no-remember
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) return false;
+    const remembered = getRememberPref();
+    if (!remembered) {
+      // user did not choose to be remembered; drop any persisted session
+      await supabase.auth.signOut();
+      clearRemember();
+      return true;
+    }
+    if (isRememberExpired()) {
+      await supabase.auth.signOut();
+      clearRemember();
+      markExpiredNotice();
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const getAccess = useServerFn(getCurrentUserAccess);
@@ -51,13 +82,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
+    (async () => {
+      const expired = await enforceExpiry();
+      if (cancelled) return;
+      if (expired) {
+        setUser(null);
+        setReady(true);
+        return;
+      }
+      const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       const sessionUser = data.session?.user ?? null;
       setUser(sessionUser);
       setReady(true);
       if (sessionUser) void refresh();
-    });
+    })();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return;
       setUser(session?.user ?? null);
@@ -75,6 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
+  const signOut = useCallback(async () => {
+    clearRemember();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => ({
     ready,
     user,
@@ -82,7 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     unread,
     refresh,
-  }), [ready, user, isAdmin, unread]);
+    signOut,
+  }), [ready, user, isAdmin, unread, refresh, signOut]);
+
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
