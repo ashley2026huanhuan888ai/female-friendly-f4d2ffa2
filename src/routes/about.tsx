@@ -65,7 +65,7 @@ function About() {
 
         <Section title="硬规则">
           <ul className="space-y-3 text-sm">
-            <li>· <strong>用户不能直接创建评估对象</strong>。只能选择已有对象或通过「<Link to="/request-object" className="underline">我希望评估</Link>」申请。</li>
+            <li>· <strong>用户不能直接创建评估对象</strong>。只能选择已有对象或通过「<Link to="/request-object" className="underline">增加新测评对象</Link>」申请。</li>
             <li>· <strong>不采用投票机制</strong>。无点赞、点踩、星级、用户投票。AI 仅依据内容质量分析。</li>
             <li>· <strong>评论数量不直接影响温度</strong>。温度由证据强度、标签多样性、议题集中度决定。</li>
           </ul>
