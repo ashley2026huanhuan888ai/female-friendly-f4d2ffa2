@@ -16,6 +16,7 @@ type Obj = {
   id: string; name: string; type: string; temperature: number;
   observation_count: number; frozen: boolean; hidden: boolean;
   merged_into: string | null; category: string | null;
+  is_public_preview?: boolean;
 };
 
 function ObjectsAdmin() {
