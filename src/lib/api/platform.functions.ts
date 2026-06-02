@@ -542,28 +542,22 @@ export const recomputeTemperature = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { data: before } = await supabaseAdmin
+      .from("objects").select("temperature").eq("id", data.object_id).single();
+    // 唯一入口；手动温度作为 admin floor 传入，规则地板永远不被绕过
+    const r = await recomputeObjectWithEngine(
+      data.object_id,
+      data.manual_temperature !== undefined ? "manual_admin" : "recompute",
+      null, context.userId,
+      { adminMinimum: data.manual_temperature ?? null },
+    );
+    if (!r) throw new Error("对象不存在或已冻结");
     if (data.manual_temperature !== undefined) {
-      const { data: before } = await supabaseAdmin
-        .from("objects").select("temperature").eq("id", data.object_id).single();
-      // 先重算以拿到 AI / 规则最低温度
-      const aiT = await recomputeObjectInternal(data.object_id);
-      const { data: cur } = await supabaseAdmin
-        .from("objects").select("temperature").eq("id", data.object_id).single();
-      const ruleAndAi = Number(cur?.temperature) || Number(aiT) || 24;
-      const finalT = Math.max(ruleAndAi, data.manual_temperature);
-      await supabaseAdmin.from("objects").update({ temperature: finalT })
-        .eq("id", data.object_id);
-      await supabaseAdmin.from("analysis_logs").insert({
-        object_id: data.object_id,
-        snapshot: { manual: true, admin_temperature: data.manual_temperature, ai_or_rule: ruleAndAi, final: finalT },
-      });
       await writeAuditLog(context.userId, "manual_temperature", "object", data.object_id,
-        before, { temperature: finalT, admin_input: data.manual_temperature }, "管理员手动覆盖（受规则最低温度约束）");
-      return { temperature: finalT };
+        before, { temperature: r.temperature, admin_input: data.manual_temperature },
+        "管理员手动覆盖（受规则最低温度约束）");
     }
-    const t = await recomputeObjectInternal(data.object_id);
-    if (t === null) throw new Error("对象不存在或已冻结");
-    return { temperature: t };
+    return { temperature: r.temperature };
   });
 
 // ===== 冻结 / 解冻对象温度 =====
