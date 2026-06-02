@@ -11,7 +11,7 @@ import {
 } from "@/lib/temperature";
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
 import { detectTags, detectEvidenceA } from "@/lib/api/bulk-import.functions";
-import { calculateRuleMinimumTemperature } from "@/lib/temperature-rules";
+import { calculateRuleMinimumTemperature, detectLegalPenalty } from "@/lib/temperature-rules";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
@@ -363,51 +363,12 @@ export const submitObservation = createServerFn({ method: "POST" })
       throw new Error("24 小时内最多提交 3 条观察");
     }
 
-    // 2-4. 并行：AI 风险审查 / AI 结构化分析 / 查重候选 / 用户档案
-    const [risk, a, existingRes, profileRes] = await Promise.all([
-      callAIRiskCheck(data.content),
-      callAIAnalyze(data.content, data.scene ?? null, data.screenshot_url ?? null, data.reference_url ?? null),
-      supabaseAdmin
-        .from("observations")
-        .select("id, cleaned_content, content")
-        .eq("object_id", data.object_id)
-        .eq("status", "approved")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabaseAdmin.from("profiles").select("auto_approve").eq("id", userId).maybeSingle(),
-    ]);
+    // 2. 法律强证据预扫描（独立于 AI，保证 AI 失败也有兜底）
+    const hasLegalPenalty = detectLegalPenalty(data.content);
+    const LEGAL_FALLBACK_TAGS = ["女性物化", "性别歧视营销", "低俗擦边营销"];
 
-    // 3. 简单相似度查重（2-gram Jaccard >= 0.8）
-    let duplicate_of: string | null = null;
-    let similarity_score: number | null = null;
-    const existing = existingRes.data;
-    if (existing?.length) {
-      const norm = (s: string) => new Set(s.toLowerCase().replace(/[\s\p{P}]+/gu, "").match(/.{1,2}/g) ?? []);
-      const aSet = norm(data.content);
-      for (const e of existing) {
-        const b = norm(e.cleaned_content || e.content || "");
-        if (b.size === 0) continue;
-        let inter = 0;
-        aSet.forEach((x) => { if (b.has(x)) inter++; });
-        const jac = inter / (aSet.size + b.size - inter);
-        if (jac > (similarity_score ?? 0)) { similarity_score = jac; duplicate_of = e.id; }
-      }
-      if ((similarity_score ?? 0) < 0.8) { duplicate_of = null; }
-    }
-
-    const impact = computeImpact(a.tags, a.evidence_level, a.confidence);
-
-    // 5. 自动通过判定
-    const profile = profileRes.data;
-
-    const canAuto =
-      profile?.auto_approve === true &&
-      risk.risk_level === "low" &&
-      !duplicate_of &&
-      a.evidence_level !== "D";
-    const status = canAuto ? "approved" : "pending";
-
-    const { data: inserted, error } = await supabaseAdmin
+    // 3. 先 INSERT observation（必须先成功，AI 失败也不丢数据）
+    const { data: inserted, error: insErr } = await supabaseAdmin
       .from("observations")
       .insert({
         object_id: data.object_id,
@@ -416,48 +377,156 @@ export const submitObservation = createServerFn({ method: "POST" })
         scene: data.scene ?? null,
         screenshot_url: data.screenshot_url ?? null,
         reference_url: data.reference_url ?? null,
-        cleaned_content: a.cleaned_content,
-        facts: a.facts,
-        summary: a.summary,
-        evidence_level: a.evidence_level,
-        tags: a.tags,
-        confidence: a.confidence,
-        impact_score: impact,
-        status,
-        risk_level: risk.risk_level,
-        risk_reasons: risk.reasons,
-        duplicate_of,
-        similarity_score,
-        principles_matched: a.principles_matched ?? [],
-        cases_cited: a.cases_cited ?? [],
-        explanation: a.explanation ?? null,
+        status: "pending",
+        evidence_level: hasLegalPenalty ? "A" : null,
+        tags: hasLegalPenalty ? LEGAL_FALLBACK_TAGS : [],
+        risk_level: hasLegalPenalty ? "high" : "low",
+        confidence: 0,
+        impact_score: 0,
+        admin_note: hasLegalPenalty ? "法律强证据预标注（待 AI 复核）" : null,
       } as never)
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (insErr) throw new Error(insErr.message);
+    const observationId = inserted.id;
 
-    // 自动通过则立即重算温度
-    if (status === "approved") {
+    // 4. AI 分析 + 查重 + 自动通过判定（全部包在 try/catch，绝不抛错）
+    let aiFailed = false;
+    let aiError: string | null = null;
+    let finalStatus: "pending" | "approved" = "pending";
+    let finalEvidence: "A" | "B" | "C" | "D" | null = hasLegalPenalty ? "A" : null;
+    let finalTags: string[] = hasLegalPenalty ? [...LEGAL_FALLBACK_TAGS] : [];
+    let finalRisk: "low" | "medium" | "high" = hasLegalPenalty ? "high" : "low";
+    let finalSummary: string | null = null;
+    let finalReason: string | null = null;
+    let finalImpact = 0;
+    let finalConfidence = 0;
+    let duplicate_of: string | null = null;
+    let similarity_score: number | null = null;
+
+    try {
+      const [risk, a, existingRes, profileRes] = await Promise.all([
+        callAIRiskCheck(data.content),
+        callAIAnalyze(data.content, data.scene ?? null, data.screenshot_url ?? null, data.reference_url ?? null),
+        supabaseAdmin
+          .from("observations")
+          .select("id, cleaned_content, content")
+          .eq("object_id", data.object_id)
+          .eq("status", "approved")
+          .neq("id", observationId)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabaseAdmin.from("profiles").select("auto_approve").eq("id", userId).maybeSingle(),
+      ]);
+
+      // 查重
+      const existing = existingRes.data;
+      if (existing?.length) {
+        const norm = (s: string) => new Set(s.toLowerCase().replace(/[\s\p{P}]+/gu, "").match(/.{1,2}/g) ?? []);
+        const aSet = norm(data.content);
+        for (const e of existing) {
+          const b = norm(e.cleaned_content || e.content || "");
+          if (b.size === 0) continue;
+          let inter = 0;
+          aSet.forEach((x) => { if (b.has(x)) inter++; });
+          const jac = inter / (aSet.size + b.size - inter);
+          if (jac > (similarity_score ?? 0)) { similarity_score = jac; duplicate_of = e.id; }
+        }
+        if ((similarity_score ?? 0) < 0.8) duplicate_of = null;
+      }
+
+      // 法律 fallback 合并：取更强者
+      const evidenceOrder = { A: 4, B: 3, C: 2, D: 1 } as const;
+      const mergedEv: "A" | "B" | "C" | "D" =
+        hasLegalPenalty || evidenceOrder[a.evidence_level] >= evidenceOrder[(finalEvidence ?? "D") as "A"|"B"|"C"|"D"]
+          ? (hasLegalPenalty ? "A" : a.evidence_level)
+          : (finalEvidence as "A" | "B" | "C" | "D");
+      const mergedTags = Array.from(new Set([...(a.tags ?? []), ...(hasLegalPenalty ? LEGAL_FALLBACK_TAGS : [])]));
+      const riskOrder = { low: 1, medium: 2, high: 3 } as const;
+      const mergedRisk: "low" | "medium" | "high" =
+        riskOrder[risk.risk_level] >= riskOrder[finalRisk] ? risk.risk_level : finalRisk;
+
+      finalEvidence = mergedEv;
+      finalTags = mergedTags;
+      finalRisk = mergedRisk;
+      finalSummary = a.summary;
+      finalReason = a.reason;
+      finalConfidence = a.confidence;
+      finalImpact = computeImpact(mergedTags, mergedEv, a.confidence);
+
+      const profile = profileRes.data;
+      const canAuto =
+        profile?.auto_approve === true &&
+        mergedRisk === "low" &&
+        !duplicate_of &&
+        mergedEv !== "D";
+      finalStatus = canAuto ? "approved" : "pending";
+
+      const { error: updErr } = await supabaseAdmin
+        .from("observations")
+        .update({
+          cleaned_content: a.cleaned_content,
+          facts: a.facts,
+          summary: a.summary,
+          evidence_level: mergedEv,
+          tags: mergedTags,
+          confidence: a.confidence,
+          impact_score: finalImpact,
+          status: finalStatus,
+          risk_level: mergedRisk,
+          risk_reasons: risk.reasons,
+          duplicate_of,
+          similarity_score,
+          principles_matched: a.principles_matched ?? [],
+          cases_cited: a.cases_cited ?? [],
+          explanation: a.explanation ?? null,
+          admin_note: hasLegalPenalty ? "法律强证据（AI 已分析）" : null,
+        } as never)
+        .eq("id", observationId);
+      if (updErr) throw new Error(updErr.message);
+
+      if (finalStatus === "approved") {
+        void recomputeObjectInternal(data.object_id).catch(() => {});
+        await supabaseAdmin.rpc("apply_reputation_delta", {
+          _user: userId, _delta: data.reference_url ? 10 : 5,
+          _reason: "auto_approve", _obs: observationId,
+        });
+      }
+    } catch (aiErr: unknown) {
+      aiFailed = true;
+      aiError = aiErr instanceof Error ? aiErr.message : String(aiErr);
+      // 写入失败原因，保留 step 3 的预标注 fallback
+      await supabaseAdmin
+        .from("observations")
+        .update({
+          admin_note: hasLegalPenalty
+            ? `法律强证据预标注（AI 分析失败: ${aiError}）`
+            : `AI 分析失败: ${aiError}`,
+        } as never)
+        .eq("id", observationId);
+    }
+
+    // 5. 法律强证据：无论 AI 成败，触发一次温度重算（让规则地板立即生效）
+    if (hasLegalPenalty) {
       void recomputeObjectInternal(data.object_id).catch(() => {});
-      await supabaseAdmin.rpc("apply_reputation_delta", {
-        _user: userId, _delta: data.reference_url ? 10 : 5,
-        _reason: "auto_approve", _obs: inserted.id,
-      });
     }
 
     return {
-      id: inserted.id,
-      status,
-      risk_level: risk.risk_level,
-      risk_reasons: risk.reasons,
+      id: observationId,
+      status: finalStatus,
+      ai_failed: aiFailed,
+      error: aiError,
+      has_legal_penalty: hasLegalPenalty,
+      risk_level: finalRisk,
+      risk_reasons: [] as string[],
       duplicate_of,
       similarity_score,
-      evidence_level: a.evidence_level,
-      tags: a.tags,
-      impact_score: impact,
-      confidence: a.confidence,
-      summary: a.summary,
-      reason: a.reason,
+      evidence_level: finalEvidence,
+      tags: finalTags,
+      impact_score: finalImpact,
+      confidence: finalConfidence,
+      summary: finalSummary,
+      reason: finalReason,
       limit_info: limit,
     };
   });

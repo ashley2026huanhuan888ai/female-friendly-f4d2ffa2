@@ -151,3 +151,34 @@ describe("强证据通过 tags 也能触发 >=90 地板", () => {
   });
 });
 
+describe("回归：绝味鸭脖案例", () => {
+  it("法律强证据内容 → 地板 ≥ 90 且 has_regulatory_penalty=true", () => {
+    const r = aggregateRuleMinimum([
+      {
+        tags: ["女性物化", "性别歧视营销", "低俗擦边营销"],
+        evidence_level: "A",
+        content:
+          "长工商案字〔2017〕91号 责令停止发布违法广告 罚款60万元 违反《广告法》第9条第7项 处罚机关 长沙市工商行政管理局",
+        summary: null,
+        cleaned_content: null,
+      },
+    ]);
+    expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(LEGAL_PENALTY_MIN_TEMPERATURE);
+    expect(r.has_regulatory_penalty).toBe(true);
+  });
+
+  it("厌女语义关键词无法律词 → 至少触发中等地板（≥45）", () => {
+    const r = aggregateRuleMinimum([
+      {
+        tags: [],
+        evidence_level: "C",
+        content: "为了儿子 / 为了丈夫 / 疯姐姐 奇观化",
+        summary: null,
+        cleaned_content: null,
+      },
+    ]);
+    expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(45);
+  });
+});
+
+
