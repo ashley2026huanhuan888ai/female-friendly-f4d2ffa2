@@ -230,7 +230,11 @@ function BulkImportPage() {
             <tbody>
               {summary.results.map((r, i) => (
                 <tr key={i}>
-                  <td className="border border-border px-2 py-1">{r.object_name}</td>
+                  <td className="border border-border px-2 py-1">
+                    {r.object_id ? (
+                      <Link to="/objects/$id" params={{ id: r.object_id }} target="_blank" className="underline-offset-2 hover:underline">{r.object_name}</Link>
+                    ) : r.object_name}
+                  </td>
                   <td className="border border-border px-2 py-1 font-mono">{r.final_temperature ?? "—"}</td>
                   <td className="border border-border px-2 py-1">{r.triggered_rules.join(" / ") || "—"}</td>
                   <td className="border border-border px-2 py-1">{r.evidence_level}</td>
