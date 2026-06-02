@@ -6,6 +6,7 @@ import { FeedEventCard } from "@/components/FeedEventCard";
 import { Thermometer } from "@/components/Thermometer";
 import { BANDS, OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
