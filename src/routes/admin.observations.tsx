@@ -58,14 +58,51 @@ function ObsAdmin() {
   const [busy, setBusy] = useState<string | null>(null);
   const [rejectFor, setRejectFor] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>("too_short");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchNote, setBatchNote] = useState("");
+  const [batchReason, setBatchReason] = useState<string>("too_short");
+  const [batchBusy, setBatchBusy] = useState(false);
 
   const reload = () => {
     let q = supabase.from("observations").select("*, objects(id,name)")
       .eq("status", filter).order("created_at", { ascending: false }).limit(100);
     if (risk !== "all") q = q.eq("risk_level", risk);
-    return q.then(({ data }) => setItems((data ?? []) as unknown as Obs[]));
+    return q.then(({ data }) => { setItems((data ?? []) as unknown as Obs[]); setSelected(new Set()); });
   };
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [filter, risk]);
+
+  const toggleSel = (id: string) => setSelected((s) => {
+    const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n;
+  });
+  const toggleAll = () => setSelected((s) =>
+    s.size === items.length ? new Set() : new Set(items.map((i) => i.id))
+  );
+
+  const runBatch = async (action: "approve" | "reject") => {
+    if (selected.size === 0) return;
+    if (!confirm(`确认批量${action === "approve" ? "通过" : "驳回"} ${selected.size} 条？`)) return;
+    setBatchBusy(true);
+    const ids = [...selected];
+    const objIds = new Set<string>();
+    let ok = 0, fail = 0;
+    for (const id of ids) {
+      const obj = items.find((i) => i.id === id);
+      try {
+        await review({ data: {
+          id, action,
+          rejection_reason: action === "reject" ? (batchReason as never) : undefined,
+          note: batchNote || undefined,
+        } });
+        if (action === "approve" && obj) objIds.add(obj.object_id);
+        ok++;
+      } catch { fail++; }
+    }
+    for (const oid of objIds) recompute({ data: { object_id: oid } }).catch(() => {});
+    setBatchBusy(false);
+    toast.success(`批量${action === "approve" ? "通过" : "驳回"}完成：${ok} 成功 / ${fail} 失败`);
+    setBatchNote("");
+    reload();
+  };
 
   const onApprove = async (id: string, objectId: string) => {
     try {
@@ -137,10 +174,42 @@ function ObsAdmin() {
         ))}
       </div>
 
+      {filter === "pending" && items.length > 0 && (
+        <div className="mt-4 border border-dashed border-border bg-muted/20 p-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <label className="flex items-center gap-1.5">
+              <input type="checkbox" checked={selected.size === items.length} onChange={toggleAll} />
+              <span>全选（已选 {selected.size}/{items.length}）</span>
+            </label>
+            <span className="ml-2 text-muted-foreground">驳回原因：</span>
+            <select value={batchReason} onChange={(e) => setBatchReason(e.target.value)}
+              className="border border-border bg-background px-2 py-1">
+              {REJECTION_REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}（{r.rep}）</option>)}
+            </select>
+            <input
+              type="text" value={batchNote} onChange={(e) => setBatchNote(e.target.value)}
+              placeholder="审核备注（可选，应用于全部选中项）"
+              className="min-w-[200px] flex-1 border border-border bg-background px-2 py-1"
+            />
+            <button onClick={() => runBatch("approve")} disabled={batchBusy || selected.size === 0}
+              className="border border-foreground bg-foreground px-3 py-1 text-background disabled:opacity-40">
+              批量通过
+            </button>
+            <button onClick={() => runBatch("reject")} disabled={batchBusy || selected.size === 0}
+              className="border border-destructive bg-destructive/10 px-3 py-1 text-destructive disabled:opacity-40">
+              批量驳回
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8 space-y-6">
         {items.map((o) => (
           <article key={o.id} className="border border-border bg-card p-5">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {filter === "pending" && (
+                <input type="checkbox" className="mr-1" checked={selected.has(o.id)} onChange={() => toggleSel(o.id)} />
+              )}
               <span className="font-medium text-foreground">{o.objects?.name ?? "—"}</span>
               <span>·</span>
               <span className={`border px-1.5 py-0.5 ${riskColor(o.risk_level)}`}>
