@@ -87,6 +87,7 @@ function ObjectsAdmin() {
               </select>
               {o.frozen && <span className="border border-accent px-1.5 py-0.5 text-[10px] text-accent">冻结</span>}
               {o.hidden && <span className="border border-temp-warm px-1.5 py-0.5 text-[10px] text-temp-warm">隐藏</span>}
+              {o.is_public_preview && <span className="border border-accent px-1.5 py-0.5 text-[10px] text-accent">公开预览</span>}
               {o.merged_into && <span className="border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">已合并</span>}
               <span className="ml-auto text-sm tabular-nums">{Number(o.temperature).toFixed(0)}°</span>
               <span className="text-xs text-muted-foreground">· {o.observation_count} 条</span>
