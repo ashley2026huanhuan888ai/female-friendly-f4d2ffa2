@@ -10,7 +10,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/request-object")({
-  head: () => ({ meta: [{ title: "我希望评估 · 女性友好体验测评" }] }),
+  head: () => ({ meta: [{ title: "增加新测评对象 · 女性友好体验测评" }] }),
   component: RequestPage,
 });
 
