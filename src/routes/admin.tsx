@@ -32,7 +32,9 @@ function AdminLayout() {
       }
     };
     check();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => { void check(); });
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      setTimeout(() => { void check(); }, 0);
+    });
     return () => { cancelled = true; sub.subscription.unsubscribe(); };
   }, [getAccess]);
 
