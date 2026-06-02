@@ -47,11 +47,53 @@ function SubmitPage() {
   const [newTemp, setNewTemp] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
 
+  const draftKey = `submit-draft:${objectId}`;
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+
+  // 初次挂载：恢复草稿 + 拉对象/登录态
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
     supabase.from("objects").select("id,name,type,temperature").eq("id", objectId).maybeSingle()
       .then(({ data }) => setObj(data as any));
-  }, [objectId]);
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d?.content) setContent(d.content);
+        if (d?.screenshot_url) setScreenshotUrl(d.screenshot_url);
+        if (d?.reference_url) setReferenceUrl(d.reference_url);
+        if (d?.screenshot_url || d?.reference_url) setShowOptional(true);
+        if (d?.content || d?.screenshot_url || d?.reference_url) setDraftRestored(true);
+      }
+    } catch { /* ignore */ }
+  }, [objectId, draftKey]);
+
+  // 自动保存草稿（防抖 600ms）
+  useEffect(() => {
+    if (phase !== "idle") return;
+    const hasAny = content || screenshot_url || reference_url;
+    const t = setTimeout(() => {
+      try {
+        if (hasAny) {
+          localStorage.setItem(draftKey, JSON.stringify({
+            content, screenshot_url, reference_url, ts: Date.now(),
+          }));
+          setDraftSavedAt(Date.now());
+        } else {
+          localStorage.removeItem(draftKey);
+          setDraftSavedAt(null);
+        }
+      } catch { /* ignore */ }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [content, screenshot_url, reference_url, phase, draftKey]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
+    setDraftSavedAt(null);
+    setDraftRestored(false);
+  };
 
   if (authed === false) {
     return (
