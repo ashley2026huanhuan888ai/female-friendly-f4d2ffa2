@@ -41,7 +41,7 @@ function SubmitPage() {
   const [screenshot_url, setScreenshotUrl] = useState("");
   const [reference_url, setReferenceUrl] = useState("");
 
-  type Phase = "idle" | "analyzing" | "done" | "error";
+  type Phase = "idle" | "analyzing" | "done" | "ai_failed" | "error";
   const [phase, setPhase] = useState<Phase>("idle");
   const [stepIdx, setStepIdx] = useState(0);
   const [result, setResult] = useState<any>(null);
