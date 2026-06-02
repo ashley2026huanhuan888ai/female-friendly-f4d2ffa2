@@ -42,8 +42,8 @@ function RequestPage() {
     setPending(true);
     try {
       await submit({ data: { requested_name: form.requested_name, requested_type: form.requested_type as any, reason: form.reason || undefined } });
-      toast.success("申请已提交，管理员会尽快审核");
-      navigate({ to: "/" });
+      toast.success("申请已提交。对象需管理员审核创建后才会出现在首页，可在「我的」页查看进度。");
+      navigate({ to: "/me" });
     } catch (err: any) {
       toast.error(err.message);
     } finally {
