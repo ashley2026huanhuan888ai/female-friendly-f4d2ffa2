@@ -33,7 +33,7 @@ function MePage() {
   const onMarkAll = async () => {
     await markRead({ data: {} });
     toast.success("已全部标记为已读");
-    fetchDash().then((d) => setData(d));
+    fetchDash().then((d: any) => setData(d));
   };
 
   if (ready && !user) {
