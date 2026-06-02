@@ -113,6 +113,7 @@ export const getHomeSummary = createServerFn({ method: "GET" })
         ...o,
         object: oMap.get(o.object_id) ?? null,
       })),
+      newest_objects: newestObjs.data ?? [],
     };
   });
 
