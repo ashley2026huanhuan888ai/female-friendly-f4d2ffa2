@@ -587,6 +587,45 @@ export const hideObject = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ===== 设置/取消 公开预览（未登录访客可见）=====
+export const setObjectPublicPreview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ object_id: z.string().uuid(), is_public_preview: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    await supabaseAdmin.from("objects" as never)
+      .update({ is_public_preview: data.is_public_preview } as never)
+      .eq("id", data.object_id);
+    await writeAuditLog(context.userId, data.is_public_preview ? "set_public_preview" : "unset_public_preview", "object", data.object_id, null, null);
+    return { ok: true };
+  });
+
+// ===== 获取未登录访客可见的预览对象（最多 2 条）=====
+export const getPublicPreviewObjects = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { data: marked } = await supabaseAdmin
+      .from("objects")
+      .select("id, name, type, temperature, observation_count, ai_summary, is_public_preview")
+      .eq("status", "published").eq("hidden", false)
+      .eq("is_public_preview" as never, true as never)
+      .order("temperature", { ascending: false })
+      .limit(2);
+    let items = (marked ?? []) as any[];
+    if (items.length < 2) {
+      const excludeIds = items.map((i) => i.id);
+      let q = supabaseAdmin
+        .from("objects")
+        .select("id, name, type, temperature, observation_count, ai_summary, is_public_preview")
+        .eq("status", "published").eq("hidden", false)
+        .order("temperature", { ascending: false })
+        .limit(2 - items.length);
+      if (excludeIds.length) q = q.not("id", "in", `(${excludeIds.join(",")})`);
+      const { data: fill } = await q;
+      items = items.concat(fill ?? []);
+    }
+    return { items: items.slice(0, 2) };
+  });
+
 // ===== 删除对象（admin）=====
 export const deleteObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
