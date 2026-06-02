@@ -9,6 +9,10 @@ interface Breakdown {
   diversity: number;
   active_count: number;
   total_count: number;
+  ai_temperature?: number;
+  rule_minimum_temperature?: number;
+  triggered_rules?: string[];
+  has_regulatory_penalty?: boolean;
 }
 
 const ROWS: Array<{ key: keyof Breakdown; label: string; sign: 1 | -1; hint: string }> = [
