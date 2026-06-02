@@ -6,7 +6,7 @@ import { getEvidenceLibrary } from "@/lib/api/archive.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 
 export const Route = createFileRoute("/archive/evidence")({
-  head: () => ({ meta: [{ title: "证据库（A 级） · 女性体验温度" }] }),
+  head: () => ({ meta: [{ title: "证据库（A 级） · 女性友好体验测评" }] }),
   component: EvidenceLib,
 });
 

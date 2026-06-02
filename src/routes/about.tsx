@@ -6,8 +6,8 @@ import { BANDS, FEMINIST_TAGS } from "@/lib/temperature";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "关于项目 · 女性体验温度" },
-      { name: "description", content: "了解「女性体验温度」平台的方法论、温度逻辑与硬规则。" },
+      { title: "关于项目 · 女性友好体验测评" },
+      { name: "description", content: "了解「女性友好体验测评」平台的方法论、温度逻辑与硬规则。" },
     ],
   }),
   component: About,
@@ -18,12 +18,12 @@ function About() {
     <SiteLayout>
       <div className="container-prose max-w-3xl py-20">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Methodology</div>
-        <h1 className="mt-4 font-serif text-5xl text-balance">关于「女性体验温度」</h1>
+        <h1 className="mt-4 font-serif text-5xl text-balance">关于「女性友好体验测评」</h1>
 
         <Section title="项目目标">
           <p>
-            本平台收集用户对品牌、产品、服务、影视作品、企业组织、公共事件等对象的女性体验观察，
-            利用 AI 进行结构化分析，最终以「女性体验温度」呈现。温度越高，代表反馈中出现的性别偏见、
+            本平台收集用户对品牌、产品、服务、影视作品、企业组织、公共事件等对象的女性友好体验观察，
+            利用 AI 进行结构化分析，最终以「女性友好体验温度」呈现。温度越高，代表反馈中出现的性别偏见、
             女性物化、性别规训等议题越集中。
           </p>
           <p className="mt-3 text-muted-foreground">

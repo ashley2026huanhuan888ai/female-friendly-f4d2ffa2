@@ -7,7 +7,7 @@ import { claimFirstAdmin } from "@/lib/api/platform.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "管理后台 · 女性体验温度" }] }),
+  head: () => ({ meta: [{ title: "管理后台 · 女性友好体验测评" }] }),
   component: AdminLayout,
 });
 

@@ -8,7 +8,7 @@ import { submitObservation } from "@/lib/api/platform.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/submit/$objectId")({
-  head: () => ({ meta: [{ title: "提交观察 · 女性体验温度" }] }),
+  head: () => ({ meta: [{ title: "提交观察 · 女性友好体验测评" }] }),
   component: SubmitPage,
 });
 

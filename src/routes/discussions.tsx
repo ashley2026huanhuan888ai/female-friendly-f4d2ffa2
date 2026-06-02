@@ -6,7 +6,7 @@ import { Thermometer } from "@/components/Thermometer";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 
 export const Route = createFileRoute("/discussions")({
-  head: () => ({ meta: [{ title: "热门讨论 · 女性体验温度" }] }),
+  head: () => ({ meta: [{ title: "热门讨论 · 女性友好体验测评" }] }),
   component: Discussions,
 });
 
