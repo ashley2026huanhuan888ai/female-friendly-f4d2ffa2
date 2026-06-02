@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runEngine, type EngineObservation, type TagMeta, type EngineResult } from "@/lib/temperature-engine";
+import { aggregateRuleMinimum } from "@/lib/temperature-rules";
 
 async function assertAdmin(userId: string) {
   const { data: roles } = await supabaseAdmin
@@ -42,14 +43,17 @@ async function recomputeAndPersist(
 
   const { data: rows } = await supabaseAdmin
     .from("observations")
-    .select("id, evidence_level, confidence, tags, cases_cited, created_at")
+    .select("id, evidence_level, confidence, tags, cases_cited, created_at, content, summary, cleaned_content")
     .eq("object_id", object_id).eq("status", "approved")
     .order("created_at", { ascending: false });
 
-  const observations: EngineObservation[] = ((rows ?? []) as never as Array<{
+  const rawRows = (rows ?? []) as never as Array<{
     id: string; evidence_level: string | null; confidence: number | string;
     tags: unknown; cases_cited: unknown; created_at: string;
-  }>).map((o) => ({
+    content: string | null; summary: string | null; cleaned_content: string | null;
+  }>;
+
+  const observations: EngineObservation[] = rawRows.map((o) => ({
     id: o.id,
     evidence_level: o.evidence_level,
     confidence: Number(o.confidence) || 0.7,
@@ -60,11 +64,31 @@ async function recomputeAndPersist(
 
   const tagMap = await loadTagMap();
   const result = runEngine(observations, tagMap, { cooling: extraCooling });
+
+  // 严重标签 + 强证据 → 规则最低温度（AI 不能压低）
+  const ruleAgg = aggregateRuleMinimum(
+    rawRows.map((o) => ({
+      tags: Array.isArray(o.tags) ? (o.tags as string[]) : [],
+      evidence_level: o.evidence_level,
+      content: o.content,
+      summary: o.summary,
+      cleaned_content: o.cleaned_content,
+    })),
+  );
+  const aiTemperature = result.temperature;
+  const finalTemperature = Math.max(aiTemperature, ruleAgg.rule_minimum_temperature);
+  result.temperature = finalTemperature;
+  // 把规则信息塞进 breakdown 便于管理端展示
+  (result.breakdown as unknown as Record<string, unknown>).ai_temperature = aiTemperature;
+  (result.breakdown as unknown as Record<string, unknown>).rule_minimum_temperature = ruleAgg.rule_minimum_temperature;
+  (result.breakdown as unknown as Record<string, unknown>).triggered_rules = ruleAgg.triggered_rules;
+  (result.breakdown as unknown as Record<string, unknown>).has_regulatory_penalty = ruleAgg.has_regulatory_penalty;
+
   const before = Number(obj.temperature) || 24;
-  const delta = Math.round((result.temperature - before) * 10) / 10;
+  const delta = Math.round((finalTemperature - before) * 10) / 10;
 
   await supabaseAdmin.from("objects").update({
-    temperature: result.temperature,
+    temperature: finalTemperature,
     heat_sources: result.heat_sources as never,
     cooling_sources: result.cooling_sources as never,
     observation_count: result.breakdown.active_count,
@@ -72,11 +96,11 @@ async function recomputeAndPersist(
   } as never).eq("id", object_id);
 
   // 仅在温度有变化时写入事件，避免噪声
-  if (delta !== 0 || extraCooling !== 0) {
+  if (delta !== 0 || extraCooling !== 0 || ruleAgg.rule_minimum_temperature > 20) {
     await supabaseAdmin.from("temperature_events" as never).insert({
       object_id, observation_id,
-      delta, temperature_after: result.temperature,
-      reason,
+      delta, temperature_after: finalTemperature,
+      reason: ruleAgg.rule_minimum_temperature > aiTemperature ? `${reason}+rule_min` : reason,
       breakdown: result.breakdown as never,
       actor_id,
     } as never);

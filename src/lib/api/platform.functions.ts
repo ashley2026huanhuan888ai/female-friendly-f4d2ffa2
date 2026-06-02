@@ -538,15 +538,21 @@ export const recomputeTemperature = createServerFn({ method: "POST" })
     if (data.manual_temperature !== undefined) {
       const { data: before } = await supabaseAdmin
         .from("objects").select("temperature").eq("id", data.object_id).single();
-      await supabaseAdmin.from("objects").update({ temperature: data.manual_temperature })
+      // 先重算以拿到 AI / 规则最低温度
+      const aiT = await recomputeObjectInternal(data.object_id);
+      const { data: cur } = await supabaseAdmin
+        .from("objects").select("temperature").eq("id", data.object_id).single();
+      const ruleAndAi = Number(cur?.temperature) || Number(aiT) || 24;
+      const finalT = Math.max(ruleAndAi, data.manual_temperature);
+      await supabaseAdmin.from("objects").update({ temperature: finalT })
         .eq("id", data.object_id);
       await supabaseAdmin.from("analysis_logs").insert({
         object_id: data.object_id,
-        snapshot: { manual: true, temperature: data.manual_temperature },
+        snapshot: { manual: true, admin_temperature: data.manual_temperature, ai_or_rule: ruleAndAi, final: finalT },
       });
       await writeAuditLog(context.userId, "manual_temperature", "object", data.object_id,
-        before, { temperature: data.manual_temperature }, "管理员手动覆盖");
-      return { temperature: data.manual_temperature };
+        before, { temperature: finalT, admin_input: data.manual_temperature }, "管理员手动覆盖（受规则最低温度约束）");
+      return { temperature: finalT };
     }
     const t = await recomputeObjectInternal(data.object_id);
     if (t === null) throw new Error("对象不存在或已冻结");
