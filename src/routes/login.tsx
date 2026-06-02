@@ -38,9 +38,11 @@ function LoginPage() {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (!session) return;
-      supabase.auth.getUser().then(({ data }) => {
-        if (data.user) navigate({ to: safeRedirect, replace: true });
-      });
+      setTimeout(() => {
+        supabase.auth.getUser().then(({ data }) => {
+          if (data.user) navigate({ to: safeRedirect, replace: true });
+        });
+      }, 0);
     });
     return () => {
       mounted = false;
