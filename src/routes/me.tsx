@@ -104,18 +104,34 @@ function MePage() {
               <Empty hint="你还没有提交过观察。" />
             ) : (
               <ul className="divide-y divide-border border-y border-border">
-                {data.my_observations.map((o: any) => (
-                  <li key={o.id} className="py-4">
-                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      <StatusChip status={o.status} />
+                {data.my_observations.map((o: any) => {
+                  const inner = (
+                    <>
+                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <StatusChip status={o.status} />
+                        <span>{o.object?.name ?? "—"}</span>
+                        <span className="ml-auto">{new Date(o.created_at).toLocaleDateString("zh-CN")}</span>
+                      </div>
+                      <p className="mt-1 text-sm">{o.summary ?? "（暂无摘要）"}</p>
+                    </>
+                  );
+                  return (
+                    <li key={o.id}>
                       {o.object?.id ? (
-                        <Link to="/objects/$id" params={{ id: o.object.id }} className="underline-offset-2 hover:underline">{o.object.name}</Link>
-                      ) : (<span>{o.object?.name ?? "—"}</span>)}
-                      <span className="ml-auto">{new Date(o.created_at).toLocaleDateString("zh-CN")}</span>
-                    </div>
-                    <p className="mt-1 text-sm">{o.summary ?? "（暂无摘要）"}</p>
-                  </li>
-                ))}
+                        <Link
+                          to="/objects/$id"
+                          params={{ id: o.object.id }}
+                          aria-label={`查看对象详情：${o.object.name}`}
+                          className="block cursor-pointer py-4 transition-colors hover:bg-card/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60"
+                        >
+                          {inner}
+                        </Link>
+                      ) : (
+                        <div className="py-4">{inner}</div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )
           )}
