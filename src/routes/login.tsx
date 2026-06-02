@@ -200,6 +200,15 @@ function LoginPage() {
           {mode === "signup" && (
             <p className="text-xs text-muted-foreground">密码至少 8 位。建议包含字母和数字。</p>
           )}
+          <label className="flex cursor-pointer select-none items-center gap-2 py-1 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRememberState(e.target.checked)}
+              className="h-4 w-4 cursor-pointer accent-foreground"
+            />
+            <span>保持登录 30 天</span>
+          </label>
           <button disabled={pending} className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50">
             {pending ? "处理中…" : mode === "signin" ? "登录" : "注册并登录"}
           </button>
