@@ -229,7 +229,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         <div className="container-prose space-y-6 text-xs text-muted-foreground">
           <nav className="flex flex-wrap gap-x-5 gap-y-2">
             {[...PRIMARY_NAV, ...SECONDARY_NAV].map((l) => (
-              <Link key={l.to} to={l.to} className="hover:text-foreground">
+              <Link key={l.to} to={l.to} className="whitespace-pre-line hover:text-foreground">
                 {l.label}
               </Link>
             ))}
