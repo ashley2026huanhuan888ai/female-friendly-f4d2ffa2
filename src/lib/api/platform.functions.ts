@@ -739,7 +739,8 @@ export const reviewObservation = createServerFn({ method: "POST" })
     await writeAuditLog(context.userId, `review_${data.action}`, "observation", data.id,
       { status: before.status }, { status, rejection_reason: data.rejection_reason }, data.note ?? null);
 
-    if (data.action === "approve") {
+    // approve 后或"曾经 approved → reject"都需要重算
+    if (data.action === "approve" || before.status === "approved") {
       void recomputeObjectInternal(before.object_id).catch(() => {});
     }
     return { object_id: before.object_id };
