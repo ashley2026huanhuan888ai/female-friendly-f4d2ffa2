@@ -25,6 +25,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const [, setRep] = useState<number | null>(null);
   const [unread, setUnread] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
