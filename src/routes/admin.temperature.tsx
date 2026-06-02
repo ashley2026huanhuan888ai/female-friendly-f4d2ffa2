@@ -25,6 +25,7 @@ function TemperatureCenter() {
   const recompute = useServerFn(recomputeObjectTemperature);
   const cool = useServerFn(runCoolingCycle);
   const fetchExpl = useServerFn(getTemperatureExplanation);
+  const scan = useServerFn(scanAndFixTemperatures);
 
   const [data, setData] = useState<{
     top_hot: Row[]; controversial: Row[]; top_heat_30d: Row[]; top_cool_30d: Row[];
