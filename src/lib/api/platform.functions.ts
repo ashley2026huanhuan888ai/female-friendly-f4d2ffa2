@@ -962,6 +962,66 @@ export const requestObject = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ===== 搜索页"申请建立对象"：含查重 =====
+function normalizeName(s: string): string {
+  return s
+    .replace(/[\u3000\s]+/g, "")
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .toLowerCase()
+    .trim();
+}
+
+export const requestObjectFromSearch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({
+      name: z.string().trim().min(1).max(120),
+      type: z.enum(["brand", "product", "service", "organization", "film", "game", "show", "event"]).optional(),
+      reason: z.string().max(500).optional(),
+    }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const name = data.name.trim();
+    const norm = normalizeName(name);
+
+    // 查重：objects（取小批量后在内存中 normalize 比对）
+    const { data: objs } = await supabaseAdmin
+      .from("objects")
+      .select("id,name")
+      .ilike("name", `%${name}%`)
+      .limit(50);
+    const hit = (objs ?? []).find((o) => normalizeName(o.name) === norm);
+    if (hit) {
+      return { status: "object_exists" as const, objectId: hit.id, name: hit.name };
+    }
+
+    // 查重：object_requests pending
+    const { data: reqs } = await supabaseAdmin
+      .from("object_requests")
+      .select("id,requested_name,status")
+      .eq("status", "pending")
+      .ilike("requested_name", `%${name}%`)
+      .limit(50);
+    const dup = (reqs ?? []).find((r) => normalizeName(r.requested_name) === norm);
+    if (dup) {
+      return { status: "request_exists" as const, requestId: dup.id, name: dup.requested_name };
+    }
+
+    const { data: inserted, error } = await supabaseAdmin
+      .from("object_requests")
+      .insert({
+        requested_name: name,
+        requested_type: data.type ?? "brand",
+        reason: data.reason ?? "用户在搜索时未找到该对象，因此申请建立。",
+        requester_id: userId,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { status: "created" as const, requestId: inserted!.id, name };
+  });
+
 // ===== 首位管理员自助声明 =====
 export const claimFirstAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
