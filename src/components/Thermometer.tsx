@@ -4,9 +4,10 @@ interface Props {
   value: number;
   size?: "sm" | "md" | "lg";
   showLabel?: boolean;
+  unmeasured?: boolean;
 }
 
-export function Thermometer({ value, size = "md", showLabel = true }: Props) {
+export function Thermometer({ value, size = "md", showLabel = true, unmeasured = false }: Props) {
   const v = Math.max(20, Math.min(100, value));
   const pct = ((v - 20) / 80) * 100;
   const band = bandOf(v);
@@ -16,6 +17,25 @@ export function Thermometer({ value, size = "md", showLabel = true }: Props) {
     md: { w: 40, h: 180, num: "text-2xl" },
     lg: { w: 56, h: 260, num: "text-4xl" },
   }[size];
+
+  if (unmeasured) {
+    return (
+      <div className="flex items-center gap-4">
+        <div
+          className="flex items-center justify-center rounded-full border border-dashed border-border bg-subtle text-[10px] uppercase tracking-wider text-muted-foreground"
+          style={{ width: dims.w, height: dims.h, writingMode: "vertical-rl" }}
+        >
+          待测评
+        </div>
+        {showLabel && (
+          <div className="flex flex-col">
+            <div className={`font-serif ${dims.num} text-muted-foreground`}>—</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">暂无温度</div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-4">

@@ -102,7 +102,7 @@ function ObjectDetail() {
           </div>
 
           <div className="flex flex-col items-center md:items-end">
-            <Thermometer value={obj.temperature} size="lg" />
+            <Thermometer value={obj.temperature} size="lg" unmeasured={obj.observation_count === 0} />
             <div className="mt-4 text-right text-xs text-muted-foreground">
               共 {obj.observation_count} 条已审核观察
             </div>

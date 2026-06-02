@@ -33,7 +33,7 @@ export function ObjectCard({ id, name, type, temperature, observation_count, ai_
             {observation_count} 条观察
           </div>
         </div>
-        <Thermometer value={temperature} size="sm" />
+        <Thermometer value={temperature} size="sm" unmeasured={observation_count === 0} />
       </div>
     </Link>
   );

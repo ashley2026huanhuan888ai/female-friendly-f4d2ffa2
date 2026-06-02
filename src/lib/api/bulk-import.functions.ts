@@ -39,7 +39,7 @@ const TAG_RULES: Array<{ tag: string; patterns: RegExp[] }> = [
   { tag: "伪女性友好", patterns: [/独立女性.*买/, /女王节/, /伪赋权/] },
 ];
 
-function detectTags(text: string): string[] {
+export function detectTags(text: string): string[] {
   const found = new Set<string>();
   for (const r of TAG_RULES) {
     if (r.patterns.some((p) => p.test(text))) found.add(r.tag);
@@ -51,7 +51,7 @@ function detectTags(text: string): string[] {
   return [...found];
 }
 
-function detectEvidenceA(text: string): boolean {
+export function detectEvidenceA(text: string): boolean {
   return REGULATORY_KW.some((kw) => text.includes(kw));
 }
 

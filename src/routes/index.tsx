@@ -107,7 +107,7 @@ function Index() {
               {summary.newest_objects.map((o: any) => (
                 <li key={o.id} className="md:border-b md:border-border">
                   <Link to="/objects/$id" params={{ id: o.id }} className="flex items-center gap-3 py-3 hover:bg-card/60">
-                    <Thermometer value={o.temperature} size="sm" showLabel={false} />
+                    <Thermometer value={o.temperature} size="sm" showLabel={false} unmeasured={(o.observation_count ?? 0) === 0} />
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                         {OBJECT_TYPE_LABELS[o.type] ?? o.type}
