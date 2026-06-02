@@ -20,6 +20,8 @@ function SubmitPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [form, setForm] = useState({ content: "", scene: "", screenshot_url: "", reference_url: "" });
   const [pending, setPending] = useState(false);
+  const [stage, setStage] = useState(0); // 0 idle, 1 校验, 2 AI分析, 3 入库, 4 完成
+  const stageLabels = ["", "正在校验内容…", "AI 正在分析与清洗…", "正在提交入库…", "已提交"];
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
