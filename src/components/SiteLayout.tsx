@@ -59,9 +59,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <Link to="/archive" className="text-muted-foreground hover:text-foreground">案例库</Link>
             <Link to="/knowledge" className="text-muted-foreground hover:text-foreground">知识引擎</Link>
             <Link to="/about" className="text-muted-foreground hover:text-foreground">关于</Link>
-            {isAdmin && (
-              <Link to="/admin" className="text-accent hover:text-accent/80">管理后台</Link>
-            )}
           </nav>
 
           <div className="flex items-center gap-3 text-sm">
