@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BackToHome } from "@/components/BackToHome";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthProvider } from "@/components/AuthProvider";
 
 function NotFoundComponent() {
   return (
@@ -107,7 +108,9 @@ function RootComponent() {
   }, [router, queryClient]);
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
