@@ -113,9 +113,29 @@ function SubmitPage() {
               placeholder="https://..." className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
           </Field>
 
-          <button disabled={pending} className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent hover:border-accent disabled:opacity-50">
-            {pending ? "AI 分析中…" : "提交观察"}
-          </button>
+          <div className="flex items-center gap-4">
+            <button disabled={pending} className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent hover:border-accent disabled:opacity-50">
+              {pending ? stageLabels[stage] || "处理中…" : "提交观察"}
+            </button>
+            {pending && (
+              <div className="flex-1">
+                <div className="h-1 w-full overflow-hidden rounded bg-border">
+                  <div
+                    className="h-full bg-foreground transition-all duration-500"
+                    style={{ width: `${(stage / 4) * 100}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                  {["校验内容", "AI 分析", "入库", "完成"].map((l, i) => (
+                    <span key={l} className={stage >= i + 1 ? "text-foreground" : ""}>
+                      {stage > i + 1 ? "✓ " : stage === i + 1 ? "● " : "○ "}{l}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">通常需 5–15 秒，请勿关闭页面。</div>
+              </div>
+            )}
+          </div>
         </form>
       </div>
     </SiteLayout>
