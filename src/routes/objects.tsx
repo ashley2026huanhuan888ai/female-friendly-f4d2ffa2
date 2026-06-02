@@ -39,6 +39,25 @@ function AllObjects() {
     query.limit(60).then(({ data }) => setItems(data ?? []));
   }, [q, type, sort, isGuest]);
 
+  if (isGuest) {
+    return (
+      <SiteLayout>
+        <section className="border-b border-border">
+          <div className="container-prose py-12">
+            <h1 className="font-serif text-4xl">全部对象</h1>
+            <p className="mt-3 text-sm text-muted-foreground">{GUEST_NOTE}</p>
+          </div>
+        </section>
+        <section className="py-12">
+          <div className="container-prose">
+            <GuestPreviewList />
+            <div className="mt-8"><GuestLoginPrompt /></div>
+          </div>
+        </section>
+      </SiteLayout>
+    );
+  }
+
   return (
     <SiteLayout>
       <section className="border-b border-border">
