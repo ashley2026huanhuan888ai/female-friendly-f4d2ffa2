@@ -94,6 +94,18 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
       <main>{children}</main>
 
+      {router.state.location.pathname !== "/" && (
+        <div className="container-prose py-8">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 border border-border px-4 py-2 text-sm text-muted-foreground hover:border-foreground hover:text-foreground"
+          >
+            <Home className="h-4 w-4" />
+            返回首页
+          </Link>
+        </div>
+      )}
+
       <footer className="mt-32 border-t border-border py-12">
         <div className="container-prose flex flex-col gap-4 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between">
           <div>
