@@ -49,20 +49,41 @@ export const listCases = createServerFn({ method: "GET" })
       polarity: z.enum(["positive", "negative", "controversial"]).optional(),
       tag: z.string().optional(),
       keyword: z.string().max(80).optional(),
-      includeDrafts: z.boolean().optional(),
     }).partial().parse(i ?? {}),
   )
   .handler(async ({ data }) => {
     let q = supabaseAdmin.from("knowledge_cases" as never).select("*")
+      .eq("status", "published")
       .order("featured", { ascending: false })
       .order("created_at", { ascending: false }).limit(200);
-    if (!data.includeDrafts) q = q.eq("status", "published");
     if (data.polarity) q = q.eq("polarity", data.polarity);
     if (data.tag) q = q.contains("tags", [data.tag]);
     if (data.keyword) q = q.or(`title.ilike.%${data.keyword}%,summary.ilike.%${data.keyword}%`);
     const { data: rows } = await q;
     return (rows ?? []) as KCase[];
   });
+
+export const listAllCasesAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({
+      polarity: z.enum(["positive", "negative", "controversial"]).optional(),
+      tag: z.string().optional(),
+      keyword: z.string().max(80).optional(),
+    }).partial().parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    let q = supabaseAdmin.from("knowledge_cases" as never).select("*")
+      .order("featured", { ascending: false })
+      .order("created_at", { ascending: false }).limit(200);
+    if (data.polarity) q = q.eq("polarity", data.polarity);
+    if (data.tag) q = q.contains("tags", [data.tag]);
+    if (data.keyword) q = q.or(`title.ilike.%${data.keyword}%,summary.ilike.%${data.keyword}%`);
+    const { data: rows } = await q;
+    return (rows ?? []) as KCase[];
+  });
+
 
 export const getCase = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ code: z.string() }).parse(i))
