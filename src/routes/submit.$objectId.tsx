@@ -291,7 +291,57 @@ function SubmitPage() {
     );
   }
 
-  // 错误页面（AI/网络失败但可能已保存）
+  // AI 失败但观察已保存（真实情况）
+  if (phase === "ai_failed") {
+    const hasLegal = (result as any)?.has_legal_penalty;
+    return (
+      <SiteLayout>
+        <div className="container-prose max-w-2xl py-20">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">已保存 · AI 待重试</div>
+          <h1 className="mt-3 font-serif text-2xl">观察已保存为待审</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            AI 分析暂时失败，管理员会重新分析。该观察已存入数据库，可在「我的观察」与对象详情页查看。
+          </p>
+          {hasLegal && (
+            <p className="mt-2 text-sm text-foreground">
+              已识别为法律 / 监管强证据，对象温度已即时更新。
+            </p>
+          )}
+          {errorMsg && (
+            <details className="mt-4 text-xs text-muted-foreground">
+              <summary className="cursor-pointer">技术细节</summary>
+              <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
+            </details>
+          )}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
+            >
+              查看对象详情
+            </button>
+            <Link
+              to="/me"
+              className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+            >
+              去「我的观察」
+            </Link>
+            <button
+              onClick={() => {
+                setContent(""); setScreenshotUrl(""); setReferenceUrl("");
+                setResult(null); setErrorMsg(""); setPhase("idle");
+              }}
+              className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            >
+              继续提交观察
+            </button>
+          </div>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  // 错误页面（serverFn 本身抛错，未保存）
   if (phase === "error") {
     return (
       <SiteLayout>
