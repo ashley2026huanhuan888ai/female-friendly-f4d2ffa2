@@ -47,12 +47,22 @@ function ObjectDetail() {
         .order("created_at", { ascending: false }).limit(50);
       setObs(o ?? []);
       setLoading(false);
-      fetchExpl({ data: { object_id: id } }).then((d) => setExpl(d as never)).catch(() => {});
+      if (data) fetchExpl({ data: { object_id: id } }).then((d) => setExpl(d as never)).catch(() => {});
     })();
   }, [id, fetchExpl]);
 
   if (loading) return <SiteLayout><div className="container-prose py-32 text-center text-muted-foreground">加载中…</div></SiteLayout>;
-  if (!obj) return <SiteLayout><div className="container-prose py-32 text-center">对象不存在</div></SiteLayout>;
+  if (!obj) {
+    return (
+      <SiteLayout>
+        <div className="container-prose py-32 text-center">
+          <h1 className="font-serif text-3xl">该对象档案需要登录后查看</h1>
+          <p className="mt-3 text-sm text-muted-foreground">未登录状态下仅展示 2 个公开预览对象。</p>
+          <Link to="/login" className="mt-6 inline-block border border-foreground bg-foreground px-5 py-2.5 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent">登录 / 注册</Link>
+        </div>
+      </SiteLayout>
+    );
+  }
 
   const band = bandOf(obj.temperature);
   const topTags: { tag: string; count: number }[] = obj.top_tags ?? [];
