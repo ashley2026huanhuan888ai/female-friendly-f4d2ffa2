@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
+import { LoginPrompt } from "@/components/LoginPrompt";
 import { Thermometer } from "@/components/Thermometer";
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
