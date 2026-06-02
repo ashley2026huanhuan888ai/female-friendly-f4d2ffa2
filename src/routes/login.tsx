@@ -49,36 +49,57 @@ function LoginPage() {
   ];
   const passwordValid = passwordRules.every((r) => r.ok);
 
-  const explainAuthError = (err: any): { title: string; hint: string } => {
-    const code: string = err?.code || err?.error_code || "";
+  const explainAuthError = (err: any): { title: string; hint: string; code: string; canResend?: boolean } => {
+    const rawCode: string = err?.code || err?.error_code || "";
     const status: number | undefined = err?.status;
     const msg: string = (err?.message || "").toLowerCase();
+    const tag = (c: string) => ` [${c}]`;
 
-    if (code === "invalid_credentials" || msg.includes("invalid login credentials")) {
-      return { title: "邮箱或密码不正确", hint: "请确认邮箱拼写、密码大小写与完整字符。如忘记密码请重置。" };
+    if (rawCode === "email_not_confirmed" || msg.includes("email not confirmed") || msg.includes("not confirmed")) {
+      return { code: "email_not_confirmed", canResend: true, title: "邮箱尚未验证" + tag("email_not_confirmed"), hint: "账号已存在但邮箱未完成验证。请到邮箱点击验证链接（含垃圾邮件箱）后再登录，或点击下方重新发送验证邮件。" };
     }
-    if (code === "email_not_confirmed" || msg.includes("email not confirmed") || msg.includes("not confirmed")) {
-      return { title: "邮箱尚未验证", hint: "请到邮箱点击验证链接后再登录（含垃圾邮件箱）。" };
+    if (rawCode === "user_banned" || msg.includes("user is banned") || msg.includes("banned")) {
+      return { code: "user_banned", title: "账号已被禁用" + tag("user_banned"), hint: "该账号被管理员临时或永久禁用，无法登录。请联系管理员解除限制。" };
     }
-    if (code === "user_not_found" || msg.includes("user not found")) {
-      return { title: "账号不存在", hint: "该邮箱尚未注册，请先切换到注册。" };
+    if (rawCode === "user_disabled" || msg.includes("user is disabled")) {
+      return { code: "user_disabled", title: "账号已停用" + tag("user_disabled"), hint: "账号处于停用状态，请联系管理员恢复。" };
     }
-    if (code === "user_banned" || msg.includes("banned") || msg.includes("blocked")) {
-      return { title: "账号被限制", hint: "该账号被停用或限制登录，请联系管理员。" };
+    if (rawCode === "signup_disabled" || msg.includes("signups not allowed")) {
+      return { code: "signup_disabled", title: "注册功能已关闭" + tag("signup_disabled"), hint: "当前不开放注册，请联系管理员。" };
     }
-    if (code === "over_request_rate_limit" || status === 429 || msg.includes("rate limit")) {
-      return { title: "尝试过于频繁", hint: "请稍等一两分钟后再试。" };
+    if (rawCode === "invalid_credentials" || msg.includes("invalid login credentials")) {
+      return { code: "invalid_credentials", title: "邮箱或密码不正确" + tag("invalid_credentials"), hint: "出于安全策略，服务器不会区分是邮箱不存在还是密码错误。请检查邮箱拼写与密码大小写；如忘记密码请重置。" };
+    }
+    if (rawCode === "user_not_found" || msg.includes("user not found")) {
+      return { code: "user_not_found", title: "账号不存在" + tag("user_not_found"), hint: "该邮箱尚未注册，请先切换到注册。" };
+    }
+    if (rawCode === "over_request_rate_limit" || rawCode === "over_email_send_rate_limit" || status === 429 || msg.includes("rate limit")) {
+      return { code: rawCode || "rate_limited", title: "尝试过于频繁" + tag(rawCode || "rate_limited"), hint: "请稍等 1–2 分钟后再试。" };
     }
     if (msg.includes("network") || msg.includes("failed to fetch")) {
-      return { title: "网络异常", hint: "无法连接服务器，请检查网络或稍后重试。" };
+      return { code: "network_error", title: "网络异常" + tag("network_error"), hint: "无法连接服务器，请检查网络或稍后重试。" };
     }
-    if (code === "user_already_exists" || msg.includes("already registered")) {
-      return { title: "该邮箱已注册", hint: "请直接登录，或使用其他邮箱注册。" };
+    if (rawCode === "user_already_exists" || msg.includes("already registered")) {
+      return { code: "user_already_exists", title: "该邮箱已注册" + tag("user_already_exists"), hint: "请直接登录，或使用其他邮箱注册。" };
     }
-    if (code === "weak_password") {
-      return { title: "密码不符合要求", hint: err?.message || "请按密码规则设置。" };
+    if (rawCode === "weak_password") {
+      return { code: "weak_password", title: "密码不符合要求" + tag("weak_password"), hint: err?.message || "请按密码规则设置。" };
     }
-    return { title: "登录失败", hint: err?.message || "未知错误，请稍后重试。" };
+    return { code: rawCode || "unknown", title: "登录失败" + tag(rawCode || "unknown"), hint: err?.message || "未知错误，请稍后重试。" };
+  };
+
+  const resendVerification = async () => {
+    if (!email.trim()) {
+      toast.error("请先填写邮箱");
+      return;
+    }
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: { emailRedirectTo: `${window.location.origin}${safeRedirect}` },
+    });
+    if (error) toast.error("发送失败：" + error.message);
+    else toast.success("验证邮件已重新发送，请查收");
   };
 
   const onSubmit = async (e: React.FormEvent) => {
