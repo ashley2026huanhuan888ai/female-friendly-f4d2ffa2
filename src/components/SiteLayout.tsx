@@ -57,7 +57,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       setUnread(count ?? 0);
     };
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => { void load(); });
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      setTimeout(() => { void load(); }, 0);
+    });
     return () => { cancelled = true; sub.subscription.unsubscribe(); };
   }, [getAccess]);
 
