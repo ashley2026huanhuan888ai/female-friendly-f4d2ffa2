@@ -1,7 +1,7 @@
 // 观察中心 V1 —— 关注 / 通知 / 信息流 / 话题
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { BANDS } from "@/lib/temperature";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // ===== 信息流 =====
