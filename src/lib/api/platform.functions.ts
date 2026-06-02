@@ -220,6 +220,7 @@ export const getCurrentUserAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId, claims } = context;
+    const claimRecord = claims as Record<string, unknown>;
     const { data: roles, error: roleError } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -228,7 +229,7 @@ export const getCurrentUserAccess = createServerFn({ method: "GET" })
     const roleList = roles?.map((r) => r.role) ?? [];
     return {
       userId,
-      email: typeof claims.email === "string" ? claims.email : null,
+      email: typeof claimRecord.email === "string" ? claimRecord.email : null,
       roles: roleList,
       isAdmin: roleList.includes("admin"),
     };
