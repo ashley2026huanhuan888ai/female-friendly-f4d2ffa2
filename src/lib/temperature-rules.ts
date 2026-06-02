@@ -174,12 +174,77 @@ export function calculateRuleMinimumTemperature(input: RuleInput): RuleOutput {
     }
   }
 
+  // 3) 厌女语义关键词地板（不依赖标签，扫描观察文本本身）
+  //    兜住"有详细描述但未打标签"的观察
+  if (input.observation_content) {
+    const semantic = detectMisogynySemantic(input.observation_content);
+    if (semantic.floor > min) min = semantic.floor;
+    for (const hit of semantic.hits) {
+      triggered.push(`语义命中: ${hit.keyword} → ≥${hit.floor}°C`);
+    }
+  }
+
   return {
     rule_minimum_temperature: min,
     triggered_rules: triggered,
     effective_evidence_level: ev,
     has_regulatory_penalty: detected,
   };
+}
+
+// ===== 厌女语义关键词地板 =====
+// 命中即作为"地板"参与 max() 比较；不替代 AI 引擎，引擎更高仍取高值。
+export const MISOGYNY_SEMANTIC_FLOORS: ReadonlyArray<{ floor: number; keywords: readonly string[] }> = [
+  {
+    floor: 75,
+    keywords: ["迷奸", "下药", "性暴力", "强奸文化", "荡妇羞辱", "性羞辱"],
+  },
+  {
+    floor: 60,
+    keywords: [
+      "受害者归因", "受害者有罪", "活该被", "自找的",
+      "生育规训", "催生", "不生孩子就", "女人就该生", "女人就要生",
+      "容貌羞辱", "身材羞辱", "丑女", "肥婆",
+    ],
+  },
+  {
+    floor: 45,
+    keywords: [
+      "物化女性", "女性工具化", "男性凝视", "奇观化",
+      "贤妻良母", "为了儿子", "为了丈夫", "相夫教子",
+      "女人头发长见识短", "女司机",
+      "女主内", "男主外", "性别角色固化",
+      "厌女",
+    ],
+  },
+  {
+    floor: 35,
+    keywords: [
+      "擦边营销", "低俗营销", "伪女性友好",
+      "疯女人", "疯姐姐", "歇斯底里",
+    ],
+  },
+];
+
+export function detectMisogynySemantic(text: string): {
+  floor: number;
+  hits: Array<{ keyword: string; floor: number }>;
+} {
+  if (!text) return { floor: 20, hits: [] };
+  let floor = 20;
+  const hits: Array<{ keyword: string; floor: number }> = [];
+  const seen = new Set<string>();
+  for (const tier of MISOGYNY_SEMANTIC_FLOORS) {
+    for (const kw of tier.keywords) {
+      if (seen.has(kw)) continue;
+      if (text.includes(kw)) {
+        seen.add(kw);
+        hits.push({ keyword: kw, floor: tier.floor });
+        if (tier.floor > floor) floor = tier.floor;
+      }
+    }
+  }
+  return { floor, hits };
 }
 
 // 在一组观察上汇总规则最低温度（取所有观察中最高的 rule_min）
