@@ -509,7 +509,7 @@ export const updateObservation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: cur } = await supabaseAdmin.from("observations")
-      .select("tags, evidence_level, confidence").eq("id", data.id).single();
+      .select("tags, evidence_level, confidence, status, object_id").eq("id", data.id).single();
     if (!cur) throw new Error("观察不存在");
     const tags = data.tags ?? (cur.tags as string[] ?? []);
     const ev = data.evidence_level ?? cur.evidence_level ?? "C";
@@ -521,6 +521,10 @@ export const updateObservation = createServerFn({ method: "POST" })
     };
     const { error } = await supabaseAdmin.from("observations").update(patch).eq("id", data.id);
     if (error) throw new Error(error.message);
+    // 影响 approved 观察 → 自动重算对象温度
+    if (cur.status === "approved") {
+      void recomputeObjectInternal(cur.object_id).catch(() => {});
+    }
     return { ok: true, impact_score: impact };
   });
 
@@ -530,8 +534,14 @@ export const deleteObservation = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
+    const { data: before } = await supabaseAdmin.from("observations")
+      .select("status, object_id").eq("id", data.id).single();
     const { error } = await supabaseAdmin.from("observations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+    // 若被删的是 approved 观察 → 自动重算对象
+    if (before?.status === "approved" && before.object_id) {
+      void recomputeObjectInternal(before.object_id).catch(() => {});
+    }
     return { ok: true };
   });
 
