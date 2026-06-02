@@ -21,7 +21,7 @@ const SECONDARY_NAV = [
 ] as const;
 
 export function SiteLayout({ children }: { children: ReactNode }) {
-  const { ready: authReady, email, isAdmin, unread } = useAuth();
+  const { ready: authReady, email, isAdmin, unread, signOut: authSignOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   
   const router = useRouter();
