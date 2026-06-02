@@ -23,6 +23,7 @@ const SECONDARY_NAV = [
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const [email, setEmail] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [, setRep] = useState<number | null>(null);
   const [unread, setUnread] = useState(0);
@@ -33,17 +34,29 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    const resetAccount = () => {
+      setEmail(null);
+      setIsAdmin(false);
+      setRep(null);
+      setUnread(0);
+      setAuthReady(true);
+    };
     const load = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
-        if (!cancelled) { setEmail(null); setIsAdmin(false); setRep(null); setUnread(0); }
+        if (!cancelled) resetAccount();
         return;
+      }
+      if (!cancelled) {
+        setEmail(sessionData.session.user.email ?? "已登录");
+        setAuthReady(true);
       }
       const { data } = await supabase.auth.getUser();
       if (!data.user) {
-        if (!cancelled) { setEmail(null); setIsAdmin(false); setRep(null); setUnread(0); }
+        if (!cancelled) resetAccount();
         return;
       }
+      if (!cancelled) setEmail(data.user.email ?? sessionData.session.user.email ?? "已登录");
       try {
         const [access, { data: prof }, { count }] = await Promise.all([
           getAccess({}),
@@ -57,11 +70,19 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         setRep(prof?.reputation ?? null);
         setUnread(count ?? 0);
       } catch {
-        if (!cancelled) { setEmail(data.user.email ?? null); setIsAdmin(false); setRep(null); setUnread(0); }
+        if (!cancelled) { setEmail(data.user.email ?? sessionData.session.user.email ?? "已登录"); setIsAdmin(false); setRep(null); setUnread(0); }
       }
     };
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) {
+        if (session?.user) {
+          setEmail(session.user.email ?? "已登录");
+          setAuthReady(true);
+        } else {
+          resetAccount();
+        }
+      }
       setTimeout(() => { void load(); }, 0);
     });
     return () => { cancelled = true; sub.subscription.unsubscribe(); };
