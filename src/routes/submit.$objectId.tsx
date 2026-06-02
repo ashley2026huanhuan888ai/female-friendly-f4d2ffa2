@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { submitObservation } from "@/lib/api/platform.functions";
+import { LoginPrompt } from "@/components/LoginPrompt";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/submit/$objectId")({
