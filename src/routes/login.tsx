@@ -149,12 +149,13 @@ function LoginPage() {
       setErrorDetail({
         title: info.title,
         hint: info.hint,
-        code: err?.code || err?.error_code,
+        code: info.code,
         status: err?.status,
         raw: err?.message,
+        canResend: info.canResend,
       });
       toast.error(info.title);
-      console.error("[login] auth error:", { code: err?.code, status: err?.status, message: err?.message, err });
+      console.error("[login] auth error:", { code: info.code, status: err?.status, message: err?.message, err });
     } finally {
       setPending(false);
     }
