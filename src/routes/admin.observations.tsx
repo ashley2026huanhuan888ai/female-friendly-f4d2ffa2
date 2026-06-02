@@ -58,14 +58,51 @@ function ObsAdmin() {
   const [busy, setBusy] = useState<string | null>(null);
   const [rejectFor, setRejectFor] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>("too_short");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchNote, setBatchNote] = useState("");
+  const [batchReason, setBatchReason] = useState<string>("too_short");
+  const [batchBusy, setBatchBusy] = useState(false);
 
   const reload = () => {
     let q = supabase.from("observations").select("*, objects(id,name)")
       .eq("status", filter).order("created_at", { ascending: false }).limit(100);
     if (risk !== "all") q = q.eq("risk_level", risk);
-    return q.then(({ data }) => setItems((data ?? []) as unknown as Obs[]));
+    return q.then(({ data }) => { setItems((data ?? []) as unknown as Obs[]); setSelected(new Set()); });
   };
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [filter, risk]);
+
+  const toggleSel = (id: string) => setSelected((s) => {
+    const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n;
+  });
+  const toggleAll = () => setSelected((s) =>
+    s.size === items.length ? new Set() : new Set(items.map((i) => i.id))
+  );
+
+  const runBatch = async (action: "approve" | "reject") => {
+    if (selected.size === 0) return;
+    if (!confirm(`确认批量${action === "approve" ? "通过" : "驳回"} ${selected.size} 条？`)) return;
+    setBatchBusy(true);
+    const ids = [...selected];
+    const objIds = new Set<string>();
+    let ok = 0, fail = 0;
+    for (const id of ids) {
+      const obj = items.find((i) => i.id === id);
+      try {
+        await review({ data: {
+          id, action,
+          rejection_reason: action === "reject" ? (batchReason as never) : undefined,
+          note: batchNote || undefined,
+        } });
+        if (action === "approve" && obj) objIds.add(obj.object_id);
+        ok++;
+      } catch { fail++; }
+    }
+    for (const oid of objIds) recompute({ data: { object_id: oid } }).catch(() => {});
+    setBatchBusy(false);
+    toast.success(`批量${action === "approve" ? "通过" : "驳回"}完成：${ok} 成功 / ${fail} 失败`);
+    setBatchNote("");
+    reload();
+  };
 
   const onApprove = async (id: string, objectId: string) => {
     try {
