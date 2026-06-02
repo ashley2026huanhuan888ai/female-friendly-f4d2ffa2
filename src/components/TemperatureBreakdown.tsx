@@ -76,6 +76,41 @@ export function TemperatureBreakdown({ data }: { data: Breakdown | null }) {
           );
         })}
       </div>
+      {(data.rule_minimum_temperature ?? 0) > 20 && (
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">规则最低温度</div>
+          <div className="mt-2 grid grid-cols-3 gap-3 font-mono text-xs">
+            <div>
+              <div className="text-muted-foreground">AI 温度</div>
+              <div className="text-base">{(data.ai_temperature ?? 0).toFixed(1)}°</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">规则下限</div>
+              <div className="text-base" style={{ color: "var(--temp-hot)" }}>
+                {(data.rule_minimum_temperature ?? 0).toFixed(1)}°
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">最终温度</div>
+              <div className="text-base font-bold">
+                {Math.max(data.ai_temperature ?? 0, data.rule_minimum_temperature ?? 0).toFixed(1)}°
+              </div>
+            </div>
+          </div>
+          {(data.triggered_rules?.length ?? 0) > 0 && (
+            <ul className="mt-3 space-y-1 text-[11px] text-muted-foreground">
+              {data.triggered_rules!.map((r, i) => (
+                <li key={i}>· {r}</li>
+              ))}
+            </ul>
+          )}
+          {data.has_regulatory_penalty && (
+            <div className="mt-2 inline-block bg-foreground px-2 py-0.5 text-[10px] text-background">
+              已识别监管处罚 → 证据等级提升至 A
+            </div>
+          )}
+        </div>
+      )}
       <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
         所有数值均来自已审核观察 + 知识库标签权重 + AI 引用的原则与案例。每次温度变化均写入审计事件，可追溯、可复核。
       </p>
