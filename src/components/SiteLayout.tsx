@@ -121,8 +121,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
           {/* 右侧账号区（桌面） */}
           <div className="hidden items-center gap-3 text-sm md:flex">
-            {isAdmin && (
-              <Link to="/admin" className="text-accent hover:text-accent/80">管理后台</Link>
+            {email && (
+              <Link to="/admin" className={isAdmin ? "text-accent hover:text-accent/80" : "text-muted-foreground hover:text-foreground"}>
+                {isAdmin ? "管理后台" : "管理入口"}
+              </Link>
             )}
             {email ? (
               <>
@@ -218,6 +220,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                     · 对象申请审核
                   </Link>
                 </>
+              )}
+              {email && !isAdmin && (
+                <Link to="/admin" className="border-b border-border/50 py-3 text-muted-foreground">
+                  管理入口
+                </Link>
               )}
               {email ? (
                 <>
