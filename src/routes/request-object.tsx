@@ -24,7 +24,7 @@ function RequestPage() {
   if (ready && !user) {
     return (
       <LoginPrompt
-        title="登录后申请测评对象"
+        title="登录后增加新测评对象"
         body="登录后可以提交你希望被测评的品牌、产品、影视作品或服务。"
         redirect="/request-object"
       />
