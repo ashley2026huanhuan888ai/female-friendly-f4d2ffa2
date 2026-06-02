@@ -669,6 +669,7 @@ export const mergeObjects = createServerFn({ method: "POST" })
     await writeAuditLog(context.userId, "merge", "object", data.source_id,
       { source_id: data.source_id }, { target_id: data.target_id }, data.reason ?? null);
     await recomputeObjectInternal(data.target_id).catch(() => {});
+    await recomputeObjectInternal(data.source_id).catch(() => {});
     return { ok: true };
   });
 
