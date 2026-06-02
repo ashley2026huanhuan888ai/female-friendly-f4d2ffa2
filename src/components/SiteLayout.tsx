@@ -62,6 +62,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-3 text-sm">
+            {isAdmin && (
+              <Link to="/admin" className="text-accent hover:text-accent/80">管理后台</Link>
+            )}
             {email ? (
               <>
                 <Link to="/me" className="relative text-muted-foreground hover:text-foreground md:hidden">
