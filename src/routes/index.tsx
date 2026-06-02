@@ -104,17 +104,18 @@ function Index() {
           </div>
 
           <div className="border border-border bg-card p-6">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">今日观察</div>
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">观察</div>
             <div className="mt-4 font-serif text-4xl tabular-nums">
-              {summary?.today_events_count ?? "—"}
-              <span className="ml-2 text-sm text-muted-foreground">次温度变化</span>
+              {summary?.total_objects ?? "—"}
+              <span className="ml-2 text-sm text-muted-foreground">个对象</span>
             </div>
             <div className="mt-6 space-y-3 text-xs">
-              {BANDS.map((b) => (
+              {(summary?.band_counts ?? []).map((b: any) => (
                 <div key={b.band} className="flex items-center gap-3">
                   <span className="inline-block h-2.5 w-7 rounded-full" style={{ background: b.color }} />
-                  <span className="font-mono tabular-nums text-muted-foreground">{b.range[0]}–{b.range[1]}°</span>
+                  <span className="font-mono tabular-nums text-muted-foreground">{b.range}</span>
                   <span>{b.label}</span>
+                  <span className="ml-auto font-mono tabular-nums text-muted-foreground">{b.count}个对象</span>
                 </div>
               ))}
             </div>
