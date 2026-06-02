@@ -56,9 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const sessionUser = sessionData.session?.user ?? null;
+    const accessToken = sessionData.session?.access_token ?? null;
     setUser(sessionUser);
     setReady(true);
-    if (!sessionUser) {
+    if (!sessionUser || !accessToken) {
       setIsAdmin(false);
       setUnread(0);
       return;
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUnread(0);
     }
   }, [getAccess]);
+
 
   useEffect(() => {
     let cancelled = false;
