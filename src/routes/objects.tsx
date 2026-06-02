@@ -183,7 +183,7 @@ function AllObjects() {
             <p className="py-16 text-center text-sm text-muted-foreground">暂无对象</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {items.map((o) => <ObjectCard key={o.id} {...o} />)}
+              {items.map((o: any) => <ObjectCard key={o.id} {...o} showActions />)}
             </div>
           )}
         </div>
