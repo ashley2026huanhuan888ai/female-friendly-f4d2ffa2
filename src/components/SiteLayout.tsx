@@ -74,11 +74,39 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
           {/* 桌面端主导航 */}
           <nav className="hidden items-center gap-6 text-sm md:flex">
-            {NAV_LINKS.map((l) => (
+            {PRIMARY_NAV.map((l) => (
               <Link key={l.to} to={l.to} className="text-muted-foreground hover:text-foreground">
                 {l.label}
               </Link>
             ))}
+            <div
+              className="relative"
+              onMouseEnter={() => setMoreOpen(true)}
+              onMouseLeave={() => setMoreOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setMoreOpen((v) => !v)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-expanded={moreOpen}
+              >
+                更多 ▾
+              </button>
+              {moreOpen && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-44 border border-border bg-paper py-1 shadow-md">
+                  {SECONDARY_NAV.map((l) => (
+                    <Link
+                      key={l.to}
+                      to={l.to}
+                      onClick={() => setMoreOpen(false)}
+                      className="block px-4 py-2 text-sm text-muted-foreground hover:bg-card hover:text-foreground"
+                    >
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* 右侧账号区（桌面） */}
