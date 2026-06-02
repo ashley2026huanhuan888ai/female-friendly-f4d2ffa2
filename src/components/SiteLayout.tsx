@@ -44,17 +44,21 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         if (!cancelled) { setEmail(null); setIsAdmin(false); setRep(null); setUnread(0); }
         return;
       }
-      const [access, { data: prof }, { count }] = await Promise.all([
-        getAccess({}),
-        supabase.from("profiles").select("reputation").eq("id", data.user.id).maybeSingle(),
-        supabase.from("notifications" as never).select("id", { count: "exact", head: true })
-          .eq("user_id", data.user.id).is("read_at", null),
-      ]);
-      if (cancelled) return;
-      setEmail(data.user.email ?? access.email);
-      setIsAdmin(access.isAdmin);
-      setRep(prof?.reputation ?? null);
-      setUnread(count ?? 0);
+      try {
+        const [access, { data: prof }, { count }] = await Promise.all([
+          getAccess({}),
+          supabase.from("profiles").select("reputation").eq("id", data.user.id).maybeSingle(),
+          supabase.from("notifications" as never).select("id", { count: "exact", head: true })
+            .eq("user_id", data.user.id).is("read_at", null),
+        ]);
+        if (cancelled) return;
+        setEmail(data.user.email ?? access.email);
+        setIsAdmin(access.isAdmin);
+        setRep(prof?.reputation ?? null);
+        setUnread(count ?? 0);
+      } catch {
+        if (!cancelled) { setEmail(data.user.email ?? null); setIsAdmin(false); setRep(null); setUnread(0); }
+      }
     };
     load();
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
