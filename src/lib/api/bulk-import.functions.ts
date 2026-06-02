@@ -53,7 +53,7 @@ export function detectTags(text: string): string[] {
 }
 
 export function detectEvidenceA(text: string): boolean {
-  return REGULATORY_KW.some((kw) => text.includes(kw));
+  return detectLegalPenalty(text);
 }
 
 function detectVerified(text: string): "已验证线索" | "待补源" {
