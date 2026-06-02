@@ -20,6 +20,8 @@ function SubmitPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [form, setForm] = useState({ content: "", scene: "", screenshot_url: "", reference_url: "" });
   const [pending, setPending] = useState(false);
+  const [stage, setStage] = useState(0); // 0 idle, 1 校验, 2 AI分析, 3 入库, 4 完成
+  const stageLabels = ["", "正在校验内容…", "AI 正在分析与清洗…", "正在提交入库…", "已提交"];
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
@@ -47,6 +49,10 @@ function SubmitPage() {
       return;
     }
     setPending(true);
+    setStage(1);
+    // 模拟阶段推进，给用户即时反馈（真实进度由服务器执行）
+    const t1 = setTimeout(() => setStage(2), 400);
+    const t2 = setTimeout(() => setStage((s) => (s < 3 ? 3 : s)), 6000);
     try {
       const res = await submit({
         data: {
@@ -57,12 +63,16 @@ function SubmitPage() {
           reference_url: form.reference_url || null,
         },
       });
+      clearTimeout(t1); clearTimeout(t2);
+      setStage(4);
       const msg = res.status === "approved"
         ? "已自动通过！(您是可信用户)"
         : `已提交，等待审核 · 证据 ${res.evidence_level} · 风险 ${res.risk_level}`;
       toast.success(msg);
       navigate({ to: "/objects/$id", params: { id: objectId } });
     } catch (err: any) {
+      clearTimeout(t1); clearTimeout(t2);
+      setStage(0);
       toast.error(err.message || "提交失败");
     } finally {
       setPending(false);
@@ -103,9 +113,29 @@ function SubmitPage() {
               placeholder="https://..." className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
           </Field>
 
-          <button disabled={pending} className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent hover:border-accent disabled:opacity-50">
-            {pending ? "AI 分析中…" : "提交观察"}
-          </button>
+          <div className="flex items-center gap-4">
+            <button disabled={pending} className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent hover:border-accent disabled:opacity-50">
+              {pending ? stageLabels[stage] || "处理中…" : "提交观察"}
+            </button>
+            {pending && (
+              <div className="flex-1">
+                <div className="h-1 w-full overflow-hidden rounded bg-border">
+                  <div
+                    className="h-full bg-foreground transition-all duration-500"
+                    style={{ width: `${(stage / 4) * 100}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                  {["校验内容", "AI 分析", "入库", "完成"].map((l, i) => (
+                    <span key={l} className={stage >= i + 1 ? "text-foreground" : ""}>
+                      {stage > i + 1 ? "✓ " : stage === i + 1 ? "● " : "○ "}{l}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">通常需 5–15 秒，请勿关闭页面。</div>
+              </div>
+            )}
+          </div>
         </form>
       </div>
     </SiteLayout>
