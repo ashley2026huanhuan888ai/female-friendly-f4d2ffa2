@@ -40,7 +40,7 @@ function AllObjects() {
         <div className="container-prose py-16">
           <h1 className="font-serif text-4xl">全部对象</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            找不到？<Link to="/request-object" className="underline">提交评估申请</Link>
+            找不到？<Link to="/request-object" className="underline">增加新测评对象</Link>
           </p>
 
           <form
