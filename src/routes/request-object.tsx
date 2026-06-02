@@ -51,7 +51,7 @@ function RequestPage() {
     <SiteLayout>
       <div className="container-prose max-w-2xl py-16">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">提交申请</div>
-        <h1 className="mt-3 font-serif text-4xl">我希望评估…</h1>
+        <h1 className="mt-3 font-serif text-4xl">增加新测评对象</h1>
         <p className="mt-4 text-sm text-muted-foreground">
           用户不能直接创建对象。请填写你希望加入观察的对象，<strong className="text-foreground">由管理员审核后才会出现在平台首页和列表中</strong>。审核通常需要 1–3 个工作日。
         </p>
