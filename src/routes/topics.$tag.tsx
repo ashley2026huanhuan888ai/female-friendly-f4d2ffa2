@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
+import { ObjectCard } from "@/components/ObjectCard";
 import { getTopicDetail } from "@/lib/api/observation-center.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 
