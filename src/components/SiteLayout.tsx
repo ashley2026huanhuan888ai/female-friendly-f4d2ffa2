@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useAuth } from "@/components/AuthProvider";
 
 const PRIMARY_NAV = [
