@@ -207,6 +207,9 @@ function ObsAdmin() {
         {items.map((o) => (
           <article key={o.id} className="border border-border bg-card p-5">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {filter === "pending" && (
+                <input type="checkbox" className="mr-1" checked={selected.has(o.id)} onChange={() => toggleSel(o.id)} />
+              )}
               <span className="font-medium text-foreground">{o.objects?.name ?? "—"}</span>
               <span>·</span>
               <span className={`border px-1.5 py-0.5 ${riskColor(o.risk_level)}`}>
