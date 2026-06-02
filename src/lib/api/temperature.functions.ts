@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runEngine, type EngineObservation, type TagMeta, type EngineResult } from "@/lib/temperature-engine";
+import { aggregateRuleMinimum } from "@/lib/temperature-rules";
 
 async function assertAdmin(userId: string) {
   const { data: roles } = await supabaseAdmin
