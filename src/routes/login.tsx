@@ -148,6 +148,22 @@ function LoginPage() {
         <p className="mt-3 text-sm text-muted-foreground">使用邮箱与密码登录。</p>
 
         <form onSubmit={onSubmit} className="mt-10 space-y-4">
+          {errorDetail && (
+            <div role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-xs">
+              <div className="font-medium text-destructive">{errorDetail.title}</div>
+              <div className="mt-1 text-muted-foreground">{errorDetail.hint}</div>
+              {(errorDetail.code || errorDetail.status || errorDetail.raw) && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-muted-foreground">技术细节</summary>
+                  <div className="mt-1 space-y-0.5 font-mono text-[11px] text-muted-foreground">
+                    {errorDetail.code && <div>code: {errorDetail.code}</div>}
+                    {errorDetail.status !== undefined && <div>status: {errorDetail.status}</div>}
+                    {errorDetail.raw && <div className="break-all">message: {errorDetail.raw}</div>}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
           <input type="email" required placeholder="邮箱"
             value={email} onChange={(e) => setEmail(e.target.value)}
             className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
