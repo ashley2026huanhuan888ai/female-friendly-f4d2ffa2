@@ -25,6 +25,7 @@ function LoginPage() {
     code?: string;
     status?: number;
     raw?: string;
+    canResend?: boolean;
   }>(null);
 
   useEffect(() => {
