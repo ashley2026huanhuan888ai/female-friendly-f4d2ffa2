@@ -128,3 +128,26 @@ describe("detectLegalPenalty 覆盖度", () => {
     expect(detectLegalPenalty("客服态度差，体验不好。")).toBe(false);
   });
 });
+
+describe("强证据通过 tags 也能触发 >=90 地板", () => {
+  it("内容中无关键词、tag 中含'行政处罚' → 仍触发 90", () => {
+    const r = aggregateRuleMinimum([
+      { tags: ["行政处罚"], evidence_level: "B", content: "无关词。", summary: null, cleaned_content: null },
+    ]);
+    expect(r.has_regulatory_penalty).toBe(true);
+    expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(LEGAL_PENALTY_MIN_TEMPERATURE);
+  });
+
+  it("内容仅有'法院判决'tag → 触发 90", () => {
+    const r = aggregateRuleMinimum([
+      { tags: ["法院判决"], evidence_level: "C", content: "客服态度差。", summary: null, cleaned_content: null },
+    ]);
+    expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(LEGAL_PENALTY_MIN_TEMPERATURE);
+  });
+
+  it("AI 低温 + cooling -20 都不能压低 tag 触发的 90 地板", () => {
+    const observations = [obs({ tags: ["行政处罚"], evidence_level: "B", content: "无关词。" })];
+    expect(finalT(observations, { cooling: -20 })).toBeGreaterThanOrEqual(LEGAL_PENALTY_MIN_TEMPERATURE);
+  });
+});
+
