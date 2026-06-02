@@ -86,6 +86,7 @@ function LoginPage() {
               ))}
             </ul>
           )}
+          <button disabled={pending} className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50">
             {pending ? "处理中…" : mode === "signin" ? "登录" : "注册并登录"}
           </button>
         </form>
