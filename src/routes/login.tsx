@@ -22,6 +22,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
+  const [remember, setRememberState] = useState(true);
   const [errorDetail, setErrorDetail] = useState<null | {
     title: string;
     hint: string;
