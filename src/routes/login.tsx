@@ -188,14 +188,7 @@ function LoginPage() {
             value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
           {mode === "signup" && (
-            <ul className="space-y-1 rounded border border-border bg-card/50 p-3 text-xs">
-              <li className="mb-1 text-muted-foreground">密码规则：</li>
-              {passwordRules.map((r) => (
-                <li key={r.label} className={r.ok ? "text-foreground" : "text-muted-foreground"}>
-                  {r.ok ? "✓" : "○"} {r.label}
-                </li>
-              ))}
-            </ul>
+            <p className="text-xs text-muted-foreground">密码至少 8 位。建议包含字母和数字。</p>
           )}
           <button disabled={pending} className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50">
             {pending ? "处理中…" : mode === "signin" ? "登录" : "注册并登录"}
