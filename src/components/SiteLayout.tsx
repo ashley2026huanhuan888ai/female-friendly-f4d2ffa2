@@ -62,9 +62,12 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             {isAdmin && (
               <Link to="/admin" className="text-accent hover:text-accent/80">管理后台</Link>
             )}
+          </nav>
+
+          <div className="flex items-center gap-3 text-sm">
             {email ? (
               <>
-                <Link to="/me" className="relative text-muted-foreground hover:text-foreground">
+                <Link to="/me" className="relative text-muted-foreground hover:text-foreground md:hidden">
                   我的
                   {unread > 0 && (
                     <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
@@ -72,9 +75,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                     </span>
                   )}
                 </Link>
-                {rep !== null && (
-                  <span className="text-xs text-muted-foreground" title="信誉值">信誉 {rep}</span>
-                )}
                 <button onClick={signOut} className="text-muted-foreground hover:text-foreground">
                   退出
                 </button>
@@ -84,10 +84,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 to="/login"
                 className="border border-foreground/80 px-3 py-1.5 text-foreground hover:bg-foreground hover:text-background"
               >
-                登录
+                登录 / 注册
               </Link>
             )}
-          </nav>
+          </div>
 
         </div>
       </header>
