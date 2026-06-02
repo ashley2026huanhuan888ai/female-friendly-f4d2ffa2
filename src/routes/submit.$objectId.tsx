@@ -49,6 +49,10 @@ function SubmitPage() {
       return;
     }
     setPending(true);
+    setStage(1);
+    // 模拟阶段推进，给用户即时反馈（真实进度由服务器执行）
+    const t1 = setTimeout(() => setStage(2), 400);
+    const t2 = setTimeout(() => setStage((s) => (s < 3 ? 3 : s)), 6000);
     try {
       const res = await submit({
         data: {
@@ -59,12 +63,16 @@ function SubmitPage() {
           reference_url: form.reference_url || null,
         },
       });
+      clearTimeout(t1); clearTimeout(t2);
+      setStage(4);
       const msg = res.status === "approved"
         ? "已自动通过！(您是可信用户)"
         : `已提交，等待审核 · 证据 ${res.evidence_level} · 风险 ${res.risk_level}`;
       toast.success(msg);
       navigate({ to: "/objects/$id", params: { id: objectId } });
     } catch (err: any) {
+      clearTimeout(t1); clearTimeout(t2);
+      setStage(0);
       toast.error(err.message || "提交失败");
     } finally {
       setPending(false);
