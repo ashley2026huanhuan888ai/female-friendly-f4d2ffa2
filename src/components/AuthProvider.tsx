@@ -82,13 +82,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
+    (async () => {
+      const expired = await enforceExpiry();
+      if (cancelled) return;
+      if (expired) {
+        setUser(null);
+        setReady(true);
+        return;
+      }
+      const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       const sessionUser = data.session?.user ?? null;
       setUser(sessionUser);
       setReady(true);
       if (sessionUser) void refresh();
-    });
+    })();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return;
       setUser(session?.user ?? null);
@@ -106,6 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
+  const signOut = useCallback(async () => {
+    clearRemember();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => ({
     ready,
     user,
@@ -113,7 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     unread,
     refresh,
-  }), [ready, user, isAdmin, unread]);
+    signOut,
+  }), [ready, user, isAdmin, unread, refresh, signOut]);
+
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
