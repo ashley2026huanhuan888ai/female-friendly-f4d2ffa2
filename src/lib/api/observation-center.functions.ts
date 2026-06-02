@@ -157,7 +157,7 @@ export const getTopicDetail = createServerFn({ method: "GET" })
     const obsRows = (obs.data ?? []) as Array<{ id: string; object_id: string; summary: string | null; evidence_level: string | null; created_at: string }>;
     const ids = [...new Set(obsRows.map((o) => o.object_id))];
     const { data: objs } = ids.length
-      ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", ids)
+      ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", ids).eq("hidden", false).eq("status", "published")
       : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
     const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
