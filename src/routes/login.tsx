@@ -175,13 +175,19 @@ function LoginPage() {
             <div role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-xs">
               <div className="font-medium text-destructive">{errorDetail.title}</div>
               <div className="mt-1 text-muted-foreground">{errorDetail.hint}</div>
+              {errorDetail.canResend && (
+                <button type="button" onClick={resendVerification}
+                  className="mt-2 border border-destructive/40 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">
+                  重新发送验证邮件
+                </button>
+              )}
               {(errorDetail.code || errorDetail.status || errorDetail.raw) && (
                 <details className="mt-2">
-                  <summary className="cursor-pointer text-muted-foreground">技术细节</summary>
+                  <summary className="cursor-pointer text-muted-foreground">技术细节（便于定位问题）</summary>
                   <div className="mt-1 space-y-0.5 font-mono text-[11px] text-muted-foreground">
-                    {errorDetail.code && <div>code: {errorDetail.code}</div>}
-                    {errorDetail.status !== undefined && <div>status: {errorDetail.status}</div>}
-                    {errorDetail.raw && <div className="break-all">message: {errorDetail.raw}</div>}
+                    {errorDetail.code && <div>error_code: {errorDetail.code}</div>}
+                    {errorDetail.status !== undefined && <div>http_status: {errorDetail.status}</div>}
+                    {errorDetail.raw && <div className="break-all">raw: {errorDetail.raw}</div>}
                   </div>
                 </details>
               )}
