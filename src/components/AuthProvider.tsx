@@ -3,6 +3,12 @@ import type { User } from "@supabase/supabase-js";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentUserAccess } from "@/lib/api/platform.functions";
+import {
+  clearRemember,
+  getRememberPref,
+  isRememberExpired,
+  markExpiredNotice,
+} from "@/lib/remember-login";
 
 type AuthContextValue = {
   ready: boolean;
@@ -11,9 +17,34 @@ type AuthContextValue = {
   isAdmin: boolean;
   unread: number;
   refresh: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+async function enforceExpiry(): Promise<boolean> {
+  // returns true if signed out due to expiry / no-remember
+  try {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) return false;
+    const remembered = getRememberPref();
+    if (!remembered) {
+      // user did not choose to be remembered; drop any persisted session
+      await supabase.auth.signOut();
+      clearRemember();
+      return true;
+    }
+    if (isRememberExpired()) {
+      await supabase.auth.signOut();
+      clearRemember();
+      markExpiredNotice();
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const getAccess = useServerFn(getCurrentUserAccess);
