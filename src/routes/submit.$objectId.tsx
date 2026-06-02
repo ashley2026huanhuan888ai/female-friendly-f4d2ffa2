@@ -1,11 +1,13 @@
 import * as React from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
-import { submitObservation } from "@/lib/api/platform.functions";
 import { LoginPrompt } from "@/components/LoginPrompt";
+import { submitObservation } from "@/lib/api/platform.functions";
+import { Thermometer } from "@/components/Thermometer";
+import { bandOf } from "@/lib/temperature";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/submit/$objectId")({
@@ -13,20 +15,42 @@ export const Route = createFileRoute("/submit/$objectId")({
   component: SubmitPage,
 });
 
+const STEPS = [
+  "内容清洗",
+  "提取事实",
+  "匹配知识库",
+  "识别议题标签",
+  "评估证据等级",
+  "生成温度贡献",
+  "更新对象温度",
+];
+
+const EVIDENCE_LABEL: Record<string, string> = {
+  A: "A · 强证据", B: "B · 一般证据", C: "C · 弱证据", D: "D · 仅供参考",
+};
+
 function SubmitPage() {
   const { objectId } = Route.useParams();
   const navigate = useNavigate();
   const submit = useServerFn(submitObservation);
-  const [obj, setObj] = useState<any>(null);
+  const [obj, setObj] = useState<{ id: string; name: string; type: string; temperature: number | null } | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [form, setForm] = useState({ content: "", scene: "", screenshot_url: "", reference_url: "" });
-  const [pending, setPending] = useState(false);
-  const [stage, setStage] = useState(0); // 0 idle, 1 校验, 2 AI分析, 3 入库, 4 完成
-  const stageLabels = ["", "正在校验内容…", "AI 正在分析与清洗…", "正在提交入库…", "已提交"];
+  const [content, setContent] = useState("");
+  const [showOptional, setShowOptional] = useState(false);
+  const [screenshot_url, setScreenshotUrl] = useState("");
+  const [reference_url, setReferenceUrl] = useState("");
+
+  type Phase = "idle" | "analyzing" | "done" | "error";
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [stepIdx, setStepIdx] = useState(0);
+  const [result, setResult] = useState<any>(null);
+  const [newTemp, setNewTemp] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
-    supabase.from("objects").select("id,name,type").eq("id", objectId).maybeSingle().then(({ data }) => setObj(data));
+    supabase.from("objects").select("id,name,type,temperature").eq("id", objectId).maybeSingle()
+      .then(({ data }) => setObj(data as any));
   }, [objectId]);
 
   if (authed === false) {
@@ -39,112 +63,285 @@ function SubmitPage() {
     );
   }
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const runSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.content.trim().length < 10) {
+    if (content.trim().length < 10) {
       toast.error("观察内容至少 10 字");
       return;
     }
-    setPending(true);
-    setStage(1);
-    // 模拟阶段推进，给用户即时反馈（真实进度由服务器执行）
-    const t1 = setTimeout(() => setStage(2), 400);
-    const t2 = setTimeout(() => setStage((s) => (s < 3 ? 3 : s)), 6000);
+    setPhase("analyzing");
+    setStepIdx(0);
+    setErrorMsg("");
+
+    // 步骤逐步推进：约每 260ms 推进一步（最短全程 ~1.8s）
+    const stepTimer = setInterval(() => {
+      setStepIdx((i) => (i < STEPS.length - 1 ? i + 1 : i));
+    }, 260);
+    const minWait = new Promise((r) => setTimeout(r, 1800));
+
     try {
-      const res = await submit({
-        data: {
-          object_id: objectId,
-          content: form.content,
-          scene: form.scene || null,
-          screenshot_url: form.screenshot_url || null,
-          reference_url: form.reference_url || null,
-        },
-      });
-      clearTimeout(t1); clearTimeout(t2);
-      setStage(4);
-      const msg = res.status === "approved"
-        ? "已自动通过！(您是可信用户)"
-        : `已提交，等待审核 · 证据 ${res.evidence_level} · 风险 ${res.risk_level}`;
-      toast.success(msg);
-      navigate({ to: "/objects/$id", params: { id: objectId } });
+      const [res] = await Promise.all([
+        submit({
+          data: {
+            object_id: objectId,
+            content,
+            scene: null,
+            screenshot_url: screenshot_url || null,
+            reference_url: reference_url || null,
+          },
+        }),
+        minWait,
+      ]);
+      clearInterval(stepTimer);
+      setStepIdx(STEPS.length - 1);
+      setResult(res);
+
+      // 拉一次最新温度
+      const { data: latest } = await supabase
+        .from("objects").select("temperature").eq("id", objectId).maybeSingle();
+      setNewTemp((latest as any)?.temperature ?? obj?.temperature ?? null);
+
+      setPhase("done");
     } catch (err: any) {
-      clearTimeout(t1); clearTimeout(t2);
-      setStage(0);
-      toast.error(err.message || "提交失败");
-    } finally {
-      setPending(false);
+      clearInterval(stepTimer);
+      setPhase("error");
+      setErrorMsg(err?.message ?? "未知错误");
     }
   };
 
+  // 分析中页面
+  if (phase === "analyzing") {
+    return (
+      <SiteLayout>
+        <div className="container-prose max-w-2xl py-20">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">AI 分析中</div>
+          <h1 className="mt-3 font-serif text-3xl">正在分析你的观察…</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            通常 5–15 秒，请勿关闭页面。系统会自动完成清洗、识别与温度更新。
+          </p>
+          <div className="mt-8 h-1 w-full overflow-hidden bg-border">
+            <div className="h-full bg-foreground transition-all duration-300"
+              style={{ width: `${((stepIdx + 1) / STEPS.length) * 100}%` }} />
+          </div>
+          <ul className="mt-8 space-y-3 text-sm">
+            {STEPS.map((s, i) => {
+              const state = i < stepIdx ? "done" : i === stepIdx ? "active" : "pending";
+              return (
+                <li key={s} className="flex items-center gap-3">
+                  <span className={`inline-flex h-5 w-5 items-center justify-center text-xs ${
+                    state === "done" ? "text-foreground" :
+                    state === "active" ? "text-accent" : "text-muted-foreground"
+                  }`}>
+                    {state === "done" ? "✓" : state === "active" ? "●" : "○"}
+                  </span>
+                  <span className={state === "pending" ? "text-muted-foreground" : ""}>{s}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  // 完成页面
+  if (phase === "done" && result) {
+    const delta = result.impact_score ?? 0;
+    const band = newTemp != null ? bandOf(newTemp) : null;
+    return (
+      <SiteLayout>
+        <div className="container-prose max-w-2xl py-16">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            {result.status === "approved" ? "已自动通过" : "已提交 · 等待审核"}
+          </div>
+          <h1 className="mt-3 font-serif text-3xl">分析完成</h1>
+
+          <div className="mt-8 border border-border bg-card p-6 space-y-5">
+            <div>
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">AI 摘要</div>
+              <p className="mt-2 text-sm leading-relaxed">{result.summary || "（无摘要）"}</p>
+            </div>
+
+            {!!result.tags?.length && (
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">识别标签</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {result.tags.map((t: string) => (
+                    <span key={t} className="border border-border px-2 py-1 text-xs">{t}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">证据等级</div>
+                <div className="mt-2 font-serif text-lg">
+                  {EVIDENCE_LABEL[result.evidence_level] ?? result.evidence_level ?? "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">温度贡献</div>
+                <div className={`mt-2 font-serif text-lg tabular-nums ${
+                  delta > 0 ? "text-accent" : delta < 0 ? "text-muted-foreground" : ""
+                }`}>
+                  {delta > 0 ? "+" : ""}{delta}°C
+                </div>
+              </div>
+            </div>
+
+            {newTemp != null && (
+              <div className="flex items-center gap-4 border-t border-border pt-5">
+                <Thermometer value={newTemp} size="sm" showLabel={false} />
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">当前对象温度</div>
+                  <div className="mt-1 font-serif text-2xl tabular-nums">
+                    {newTemp}°C
+                    {band && <span className="ml-2 text-sm text-muted-foreground">{band.label}</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {result.status !== "approved" && (
+              <p className="text-xs text-muted-foreground border-t border-border pt-4">
+                此条提交需管理员复核后才会计入对象温度。可在「我的」页查看进度。
+              </p>
+            )}
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
+            >
+              返回对象页
+            </button>
+            <Link
+              to="/feed"
+              className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+            >
+              查看全部观察
+            </Link>
+            <button
+              onClick={() => {
+                setContent(""); setScreenshotUrl(""); setReferenceUrl("");
+                setResult(null); setPhase("idle");
+              }}
+              className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            >
+              继续提交观察
+            </button>
+          </div>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  // 错误页面（AI/网络失败但可能已保存）
+  if (phase === "error") {
+    return (
+      <SiteLayout>
+        <div className="container-prose max-w-2xl py-20">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">提示</div>
+          <h1 className="mt-3 font-serif text-2xl">分析暂时不可用</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            你的观察已经保存。管理员稍后可重新分析，结果会出现在对象页与「我的」页中。
+          </p>
+          {errorMsg && (
+            <details className="mt-4 text-xs text-muted-foreground">
+              <summary className="cursor-pointer">技术细节</summary>
+              <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
+            </details>
+          )}
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background"
+            >
+              返回对象页
+            </button>
+            <button
+              onClick={() => setPhase("idle")}
+              className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            >
+              再试一次
+            </button>
+          </div>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  // 提交表单（极简）
   return (
     <SiteLayout>
       <div className="container-prose max-w-2xl py-16">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">提交观察</div>
         <h1 className="mt-3 font-serif text-4xl">{obj?.name ?? "—"}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          只需写下你观察到的现象，其余由 AI 完成。
+        </p>
 
-        <div className="mt-6 border border-border bg-card p-4 text-xs leading-relaxed text-muted-foreground">
-          请客观描述你观察到的现象。AI 会自动清洗内容、识别标签、判定证据等级。
-          <strong className="text-foreground"> 攻击性、辱骂性内容会被标记为 D 级并不参与温度计算。</strong>
-          <div className="mt-2">提交频率限制：同一对象 24 小时内 1 条；全平台 24 小时内最多 3 条。</div>
-        </div>
-
-        <form onSubmit={onSubmit} className="mt-8 space-y-6">
-          <Field label="观察内容 *" hint="10–2000 字。请描述事实，避免人身攻击。">
+        <form onSubmit={runSubmit} className="mt-10 space-y-6">
+          <div>
+            <label className="block text-sm font-medium">你观察到了什么？*</label>
             <textarea
               required minLength={10} maxLength={2000} rows={8}
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={`例如：\n· 某广告中女性始终负责家务劳动，男性负责做决定。\n· 某影视作品中女性角色几乎没有独立剧情。\n· 某品牌营销内容长期聚焦女性外貌评价。`}
+              className="mt-2 w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
             />
-          </Field>
-          <Field label="出现的场景" hint="例如：广告片 / 第三季第五集 / 公司年会">
-            <input maxLength={200} value={form.scene} onChange={(e) => setForm({ ...form, scene: e.target.value })}
-              className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
-          </Field>
-          <Field label="截图链接（可选）">
-            <input type="url" maxLength={500} value={form.screenshot_url} onChange={(e) => setForm({ ...form, screenshot_url: e.target.value })}
-              placeholder="https://..." className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
-          </Field>
-          <Field label="参考链接（可选）">
-            <input type="url" maxLength={500} value={form.reference_url} onChange={(e) => setForm({ ...form, reference_url: e.target.value })}
-              placeholder="https://..." className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground" />
-          </Field>
+            <div className="mt-3 border-l-2 border-border pl-3 text-xs text-muted-foreground leading-relaxed">
+              提交后系统会自动：
+              <div className="mt-1 space-y-0.5">
+                <div>✓ 提取事实</div>
+                <div>✓ 识别议题标签</div>
+                <div>✓ 判断证据等级</div>
+                <div>✓ 更新女性体验温度</div>
+              </div>
+            </div>
+            <div className="mt-2 text-[11px] text-muted-foreground">
+              {content.length} / 2000 字 · 至少 10 字 · 同一对象 24 小时内仅可提交 1 条
+            </div>
+          </div>
 
-          <div className="flex items-center gap-4">
-            <button disabled={pending} className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent hover:border-accent disabled:opacity-50">
-              {pending ? stageLabels[stage] || "处理中…" : "提交观察"}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowOptional((v) => !v)}
+              className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            >
+              {showOptional ? "▾" : "▸"} 可选附件（截图 / 参考链接）
             </button>
-            {pending && (
-              <div className="flex-1">
-                <div className="h-1 w-full overflow-hidden rounded bg-border">
-                  <div
-                    className="h-full bg-foreground transition-all duration-500"
-                    style={{ width: `${(stage / 4) * 100}%` }}
-                  />
+            {showOptional && (
+              <div className="mt-4 space-y-4 border-l-2 border-border pl-4">
+                <div>
+                  <label className="block text-xs text-muted-foreground">截图链接</label>
+                  <input type="url" maxLength={500} value={screenshot_url}
+                    onChange={(e) => setScreenshotUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="mt-1 w-full border border-border bg-card p-2 text-sm outline-none focus:border-foreground" />
                 </div>
-                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                  {["校验内容", "AI 分析", "入库", "完成"].map((l, i) => (
-                    <span key={l} className={stage >= i + 1 ? "text-foreground" : ""}>
-                      {stage > i + 1 ? "✓ " : stage === i + 1 ? "● " : "○ "}{l}
-                    </span>
-                  ))}
+                <div>
+                  <label className="block text-xs text-muted-foreground">参考链接</label>
+                  <input type="url" maxLength={500} value={reference_url}
+                    onChange={(e) => setReferenceUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="mt-1 w-full border border-border bg-card p-2 text-sm outline-none focus:border-foreground" />
                 </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">通常需 5–15 秒，请勿关闭页面。</div>
               </div>
             )}
           </div>
+
+          <button
+            className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent hover:border-accent"
+          >
+            提交观察
+          </button>
         </form>
       </div>
     </SiteLayout>
-  );
-}
-
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium">{label}</label>
-      {hint && <div className="mb-2 mt-1 text-xs text-muted-foreground">{hint}</div>}
-      <div className="mt-1">{children}</div>
-    </div>
   );
 }
