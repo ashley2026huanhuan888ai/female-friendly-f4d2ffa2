@@ -47,11 +47,53 @@ function SubmitPage() {
   const [newTemp, setNewTemp] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
 
+  const draftKey = `submit-draft:${objectId}`;
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+
+  // 初次挂载：恢复草稿 + 拉对象/登录态
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setAuthed(!!data.user));
     supabase.from("objects").select("id,name,type,temperature").eq("id", objectId).maybeSingle()
       .then(({ data }) => setObj(data as any));
-  }, [objectId]);
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d?.content) setContent(d.content);
+        if (d?.screenshot_url) setScreenshotUrl(d.screenshot_url);
+        if (d?.reference_url) setReferenceUrl(d.reference_url);
+        if (d?.screenshot_url || d?.reference_url) setShowOptional(true);
+        if (d?.content || d?.screenshot_url || d?.reference_url) setDraftRestored(true);
+      }
+    } catch { /* ignore */ }
+  }, [objectId, draftKey]);
+
+  // 自动保存草稿（防抖 600ms）
+  useEffect(() => {
+    if (phase !== "idle") return;
+    const hasAny = content || screenshot_url || reference_url;
+    const t = setTimeout(() => {
+      try {
+        if (hasAny) {
+          localStorage.setItem(draftKey, JSON.stringify({
+            content, screenshot_url, reference_url, ts: Date.now(),
+          }));
+          setDraftSavedAt(Date.now());
+        } else {
+          localStorage.removeItem(draftKey);
+          setDraftSavedAt(null);
+        }
+      } catch { /* ignore */ }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [content, screenshot_url, reference_url, phase, draftKey]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
+    setDraftSavedAt(null);
+    setDraftRestored(false);
+  };
 
   if (authed === false) {
     return (
@@ -63,17 +105,11 @@ function SubmitPage() {
     );
   }
 
-  const runSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (content.trim().length < 10) {
-      toast.error("观察内容至少 10 字");
-      return;
-    }
+  const runAnalysis = async () => {
     setPhase("analyzing");
     setStepIdx(0);
     setErrorMsg("");
 
-    // 步骤逐步推进：约每 260ms 推进一步（最短全程 ~1.8s）
     const stepTimer = setInterval(() => {
       setStepIdx((i) => (i < STEPS.length - 1 ? i + 1 : i));
     }, 260);
@@ -96,17 +132,26 @@ function SubmitPage() {
       setStepIdx(STEPS.length - 1);
       setResult(res);
 
-      // 拉一次最新温度
       const { data: latest } = await supabase
         .from("objects").select("temperature").eq("id", objectId).maybeSingle();
       setNewTemp((latest as any)?.temperature ?? obj?.temperature ?? null);
 
+      clearDraft();
       setPhase("done");
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
       setErrorMsg(err?.message ?? "未知错误");
     }
+  };
+
+  const runSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (content.trim().length < 10) {
+      toast.error("观察内容至少 10 字");
+      return;
+    }
+    await runAnalysis();
   };
 
   // 分析中页面
@@ -254,20 +299,29 @@ function SubmitPage() {
               <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
             </details>
           )}
-          <div className="mt-6 flex gap-3">
+          <div className="mt-6 flex flex-wrap gap-3">
             <button
-              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
-              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background"
+              onClick={() => runAnalysis()}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
             >
-              返回对象页
+              一键重试分析
             </button>
             <button
               onClick={() => setPhase("idle")}
+              className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+            >
+              返回编辑 / 重新进入分析
+            </button>
+            <button
+              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
               className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
             >
-              再试一次
+              返回对象页
             </button>
           </div>
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            草稿已自动保存到本机浏览器，刷新或重新打开后会自动恢复。
+          </p>
         </div>
       </SiteLayout>
     );
@@ -282,6 +336,22 @@ function SubmitPage() {
         <p className="mt-3 text-sm text-muted-foreground">
           只需写下你观察到的现象，其余由 AI 完成。
         </p>
+
+        {draftRestored && (
+          <div className="mt-6 flex items-center justify-between gap-3 border border-dashed border-border bg-card/60 p-3 text-xs">
+            <span className="text-muted-foreground">已恢复上次未提交的草稿。</span>
+            <button
+              type="button"
+              onClick={() => {
+                setContent(""); setScreenshotUrl(""); setReferenceUrl("");
+                clearDraft();
+              }}
+              className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              清空草稿
+            </button>
+          </div>
+        )}
 
         <form onSubmit={runSubmit} className="mt-10 space-y-6">
           <div>
@@ -302,8 +372,9 @@ function SubmitPage() {
                 <div>✓ 更新女性体验温度</div>
               </div>
             </div>
-            <div className="mt-2 text-[11px] text-muted-foreground">
-              {content.length} / 2000 字 · 至少 10 字 · 同一对象 24 小时内仅可提交 1 条
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+              <span>{content.length} / 2000 字 · 至少 10 字 · 同一对象 24 小时内仅可提交 1 条</span>
+              {draftSavedAt && <span>草稿已自动保存 · {new Date(draftSavedAt).toLocaleTimeString("zh-CN")}</span>}
             </div>
           </div>
 
