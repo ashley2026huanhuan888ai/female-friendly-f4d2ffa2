@@ -30,11 +30,17 @@ function LoginPage() {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getUser().then(({ data }) => {
-      if (mounted && data.user) navigate({ to: safeRedirect, replace: true });
+    supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (!mounted || !sessionData.session) return;
+      supabase.auth.getUser().then(({ data }) => {
+        if (mounted && data.user) navigate({ to: safeRedirect, replace: true });
+      });
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate({ to: safeRedirect, replace: true });
+      if (!session) return;
+      supabase.auth.getUser().then(({ data }) => {
+        if (data.user) navigate({ to: safeRedirect, replace: true });
+      });
     });
     return () => {
       mounted = false;
@@ -135,6 +141,7 @@ function LoginPage() {
         }
         toast.success("登录成功，正在跳转…");
         try {
+          await supabase.auth.getUser();
           await navigate({ to: safeRedirect, replace: true });
         } catch (navErr: any) {
           setErrorDetail({
