@@ -9,7 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
 const PRIMARY_NAV = [
   { to: "/objects", label: "对象" },
   { to: "/feed", label: "观察流" },
-  { to: "/request-object", label: "申请对象" },
+  { to: "/request-object", label: "增加\n新测评\n对象" },
 ] as const;
 
 const SECONDARY_NAV = [
@@ -50,7 +50,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           {/* 桌面端主导航 */}
           <nav className="hidden items-center gap-6 text-sm md:flex">
             {PRIMARY_NAV.map((l) => (
-              <Link key={l.to} to={l.to} className="text-muted-foreground hover:text-foreground">
+              <Link key={l.to} to={l.to} className="whitespace-pre-line text-muted-foreground hover:text-foreground">
                 {l.label}
               </Link>
             ))}
@@ -160,7 +160,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 <Link
                   key={l.to}
                   to={l.to}
-                  className="border-b border-border/50 py-3 text-foreground"
+                  className="whitespace-pre-line border-b border-border/50 py-3 text-foreground"
                 >
                   {l.label}
                 </Link>
@@ -229,7 +229,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         <div className="container-prose space-y-6 text-xs text-muted-foreground">
           <nav className="flex flex-wrap gap-x-5 gap-y-2">
             {[...PRIMARY_NAV, ...SECONDARY_NAV].map((l) => (
-              <Link key={l.to} to={l.to} className="hover:text-foreground">
+              <Link key={l.to} to={l.to} className="whitespace-pre-line hover:text-foreground">
                 {l.label}
               </Link>
             ))}
