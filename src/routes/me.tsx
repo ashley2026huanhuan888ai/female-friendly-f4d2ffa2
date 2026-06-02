@@ -27,7 +27,7 @@ function MePage() {
   useEffect(() => {
     if (!ready) return;
     if (!user) { setLoading(false); return; }
-    fetchDash().then((d) => setData(d)).finally(() => setLoading(false));
+    fetchDash().then((d: any) => setData(d)).finally(() => setLoading(false));
   }, [ready, user, fetchDash]);
 
   const onMarkAll = async () => {
