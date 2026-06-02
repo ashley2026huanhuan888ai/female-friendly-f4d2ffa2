@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { requestObject } from "@/lib/api/platform.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { LoginPrompt } from "@/components/LoginPrompt";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/request-object")({
