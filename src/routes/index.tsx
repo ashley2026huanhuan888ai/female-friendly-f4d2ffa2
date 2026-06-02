@@ -160,12 +160,12 @@ function Index() {
             </Link>
           </div>
           <div className="border border-border bg-paper p-6">
-            <h3 className="font-serif text-xl">申请评估对象</h3>
+            <h3 className="font-serif text-xl">增加新测评对象</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               没找到你关心的品牌、影视或组织？提交申请，由管理员审核后纳入观察。
             </p>
             <Link to="/request-object" className="mt-4 inline-block border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground">
-              我希望评估… →
+              增加新测评对象 →
             </Link>
           </div>
         </div>
