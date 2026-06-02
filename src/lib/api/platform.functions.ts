@@ -337,42 +337,43 @@ export const submitObservation = createServerFn({ method: "POST" })
       throw new Error("24 小时内最多提交 3 条观察");
     }
 
-    // 2. AI 风险审查
-    const risk = await callAIRiskCheck(data.content);
+    // 2-4. 并行：AI 风险审查 / AI 结构化分析 / 查重候选 / 用户档案
+    const [risk, a, existingRes, profileRes] = await Promise.all([
+      callAIRiskCheck(data.content),
+      callAIAnalyze(data.content, data.scene ?? null, data.screenshot_url ?? null, data.reference_url ?? null),
+      supabaseAdmin
+        .from("observations")
+        .select("id, cleaned_content, content")
+        .eq("object_id", data.object_id)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabaseAdmin.from("profiles").select("auto_approve").eq("id", userId).maybeSingle(),
+    ]);
 
-    // 3. 简单相似度查重（同对象近 50 条已通过观察，2-gram Jaccard >= 0.8）
+    // 3. 简单相似度查重（2-gram Jaccard >= 0.8）
     let duplicate_of: string | null = null;
     let similarity_score: number | null = null;
-    const { data: existing } = await supabaseAdmin
-      .from("observations")
-      .select("id, cleaned_content, content")
-      .eq("object_id", data.object_id)
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(50);
+    const existing = existingRes.data;
     if (existing?.length) {
       const norm = (s: string) => new Set(s.toLowerCase().replace(/[\s\p{P}]+/gu, "").match(/.{1,2}/g) ?? []);
-      const a = norm(data.content);
+      const aSet = norm(data.content);
       for (const e of existing) {
         const b = norm(e.cleaned_content || e.content || "");
         if (b.size === 0) continue;
         let inter = 0;
-        a.forEach((x) => { if (b.has(x)) inter++; });
-        const jac = inter / (a.size + b.size - inter);
+        aSet.forEach((x) => { if (b.has(x)) inter++; });
+        const jac = inter / (aSet.size + b.size - inter);
         if (jac > (similarity_score ?? 0)) { similarity_score = jac; duplicate_of = e.id; }
       }
       if ((similarity_score ?? 0) < 0.8) { duplicate_of = null; }
     }
 
-    // 4. AI 结构化分析
-    const a = await callAIAnalyze(
-      data.content, data.scene ?? null, data.screenshot_url ?? null, data.reference_url ?? null,
-    );
     const impact = computeImpact(a.tags, a.evidence_level, a.confidence);
 
     // 5. 自动通过判定
-    const { data: profile } = await supabaseAdmin
-      .from("profiles").select("auto_approve").eq("id", userId).maybeSingle();
+    const profile = profileRes.data;
+
     const canAuto =
       profile?.auto_approve === true &&
       risk.risk_level === "low" &&
