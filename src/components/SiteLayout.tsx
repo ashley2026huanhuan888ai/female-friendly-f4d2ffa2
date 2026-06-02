@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import type { ReactNode } from "react";
-import { Home } from "lucide-react";
+import { BackToHome } from "@/components/BackToHome";
 
 
 export function SiteLayout({ children }: { children: ReactNode }) {
