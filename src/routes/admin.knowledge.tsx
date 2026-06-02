@@ -216,7 +216,8 @@ function TagsPanel() {
 
 // ---------------- Cases ----------------
 function CasesPanel() {
-  const list = useServerFn(listCases);
+  const list = useServerFn(listAllCasesAdmin);
+
   const upsert = useServerFn(upsertCase);
   const del = useServerFn(deleteCase);
   const tagsFn = useServerFn(listTags);
