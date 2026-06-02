@@ -105,17 +105,11 @@ function SubmitPage() {
     );
   }
 
-  const runSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (content.trim().length < 10) {
-      toast.error("观察内容至少 10 字");
-      return;
-    }
+  const runAnalysis = async () => {
     setPhase("analyzing");
     setStepIdx(0);
     setErrorMsg("");
 
-    // 步骤逐步推进：约每 260ms 推进一步（最短全程 ~1.8s）
     const stepTimer = setInterval(() => {
       setStepIdx((i) => (i < STEPS.length - 1 ? i + 1 : i));
     }, 260);
@@ -138,17 +132,26 @@ function SubmitPage() {
       setStepIdx(STEPS.length - 1);
       setResult(res);
 
-      // 拉一次最新温度
       const { data: latest } = await supabase
         .from("objects").select("temperature").eq("id", objectId).maybeSingle();
       setNewTemp((latest as any)?.temperature ?? obj?.temperature ?? null);
 
+      clearDraft();
       setPhase("done");
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
       setErrorMsg(err?.message ?? "未知错误");
     }
+  };
+
+  const runSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (content.trim().length < 10) {
+      toast.error("观察内容至少 10 字");
+      return;
+    }
+    await runAnalysis();
   };
 
   // 分析中页面
