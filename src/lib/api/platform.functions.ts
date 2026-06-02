@@ -11,7 +11,7 @@ import {
 } from "@/lib/temperature";
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
 import { detectTags, detectEvidenceA } from "@/lib/api/bulk-import.functions";
-import { calculateRuleMinimumTemperature } from "@/lib/temperature-rules";
+import { calculateRuleMinimumTemperature, detectLegalPenalty } from "@/lib/temperature-rules";
 
 const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
