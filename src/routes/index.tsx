@@ -6,6 +6,8 @@ import { FeedEventCard } from "@/components/FeedEventCard";
 import { Thermometer } from "@/components/Thermometer";
 import { BANDS, OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
+import { useAuth } from "@/components/AuthProvider";
+import { GuestPreviewList, GuestLoginPrompt, GUEST_NOTE } from "@/components/PreviewGate";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,12 +25,39 @@ function Index() {
   const [q, setQ] = useState("");
   const [summary, setSummary] = useState<any>(null);
   const fetchSummary = useServerFn(getHomeSummary);
+  const { ready, user } = useAuth();
+  const isGuest = ready && !user;
 
   useEffect(() => {
+    if (isGuest) return;
     fetchSummary().then(setSummary).catch(() => setSummary({
       today_events: [], today_events_count: 0, heating: [], cooling: [], latest_cases: [], latest_observations: [], newest_objects: [],
     }));
-  }, [fetchSummary]);
+  }, [fetchSummary, isGuest]);
+
+  if (isGuest) {
+    return (
+      <SiteLayout>
+        <section className="border-b border-border">
+          <div className="container-prose py-16 md:py-24">
+            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Observatory · Est. 2026</div>
+            <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-balance md:text-6xl">
+              持续观察<span className="text-accent">女性友好体验</span>的变化。
+            </h1>
+            <p className="mt-6 max-w-2xl text-sm text-muted-foreground">{GUEST_NOTE}</p>
+            <div className="mt-6"><Link to="/login" className="inline-block border border-foreground bg-foreground px-5 py-2.5 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent">登录 / 注册</Link></div>
+          </div>
+        </section>
+        <section className="py-12">
+          <div className="container-prose">
+            <h2 className="font-serif text-2xl">公开预览对象</h2>
+            <div className="mt-6"><GuestPreviewList /></div>
+            <div className="mt-8"><GuestLoginPrompt /></div>
+          </div>
+        </section>
+      </SiteLayout>
+    );
+  }
 
   return (
     <SiteLayout>

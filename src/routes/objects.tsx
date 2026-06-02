@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { ObjectCard } from "@/components/ObjectCard";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { useAuth } from "@/components/AuthProvider";
+import { GuestPreviewList, GuestLoginPrompt, GUEST_NOTE } from "@/components/PreviewGate";
 
 export const Route = createFileRoute("/objects")({
   validateSearch: (s: Record<string, unknown>) => ({ q: (s.q as string) ?? "" }),
@@ -23,8 +25,11 @@ function AllObjects() {
   const [type, setType] = useState<string>("");
   const [sort, setSort] = useState<"temp" | "recent">("temp");
   const [items, setItems] = useState<any[]>([]);
+  const { ready, user } = useAuth();
+  const isGuest = ready && !user;
 
   useEffect(() => {
+    if (isGuest) return;
     let query = supabase.from("objects").select("id,name,type,temperature,observation_count,ai_summary");
     if (type) query = query.eq("type", type as any);
     if (q.trim()) query = query.ilike("name", `%${q.trim()}%`);
@@ -32,7 +37,26 @@ function AllObjects() {
       ? query.order("temperature", { ascending: false })
       : query.order("updated_at", { ascending: false });
     query.limit(60).then(({ data }) => setItems(data ?? []));
-  }, [q, type, sort]);
+  }, [q, type, sort, isGuest]);
+
+  if (isGuest) {
+    return (
+      <SiteLayout>
+        <section className="border-b border-border">
+          <div className="container-prose py-12">
+            <h1 className="font-serif text-4xl">全部对象</h1>
+            <p className="mt-3 text-sm text-muted-foreground">{GUEST_NOTE}</p>
+          </div>
+        </section>
+        <section className="py-12">
+          <div className="container-prose">
+            <GuestPreviewList />
+            <div className="mt-8"><GuestLoginPrompt /></div>
+          </div>
+        </section>
+      </SiteLayout>
+    );
+  }
 
   return (
     <SiteLayout>

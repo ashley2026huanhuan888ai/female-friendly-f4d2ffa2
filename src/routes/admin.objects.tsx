@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   createObject, recomputeTemperature, freezeObject,
   hideObject, deleteObject, mergeObjects, updateObjectCategory,
+  setObjectPublicPreview,
 } from "@/lib/api/platform.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { toast } from "sonner";
@@ -15,6 +16,7 @@ type Obj = {
   id: string; name: string; type: string; temperature: number;
   observation_count: number; frozen: boolean; hidden: boolean;
   merged_into: string | null; category: string | null;
+  is_public_preview?: boolean;
 };
 
 function ObjectsAdmin() {
@@ -25,6 +27,7 @@ function ObjectsAdmin() {
   const del = useServerFn(deleteObject);
   const merge = useServerFn(mergeObjects);
   const updateCat = useServerFn(updateObjectCategory);
+  const setPreview = useServerFn(setObjectPublicPreview);
 
   const [items, setItems] = useState<Obj[]>([]);
   const [form, setForm] = useState({ name: "", type: "brand", description: "" });
@@ -84,6 +87,7 @@ function ObjectsAdmin() {
               </select>
               {o.frozen && <span className="border border-accent px-1.5 py-0.5 text-[10px] text-accent">冻结</span>}
               {o.hidden && <span className="border border-temp-warm px-1.5 py-0.5 text-[10px] text-temp-warm">隐藏</span>}
+              {o.is_public_preview && <span className="border border-accent px-1.5 py-0.5 text-[10px] text-accent">公开预览</span>}
               {o.merged_into && <span className="border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">已合并</span>}
               <span className="ml-auto text-sm tabular-nums">{Number(o.temperature).toFixed(0)}°</span>
               <span className="text-xs text-muted-foreground">· {o.observation_count} 条</span>
@@ -107,6 +111,11 @@ function ObjectsAdmin() {
                 onClick={() => wrap(o.id, () => hide({ data: { object_id: o.id, hidden: !o.hidden } }), o.hidden ? "已显示" : "已隐藏")}
                 className="border border-border px-3 py-1 text-xs hover:border-foreground">
                 {o.hidden ? "取消隐藏" : "隐藏"}
+              </button>
+              <button disabled={busy === o.id}
+                onClick={() => wrap(o.id, () => setPreview({ data: { object_id: o.id, is_public_preview: !o.is_public_preview } }), o.is_public_preview ? "已取消公开预览" : "已设为公开预览")}
+                className="border border-border px-3 py-1 text-xs hover:border-foreground">
+                {o.is_public_preview ? "取消公开预览" : "设为公开预览"}
               </button>
               <button disabled={busy === o.id}
                 onClick={() => {

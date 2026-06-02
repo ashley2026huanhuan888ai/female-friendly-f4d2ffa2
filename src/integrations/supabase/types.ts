@@ -260,6 +260,7 @@ export type Database = {
           heat_sources: Json
           hidden: boolean
           id: string
+          is_public_preview: boolean
           last_cooled_at: string | null
           merged_into: string | null
           name: string
@@ -280,6 +281,7 @@ export type Database = {
           heat_sources?: Json
           hidden?: boolean
           id?: string
+          is_public_preview?: boolean
           last_cooled_at?: string | null
           merged_into?: string | null
           name: string
@@ -300,6 +302,7 @@ export type Database = {
           heat_sources?: Json
           hidden?: boolean
           id?: string
+          is_public_preview?: boolean
           last_cooled_at?: string | null
           merged_into?: string | null
           name?: string
