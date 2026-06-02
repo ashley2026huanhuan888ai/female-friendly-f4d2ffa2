@@ -26,8 +26,20 @@ function LoginPage() {
     return () => sub.subscription.unsubscribe();
   }, [navigate, redirect]);
 
+  const passwordRules = [
+    { ok: password.length >= 8, label: "至少 8 位" },
+    { ok: /[a-z]/.test(password), label: "包含小写字母" },
+    { ok: /[A-Z]/.test(password), label: "包含大写字母" },
+    { ok: /[0-9]/.test(password), label: "包含数字" },
+  ];
+  const passwordValid = passwordRules.every((r) => r.ok);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === "signup" && !passwordValid) {
+      toast.error("密码不符合规则，请按下方提示设置");
+      return;
+    }
     setPending(true);
     try {
       if (mode === "signup") {
