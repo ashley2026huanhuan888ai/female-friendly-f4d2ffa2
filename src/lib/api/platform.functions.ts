@@ -854,13 +854,9 @@ async function ingestReasonAsObservation(
   } as never).select("id").single();
   if (error) throw new Error(error.message);
 
+  // 统一入口已处理规则地板；不再二次直接写 objects.temperature
   const result = await recomputeObjectWithEngine(object_id, "request_approval", null, actor_id);
-  let final = result?.temperature ?? rule.rule_minimum_temperature;
-  if (rule.rule_minimum_temperature > final) final = rule.rule_minimum_temperature;
-  if (final !== (result?.temperature ?? 0)) {
-    await supabaseAdmin.from("objects").update({ temperature: final } as never).eq("id", object_id);
-  }
-  return { observation_id: (ins as { id: string }).id, temperature: final };
+  return { observation_id: (ins as { id: string }).id, temperature: result?.temperature ?? rule.rule_minimum_temperature };
 }
 
 // ===== 管理员通过对象申请（完整流程：创建对象 + 写观察 + 重算温度） =====
