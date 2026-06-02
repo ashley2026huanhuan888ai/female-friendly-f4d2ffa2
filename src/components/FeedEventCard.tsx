@@ -31,8 +31,10 @@ export function FeedEventCard({ ev }: { ev: Event }) {
     <Link
       to="/objects/$id"
       params={{ id: ev.object.id }}
-      className="block border border-border bg-card p-5 transition-colors hover:border-foreground/40"
+      aria-label={`查看对象详情：${ev.object.name}`}
+      className="block cursor-pointer border border-border bg-card p-5 transition-all hover:border-foreground/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
+
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
