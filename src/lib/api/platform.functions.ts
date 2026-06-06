@@ -3,18 +3,59 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import {
-  FEMINIST_TAGS,
-  TAG_WEIGHTS,
-  EVIDENCE_STRENGTH,
-  computeImpact,
-} from "@/lib/temperature";
+import { FEMINIST_TAGS, TAG_WEIGHTS, EVIDENCE_STRENGTH, computeImpact } from "@/lib/temperature";
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
 import { detectTags, detectEvidenceA } from "@/lib/api/bulk-import.functions";
 import { calculateRuleMinimumTemperature, detectLegalPenalty } from "@/lib/temperature-rules";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-2.5-flash";
+const DEFAULT_LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const DEFAULT_LOVABLE_MODEL = "google/gemini-2.5-flash";
+const DEFAULT_DEEPSEEK_GATEWAY = "https://api.deepseek.com/chat/completions";
+const DEFAULT_DEEPSEEK_MODEL = "deepseek-chat";
+const PUBLIC_OBJECT_COLUMNS =
+  "id, name, type, description, temperature, observation_count, ai_summary, top_tags, heat_sources, cooling_sources, updated_at";
+
+function normalizeAIEndpoint(rawUrl: string): string {
+  const trimmed = rawUrl.trim().replace(/\/+$/, "");
+  if (trimmed.endsWith("/chat/completions")) return trimmed;
+  return `${trimmed}/chat/completions`;
+}
+
+function getAIProvider(): "lovable" | "deepseek" | "custom" {
+  const explicitProvider = process.env.AI_PROVIDER?.trim().toLowerCase();
+  if (explicitProvider === "deepseek") return "deepseek";
+  if (explicitProvider && explicitProvider !== "lovable") return "custom";
+
+  const explicitEndpoint = (process.env.AI_BASE_URL || process.env.AI_GATEWAY_URL || "")
+    .trim()
+    .toLowerCase();
+  if (explicitEndpoint.includes("deepseek")) return "deepseek";
+  if (explicitEndpoint) return "custom";
+  return "lovable";
+}
+
+function getAIConfig(): { apiKey: string; endpoint: string; model: string } {
+  const provider = getAIProvider();
+  const explicitEndpoint = process.env.AI_BASE_URL || process.env.AI_GATEWAY_URL;
+  const endpoint = explicitEndpoint
+    ? normalizeAIEndpoint(explicitEndpoint)
+    : provider === "deepseek"
+      ? DEFAULT_DEEPSEEK_GATEWAY
+      : DEFAULT_LOVABLE_GATEWAY;
+  const model =
+    process.env.AI_MODEL ||
+    (provider === "deepseek" ? DEFAULT_DEEPSEEK_MODEL : DEFAULT_LOVABLE_MODEL);
+
+  if (provider === "lovable") {
+    const apiKey = process.env.LOVABLE_API_KEY || process.env.AI_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY 或 AI_API_KEY 未配置");
+    return { apiKey, endpoint, model };
+  }
+
+  const apiKey = process.env.AI_API_KEY;
+  if (!apiKey) throw new Error("AI_API_KEY 未配置（DeepSeek 或自定义 AI Provider 需要）");
+  return { apiKey, endpoint, model };
+}
 
 interface AnalyzeResult {
   cleaned_content: string;
@@ -32,9 +73,13 @@ interface AnalyzeResult {
 // 检索可被 AI 引用的知识：活跃原则 + 已发布案例
 async function loadKnowledgeContext() {
   const [pRes, cRes] = await Promise.all([
-    supabaseAdmin.from("principles" as never).select("code, name, description")
-      .eq("active", true).order("display_order"),
-    supabaseAdmin.from("knowledge_cases" as never)
+    supabaseAdmin
+      .from("principles" as never)
+      .select("code, name, description")
+      .eq("active", true)
+      .order("display_order"),
+    supabaseAdmin
+      .from("knowledge_cases" as never)
       .select("code, title, summary, polarity, tags")
       .eq("status", "published")
       .order("featured", { ascending: false })
@@ -43,7 +88,13 @@ async function loadKnowledgeContext() {
   ]);
   return {
     principles: (pRes.data ?? []) as { code: string; name: string; description: string | null }[],
-    cases: (cRes.data ?? []) as { code: string; title: string; summary: string; polarity: string; tags: string[] }[],
+    cases: (cRes.data ?? []) as {
+      code: string;
+      title: string;
+      summary: string;
+      polarity: string;
+      tags: string[];
+    }[],
   };
 }
 
@@ -53,8 +104,7 @@ async function callAIAnalyze(
   screenshot: string | null,
   ref: string | null,
 ): Promise<AnalyzeResult> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY 未配置");
+  const ai = getAIConfig();
 
   const kb = await loadKnowledgeContext();
   const principleCodes = kb.principles.map((p) => p.code);
@@ -92,42 +142,62 @@ ${scene ? `场景：${scene}` : ""}
 ${screenshot ? `附有截图证据：${screenshot}` : ""}
 ${ref ? `参考链接：${ref}` : ""}`;
 
-  const res = await fetch(GATEWAY, {
+  const res = await fetch(ai.endpoint, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${ai.apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: "system", content: sys }, { role: "user", content: user }],
-      tools: [{
-        type: "function",
-        function: {
-          name: "submit_analysis",
-          description: "返回结构化分析结果",
-          parameters: {
-            type: "object",
-            properties: {
-              cleaned_content: { type: "string" },
-              facts: { type: "array", items: { type: "string" } },
-              evidence_level: { type: "string", enum: ["A", "B", "C", "D"] },
-              tags: { type: "array", items: { type: "string", enum: [...FEMINIST_TAGS] } },
-              confidence: { type: "number", minimum: 0, maximum: 1 },
-              summary: { type: "string" },
-              reason: { type: "string" },
-              principles_matched: {
-                type: "array",
-                items: principleCodes.length ? { type: "string", enum: principleCodes } : { type: "string" },
+      model: ai.model,
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content: user },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "submit_analysis",
+            description: "返回结构化分析结果",
+            parameters: {
+              type: "object",
+              properties: {
+                cleaned_content: { type: "string" },
+                facts: { type: "array", items: { type: "string" } },
+                evidence_level: { type: "string", enum: ["A", "B", "C", "D"] },
+                tags: { type: "array", items: { type: "string", enum: [...FEMINIST_TAGS] } },
+                confidence: { type: "number", minimum: 0, maximum: 1 },
+                summary: { type: "string" },
+                reason: { type: "string" },
+                principles_matched: {
+                  type: "array",
+                  items: principleCodes.length
+                    ? { type: "string", enum: principleCodes }
+                    : { type: "string" },
+                },
+                cases_cited: {
+                  type: "array",
+                  items: caseCodes.length
+                    ? { type: "string", enum: caseCodes }
+                    : { type: "string" },
+                },
+                explanation: { type: "string", description: "可解释性说明，需援引 code" },
               },
-              cases_cited: {
-                type: "array",
-                items: caseCodes.length ? { type: "string", enum: caseCodes } : { type: "string" },
-              },
-              explanation: { type: "string", description: "可解释性说明，需援引 code" },
+              required: [
+                "cleaned_content",
+                "facts",
+                "evidence_level",
+                "tags",
+                "confidence",
+                "summary",
+                "reason",
+                "principles_matched",
+                "cases_cited",
+                "explanation",
+              ],
+              additionalProperties: false,
             },
-            required: ["cleaned_content","facts","evidence_level","tags","confidence","summary","reason","principles_matched","cases_cited","explanation"],
-            additionalProperties: false,
           },
         },
-      }],
+      ],
       tool_choice: { type: "function", function: { name: "submit_analysis" } },
     }),
   });
@@ -153,8 +223,7 @@ async function callAIObjectSummary(
   objectName: string,
   observations: { summary: string; tags: string[]; evidence_level: string; impact_score: number }[],
 ): Promise<SummaryResult> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY 未配置");
+  const ai = getAIConfig();
 
   // 标签 / 证据分布
   const tagCount = new Map<string, number>();
@@ -179,26 +248,37 @@ async function callAIObjectSummary(
 Top 标签：${top_tags.map((t) => `${t.tag}(${t.count})`).join("、") || "无"}
 
 观察摘要样本（最多 20 条）：
-${observations.slice(0, 20).map((o, i) => `${i + 1}. [${o.evidence_level}|分${o.impact_score}|${o.tags.join(",")}] ${o.summary}`).join("\n")}`;
+${observations
+  .slice(0, 20)
+  .map(
+    (o, i) =>
+      `${i + 1}. [${o.evidence_level}|分${o.impact_score}|${o.tags.join(",")}] ${o.summary}`,
+  )
+  .join("\n")}`;
 
-  const res = await fetch(GATEWAY, {
+  const res = await fetch(ai.endpoint, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${ai.apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: "system", content: sys }, { role: "user", content: user }],
-      tools: [{
-        type: "function",
-        function: {
-          name: "submit_summary",
-          parameters: {
-            type: "object",
-            properties: { summary: { type: "string" } },
-            required: ["summary"],
-            additionalProperties: false,
+      model: ai.model,
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content: user },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "submit_summary",
+            parameters: {
+              type: "object",
+              properties: { summary: { type: "string" } },
+              required: ["summary"],
+              additionalProperties: false,
+            },
           },
         },
-      }],
+      ],
       tool_choice: { type: "function", function: { name: "submit_summary" } },
     }),
   });
@@ -214,7 +294,10 @@ ${observations.slice(0, 20).map((o, i) => `${i + 1}. [${o.evidence_level}|分${o
 
 async function assertAdmin(userId: string) {
   const { data: roles } = await supabaseAdmin
-    .from("user_roles").select("role").eq("user_id", userId).eq("role", "admin");
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin");
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
@@ -238,24 +321,38 @@ export const getCurrentUserAccess = createServerFn({ method: "GET" })
   });
 
 async function writeAuditLog(
-  actor: string, action: string, target_type: string, target_id: string | null,
-  before: unknown, after: unknown, reason?: string | null,
+  actor: string,
+  action: string,
+  target_type: string,
+  target_id: string | null,
+  before: unknown,
+  after: unknown,
+  reason?: string | null,
 ) {
   await supabaseAdmin.from("audit_logs").insert({
-    actor_id: actor, action, target_type, target_id,
-    before: before as never, after: after as never, reason: reason ?? null,
+    actor_id: actor,
+    action,
+    target_type,
+    target_id,
+    before: before as never,
+    after: after as never,
+    reason: reason ?? null,
   });
 }
 
 // 内部温度重算（薄包装：唯一温度入口是 recomputeObjectWithEngine）
 async function recomputeObjectInternal(object_id: string): Promise<number | null> {
   const { data: obj } = await supabaseAdmin
-    .from("objects").select("id, name, frozen").eq("id", object_id).single();
+    .from("objects")
+    .select("id, name, frozen")
+    .eq("id", object_id)
+    .single();
   if (!obj || obj.frozen) return null;
   const { data: obs } = await supabaseAdmin
     .from("observations")
     .select("summary, cleaned_content, content, evidence_level, tags, impact_score")
-    .eq("object_id", object_id).eq("status", "approved");
+    .eq("object_id", object_id)
+    .eq("status", "approved");
   const list = (obs ?? []).map((o) => ({
     summary: o.summary || o.cleaned_content || o.content?.slice(0, 80) || "",
     evidence_level: (o.evidence_level ?? "C") as string,
@@ -269,11 +366,14 @@ async function recomputeObjectInternal(object_id: string): Promise<number | null
 
   if (list.length === 0) {
     // 0 观察：清空总结，不写温度
-    await supabaseAdmin.from("objects").update({
-      ai_summary: "暂无足够观察生成总结。",
-      top_tags: [] as never,
-      observation_count: 0,
-    } as never).eq("id", object_id);
+    await supabaseAdmin
+      .from("objects")
+      .update({
+        ai_summary: "暂无足够观察生成总结。",
+        top_tags: [] as never,
+        observation_count: 0,
+      } as never)
+      .eq("id", object_id);
     return temperature;
   }
 
@@ -282,14 +382,23 @@ async function recomputeObjectInternal(object_id: string): Promise<number | null
   let evidence_distribution: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
   try {
     const r = await callAIObjectSummary(obj.name, list);
-    summary = r.summary; top_tags = r.top_tags; evidence_distribution = r.evidence_distribution;
-  } catch { /* tolerate AI failure */ }
-  await supabaseAdmin.from("objects").update({
-    ai_summary: summary || null, top_tags,
-    observation_count: list.filter((o) => o.evidence_level !== "D").length,
-  }).eq("id", object_id);
+    summary = r.summary;
+    top_tags = r.top_tags;
+    evidence_distribution = r.evidence_distribution;
+  } catch {
+    /* tolerate AI failure */
+  }
+  await supabaseAdmin
+    .from("objects")
+    .update({
+      ai_summary: summary || null,
+      top_tags,
+      observation_count: list.filter((o) => o.evidence_level !== "D").length,
+    })
+    .eq("id", object_id);
   await supabaseAdmin.from("analysis_logs").insert({
-    object_id, snapshot: { temperature, top_tags, evidence_distribution, obs_count: list.length },
+    object_id,
+    snapshot: { temperature, top_tags, evidence_distribution, obs_count: list.length },
   });
   return temperature;
 }
@@ -300,34 +409,44 @@ async function callAIRiskCheck(content: string): Promise<{
   reasons: string[];
   suggested_action: "approve" | "review" | "reject";
 }> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY 未配置");
+  const ai = getAIConfig();
   const sys = `你是平台内容风险审查员。判断用户提交的观察是否存在以下风险：
 abuse(辱骂/人身攻击) / ad(广告) / spam(刷屏/重复无意义) / extreme(极端情绪宣泄) / political(政治内容) / illegal(违法) / defamation(诽谤)。
 风险等级：low=正常观察；medium=存在争议但可审；high=涉嫌前述严重情形。
 suggested_action：approve(明显正常)/review(需人工审)/reject(强烈建议拒绝)。`;
-  const res = await fetch(GATEWAY, {
+  const res = await fetch(ai.endpoint, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${ai.apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: MODEL,
-      messages: [{ role: "system", content: sys }, { role: "user", content }],
-      tools: [{
-        type: "function",
-        function: {
-          name: "risk",
-          parameters: {
-            type: "object",
-            properties: {
-              risk_level: { type: "string", enum: ["low", "medium", "high"] },
-              reasons: { type: "array", items: { type: "string", enum: ["abuse","ad","spam","extreme","political","illegal","defamation"] } },
-              suggested_action: { type: "string", enum: ["approve", "review", "reject"] },
+      model: ai.model,
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "risk",
+            parameters: {
+              type: "object",
+              properties: {
+                risk_level: { type: "string", enum: ["low", "medium", "high"] },
+                reasons: {
+                  type: "array",
+                  items: {
+                    type: "string",
+                    enum: ["abuse", "ad", "spam", "extreme", "political", "illegal", "defamation"],
+                  },
+                },
+                suggested_action: { type: "string", enum: ["approve", "review", "reject"] },
+              },
+              required: ["risk_level", "reasons", "suggested_action"],
+              additionalProperties: false,
             },
-            required: ["risk_level", "reasons", "suggested_action"],
-            additionalProperties: false,
           },
         },
-      }],
+      ],
       tool_choice: { type: "function", function: { name: "risk" } },
     }),
   });
@@ -342,20 +461,23 @@ suggested_action：approve(明显正常)/review(需人工审)/reject(强烈建�
 export const submitObservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      object_id: z.string().uuid(),
-      content: z.string().trim().min(10).max(2000),
-      scene: z.string().max(200).optional().nullable(),
-      screenshot_url: z.string().url().max(500).optional().nullable(),
-      reference_url: z.string().url().max(500).optional().nullable(),
-    }).parse(input),
+    z
+      .object({
+        object_id: z.string().uuid(),
+        content: z.string().trim().min(10).max(2000),
+        scene: z.string().max(200).optional().nullable(),
+        screenshot_url: z.string().url().max(500).optional().nullable(),
+        reference_url: z.string().url().max(500).optional().nullable(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
 
     // 1. 限额检查
     const { data: lim } = await supabaseAdmin.rpc("check_user_submit_limit", {
-      _user: userId, _object: data.object_id,
+      _user: userId,
+      _object: data.object_id,
     });
     const limit = lim as { allowed: boolean; total_24h: number; same_object_24h: number } | null;
     if (limit && !limit.allowed) {
@@ -365,7 +487,13 @@ export const submitObservation = createServerFn({ method: "POST" })
 
     // 2. 法律强证据预扫描（独立于 AI，保证 AI 失败也有兜底）
     const hasLegalPenalty = detectLegalPenalty(data.content);
-    const LEGAL_FALLBACK_TAGS = ["女性物化", "性别歧视营销", "低俗擦边营销"];
+    const LEGAL_FALLBACK_TAGS = Array.from(
+      new Set(["女性物化", "性别歧视营销", "低俗擦边营销", ...detectTags(data.content)]),
+    );
+    const legalFallbackConfidence = 0.8;
+    const legalFallbackImpact = hasLegalPenalty
+      ? computeImpact(LEGAL_FALLBACK_TAGS, "A", legalFallbackConfidence)
+      : 0;
 
     // 3. 先 INSERT observation（必须先成功，AI 失败也不丢数据）
     const { data: inserted, error: insErr } = await supabaseAdmin
@@ -377,13 +505,13 @@ export const submitObservation = createServerFn({ method: "POST" })
         scene: data.scene ?? null,
         screenshot_url: data.screenshot_url ?? null,
         reference_url: data.reference_url ?? null,
-        status: "pending",
+        status: hasLegalPenalty ? "approved" : "pending",
         evidence_level: hasLegalPenalty ? "A" : null,
         tags: hasLegalPenalty ? LEGAL_FALLBACK_TAGS : [],
         risk_level: hasLegalPenalty ? "high" : "low",
-        confidence: 0,
-        impact_score: 0,
-        admin_note: hasLegalPenalty ? "法律强证据预标注（待 AI 复核）" : null,
+        confidence: hasLegalPenalty ? legalFallbackConfidence : 0,
+        impact_score: legalFallbackImpact,
+        admin_note: hasLegalPenalty ? "法律强证据预标注（已纳入温度，待 AI 复核）" : null,
       } as never)
       .select("id")
       .single();
@@ -393,21 +521,27 @@ export const submitObservation = createServerFn({ method: "POST" })
     // 4. AI 分析 + 查重 + 自动通过判定（全部包在 try/catch，绝不抛错）
     let aiFailed = false;
     let aiError: string | null = null;
-    let finalStatus: "pending" | "approved" = "pending";
+    let finalStatus: "pending" | "approved" = hasLegalPenalty ? "approved" : "pending";
     let finalEvidence: "A" | "B" | "C" | "D" | null = hasLegalPenalty ? "A" : null;
     let finalTags: string[] = hasLegalPenalty ? [...LEGAL_FALLBACK_TAGS] : [];
     let finalRisk: "low" | "medium" | "high" = hasLegalPenalty ? "high" : "low";
     let finalSummary: string | null = null;
     let finalReason: string | null = null;
-    let finalImpact = 0;
-    let finalConfidence = 0;
+    let finalImpact = legalFallbackImpact;
+    let finalConfidence = hasLegalPenalty ? legalFallbackConfidence : 0;
+    let finalRiskReasons: string[] = hasLegalPenalty ? ["regulatory_penalty"] : [];
     let duplicate_of: string | null = null;
     let similarity_score: number | null = null;
 
     try {
       const [risk, a, existingRes, profileRes] = await Promise.all([
         callAIRiskCheck(data.content),
-        callAIAnalyze(data.content, data.scene ?? null, data.screenshot_url ?? null, data.reference_url ?? null),
+        callAIAnalyze(
+          data.content,
+          data.scene ?? null,
+          data.screenshot_url ?? null,
+          data.reference_url ?? null,
+        ),
         supabaseAdmin
           .from("observations")
           .select("id, cleaned_content, content")
@@ -422,15 +556,26 @@ export const submitObservation = createServerFn({ method: "POST" })
       // 查重
       const existing = existingRes.data;
       if (existing?.length) {
-        const norm = (s: string) => new Set(s.toLowerCase().replace(/[\s\p{P}]+/gu, "").match(/.{1,2}/g) ?? []);
+        const norm = (s: string) =>
+          new Set(
+            s
+              .toLowerCase()
+              .replace(/[\s\p{P}]+/gu, "")
+              .match(/.{1,2}/g) ?? [],
+          );
         const aSet = norm(data.content);
         for (const e of existing) {
           const b = norm(e.cleaned_content || e.content || "");
           if (b.size === 0) continue;
           let inter = 0;
-          aSet.forEach((x) => { if (b.has(x)) inter++; });
+          aSet.forEach((x) => {
+            if (b.has(x)) inter++;
+          });
           const jac = inter / (aSet.size + b.size - inter);
-          if (jac > (similarity_score ?? 0)) { similarity_score = jac; duplicate_of = e.id; }
+          if (jac > (similarity_score ?? 0)) {
+            similarity_score = jac;
+            duplicate_of = e.id;
+          }
         }
         if ((similarity_score ?? 0) < 0.8) duplicate_of = null;
       }
@@ -438,10 +583,16 @@ export const submitObservation = createServerFn({ method: "POST" })
       // 法律 fallback 合并：取更强者
       const evidenceOrder = { A: 4, B: 3, C: 2, D: 1 } as const;
       const mergedEv: "A" | "B" | "C" | "D" =
-        hasLegalPenalty || evidenceOrder[a.evidence_level] >= evidenceOrder[(finalEvidence ?? "D") as "A"|"B"|"C"|"D"]
-          ? (hasLegalPenalty ? "A" : a.evidence_level)
+        hasLegalPenalty ||
+        evidenceOrder[a.evidence_level] >=
+          evidenceOrder[(finalEvidence ?? "D") as "A" | "B" | "C" | "D"]
+          ? hasLegalPenalty
+            ? "A"
+            : a.evidence_level
           : (finalEvidence as "A" | "B" | "C" | "D");
-      const mergedTags = Array.from(new Set([...(a.tags ?? []), ...(hasLegalPenalty ? LEGAL_FALLBACK_TAGS : [])]));
+      const mergedTags = Array.from(
+        new Set([...(a.tags ?? []), ...(hasLegalPenalty ? LEGAL_FALLBACK_TAGS : [])]),
+      );
       const riskOrder = { low: 1, medium: 2, high: 3 } as const;
       const mergedRisk: "low" | "medium" | "high" =
         riskOrder[risk.risk_level] >= riskOrder[finalRisk] ? risk.risk_level : finalRisk;
@@ -449,6 +600,9 @@ export const submitObservation = createServerFn({ method: "POST" })
       finalEvidence = mergedEv;
       finalTags = mergedTags;
       finalRisk = mergedRisk;
+      finalRiskReasons = Array.from(
+        new Set([...(risk.reasons ?? []), ...(hasLegalPenalty ? ["regulatory_penalty"] : [])]),
+      );
       finalSummary = a.summary;
       finalReason = a.reason;
       finalConfidence = a.confidence;
@@ -456,11 +610,8 @@ export const submitObservation = createServerFn({ method: "POST" })
 
       const profile = profileRes.data;
       const canAuto =
-        profile?.auto_approve === true &&
-        mergedRisk === "low" &&
-        !duplicate_of &&
-        mergedEv !== "D";
-      finalStatus = canAuto ? "approved" : "pending";
+        profile?.auto_approve === true && mergedRisk === "low" && !duplicate_of && mergedEv !== "D";
+      finalStatus = hasLegalPenalty || canAuto ? "approved" : "pending";
 
       const { error: updErr } = await supabaseAdmin
         .from("observations")
@@ -474,7 +625,7 @@ export const submitObservation = createServerFn({ method: "POST" })
           impact_score: finalImpact,
           status: finalStatus,
           risk_level: mergedRisk,
-          risk_reasons: risk.reasons,
+          risk_reasons: finalRiskReasons,
           duplicate_of,
           similarity_score,
           principles_matched: a.principles_matched ?? [],
@@ -488,8 +639,10 @@ export const submitObservation = createServerFn({ method: "POST" })
       if (finalStatus === "approved") {
         void recomputeObjectInternal(data.object_id).catch(() => {});
         await supabaseAdmin.rpc("apply_reputation_delta", {
-          _user: userId, _delta: data.reference_url ? 10 : 5,
-          _reason: "auto_approve", _obs: observationId,
+          _user: userId,
+          _delta: data.reference_url ? 10 : 5,
+          _reason: "auto_approve",
+          _obs: observationId,
         });
       }
     } catch (aiErr: unknown) {
@@ -499,8 +652,15 @@ export const submitObservation = createServerFn({ method: "POST" })
       await supabaseAdmin
         .from("observations")
         .update({
+          status: hasLegalPenalty ? "approved" : "pending",
+          evidence_level: hasLegalPenalty ? "A" : finalEvidence,
+          tags: finalTags,
+          confidence: finalConfidence,
+          impact_score: finalImpact,
+          risk_level: finalRisk,
+          risk_reasons: finalRiskReasons,
           admin_note: hasLegalPenalty
-            ? `法律强证据预标注（AI 分析失败: ${aiError}）`
+            ? `法律强证据预标注（已纳入温度；AI 分析失败: ${aiError}）`
             : `AI 分析失败: ${aiError}`,
         } as never)
         .eq("id", observationId);
@@ -518,7 +678,7 @@ export const submitObservation = createServerFn({ method: "POST" })
       error: aiError,
       has_legal_penalty: hasLegalPenalty,
       risk_level: finalRisk,
-      risk_reasons: [] as string[],
+      risk_reasons: finalRiskReasons,
       duplicate_of,
       similarity_score,
       evidence_level: finalEvidence,
@@ -531,6 +691,188 @@ export const submitObservation = createServerFn({ method: "POST" })
     };
   });
 
+// ===== 用户 / 管理员重试已保存观察的 AI 分析 =====
+export const retryObservationAnalysis = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: obs } = await supabaseAdmin
+      .from("observations")
+      .select("id, object_id, user_id, content, scene, screenshot_url, reference_url, status")
+      .eq("id", data.id)
+      .single();
+    if (!obs) throw new Error("观察不存在");
+
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin");
+    const isAdmin = Boolean(roles?.length);
+    if (!isAdmin && obs.user_id !== context.userId) throw new Error("只能重试自己的观察");
+
+    const hasLegalPenalty = detectLegalPenalty(obs.content);
+    const fallbackTags = Array.from(
+      new Set(["女性物化", "性别歧视营销", "低俗擦边营销", ...detectTags(obs.content)]),
+    );
+    const fallbackConfidence = 0.8;
+    const fallbackImpact = hasLegalPenalty
+      ? computeImpact(fallbackTags, "A", fallbackConfidence)
+      : 0;
+
+    try {
+      const [risk, a, existingRes, profileRes] = await Promise.all([
+        callAIRiskCheck(obs.content),
+        callAIAnalyze(obs.content, obs.scene, obs.screenshot_url, obs.reference_url),
+        supabaseAdmin
+          .from("observations")
+          .select("id, cleaned_content, content")
+          .eq("object_id", obs.object_id)
+          .eq("status", "approved")
+          .neq("id", obs.id)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabaseAdmin.from("profiles").select("auto_approve").eq("id", obs.user_id).maybeSingle(),
+      ]);
+
+      let duplicate_of: string | null = null;
+      let similarity_score: number | null = null;
+      const existing = existingRes.data;
+      if (existing?.length) {
+        const norm = (s: string) =>
+          new Set(
+            s
+              .toLowerCase()
+              .replace(/[\s\p{P}]+/gu, "")
+              .match(/.{1,2}/g) ?? [],
+          );
+        const aSet = norm(obs.content);
+        for (const e of existing) {
+          const b = norm(e.cleaned_content || e.content || "");
+          if (b.size === 0) continue;
+          let inter = 0;
+          aSet.forEach((x) => {
+            if (b.has(x)) inter++;
+          });
+          const jac = inter / (aSet.size + b.size - inter);
+          if (jac > (similarity_score ?? 0)) {
+            similarity_score = jac;
+            duplicate_of = e.id;
+          }
+        }
+        if ((similarity_score ?? 0) < 0.8) duplicate_of = null;
+      }
+
+      const mergedEv: "A" | "B" | "C" | "D" = hasLegalPenalty ? "A" : a.evidence_level;
+      const mergedTags = Array.from(
+        new Set([...(a.tags ?? []), ...(hasLegalPenalty ? fallbackTags : [])]),
+      );
+      const mergedRisk: "low" | "medium" | "high" = hasLegalPenalty ? "high" : risk.risk_level;
+      const riskReasons = Array.from(
+        new Set([...(risk.reasons ?? []), ...(hasLegalPenalty ? ["regulatory_penalty"] : [])]),
+      );
+      const impact = computeImpact(mergedTags, mergedEv, a.confidence);
+      const canAuto =
+        profileRes.data?.auto_approve === true &&
+        mergedRisk === "low" &&
+        !duplicate_of &&
+        mergedEv !== "D";
+      const status: "approved" | "pending" =
+        hasLegalPenalty || canAuto || obs.status === "approved" ? "approved" : "pending";
+
+      await supabaseAdmin
+        .from("observations")
+        .update({
+          cleaned_content: a.cleaned_content,
+          facts: a.facts,
+          summary: a.summary,
+          evidence_level: mergedEv,
+          tags: mergedTags,
+          confidence: a.confidence,
+          impact_score: impact,
+          status,
+          risk_level: mergedRisk,
+          risk_reasons: riskReasons,
+          duplicate_of,
+          similarity_score,
+          principles_matched: a.principles_matched ?? [],
+          cases_cited: a.cases_cited ?? [],
+          explanation: a.explanation ?? null,
+          admin_note: hasLegalPenalty ? "法律强证据（AI 已分析）" : null,
+        } as never)
+        .eq("id", obs.id);
+
+      if (status === "approved") {
+        void recomputeObjectInternal(obs.object_id).catch(() => {});
+        if (obs.status !== "approved") {
+          await supabaseAdmin.rpc("apply_reputation_delta", {
+            _user: obs.user_id,
+            _delta: obs.reference_url ? 10 : 5,
+            _reason: "retry_auto_approve",
+            _obs: obs.id,
+          });
+        }
+      }
+
+      return {
+        id: obs.id,
+        status,
+        ai_failed: false,
+        error: null,
+        has_legal_penalty: hasLegalPenalty,
+        risk_level: mergedRisk,
+        risk_reasons: riskReasons,
+        duplicate_of,
+        similarity_score,
+        evidence_level: mergedEv,
+        tags: mergedTags,
+        impact_score: impact,
+        confidence: a.confidence,
+        summary: a.summary,
+        reason: a.reason,
+      };
+    } catch (aiErr: unknown) {
+      const message = aiErr instanceof Error ? aiErr.message : String(aiErr);
+      await supabaseAdmin
+        .from("observations")
+        .update({
+          status: hasLegalPenalty ? "approved" : obs.status,
+          ...(hasLegalPenalty
+            ? {
+                evidence_level: "A",
+                tags: fallbackTags,
+                confidence: fallbackConfidence,
+                impact_score: fallbackImpact,
+                risk_level: "high",
+                risk_reasons: ["regulatory_penalty"],
+              }
+            : {}),
+          admin_note: hasLegalPenalty
+            ? `法律强证据预标注（已纳入温度；AI 分析失败: ${message}）`
+            : `AI 分析失败: ${message}`,
+        } as never)
+        .eq("id", obs.id);
+      if (hasLegalPenalty) void recomputeObjectInternal(obs.object_id).catch(() => {});
+      return {
+        id: obs.id,
+        status: hasLegalPenalty ? "approved" : obs.status,
+        ai_failed: true,
+        error: message,
+        has_legal_penalty: hasLegalPenalty,
+        risk_level: hasLegalPenalty ? "high" : "low",
+        risk_reasons: hasLegalPenalty ? ["regulatory_penalty"] : [],
+        duplicate_of: null,
+        similarity_score: null,
+        evidence_level: hasLegalPenalty ? "A" : null,
+        tags: hasLegalPenalty ? fallbackTags : [],
+        impact_score: fallbackImpact,
+        confidence: hasLegalPenalty ? fallbackConfidence : 0,
+        summary: null,
+        reason: null,
+      };
+    }
+  });
+
 // ===== 重新生成单条观察的 AI 分析（admin）=====
 export const regenerateObservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -540,22 +882,26 @@ export const regenerateObservation = createServerFn({ method: "POST" })
     const { data: obs } = await supabaseAdmin
       .from("observations")
       .select("content, scene, screenshot_url, reference_url, object_id, status")
-      .eq("id", data.id).single();
+      .eq("id", data.id)
+      .single();
     if (!obs) throw new Error("观察不存在");
     const a = await callAIAnalyze(obs.content, obs.scene, obs.screenshot_url, obs.reference_url);
     const impact = computeImpact(a.tags, a.evidence_level, a.confidence);
-    await supabaseAdmin.from("observations").update({
-      cleaned_content: a.cleaned_content,
-      facts: a.facts,
-      summary: a.summary,
-      evidence_level: a.evidence_level,
-      tags: a.tags,
-      confidence: a.confidence,
-      impact_score: impact,
-      principles_matched: a.principles_matched ?? [],
-      cases_cited: a.cases_cited ?? [],
-      explanation: a.explanation ?? null,
-    } as never).eq("id", data.id);
+    await supabaseAdmin
+      .from("observations")
+      .update({
+        cleaned_content: a.cleaned_content,
+        facts: a.facts,
+        summary: a.summary,
+        evidence_level: a.evidence_level,
+        tags: a.tags,
+        confidence: a.confidence,
+        impact_score: impact,
+        principles_matched: a.principles_matched ?? [],
+        cases_cited: a.cases_cited ?? [],
+        explanation: a.explanation ?? null,
+      } as never)
+      .eq("id", data.id);
     // 影响 approved 观察 → 自动重算对象温度
     if (obs.status === "approved") {
       void recomputeObjectInternal(obs.object_id).catch(() => {});
@@ -567,25 +913,34 @@ export const regenerateObservation = createServerFn({ method: "POST" })
 export const updateObservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      tags: z.array(z.string()).max(10).optional(),
-      evidence_level: z.enum(["A", "B", "C", "D"]).optional(),
-      summary: z.string().max(200).optional(),
-      confidence: z.number().min(0).max(1).optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        tags: z.array(z.string()).max(10).optional(),
+        evidence_level: z.enum(["A", "B", "C", "D"]).optional(),
+        summary: z.string().max(200).optional(),
+        confidence: z.number().min(0).max(1).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: cur } = await supabaseAdmin.from("observations")
-      .select("tags, evidence_level, confidence, status, object_id").eq("id", data.id).single();
+    const { data: cur } = await supabaseAdmin
+      .from("observations")
+      .select("tags, evidence_level, confidence, status, object_id")
+      .eq("id", data.id)
+      .single();
     if (!cur) throw new Error("观察不存在");
-    const tags = data.tags ?? (cur.tags as string[] ?? []);
+    const tags = data.tags ?? (cur.tags as string[]) ?? [];
     const ev = data.evidence_level ?? cur.evidence_level ?? "C";
-    const conf = data.confidence ?? Number(cur.confidence) ?? 0.7;
+    const storedConfidence = Number(cur.confidence);
+    const conf = data.confidence ?? (Number.isFinite(storedConfidence) ? storedConfidence : 0.7);
     const impact = computeImpact(tags, ev, conf);
     const patch = {
-      tags, evidence_level: ev, confidence: conf, impact_score: impact,
+      tags,
+      evidence_level: ev,
+      confidence: conf,
+      impact_score: impact,
       ...(data.summary !== undefined ? { summary: data.summary } : {}),
     };
     const { error } = await supabaseAdmin.from("observations").update(patch).eq("id", data.id);
@@ -603,8 +958,11 @@ export const deleteObservation = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: before } = await supabaseAdmin.from("observations")
-      .select("status, object_id").eq("id", data.id).single();
+    const { data: before } = await supabaseAdmin
+      .from("observations")
+      .select("status, object_id")
+      .eq("id", data.id)
+      .single();
     const { error } = await supabaseAdmin.from("observations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     // 若被删的是 approved 观察 → 自动重算对象
@@ -618,27 +976,39 @@ export const deleteObservation = createServerFn({ method: "POST" })
 export const recomputeTemperature = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      object_id: z.string().uuid(),
-      manual_temperature: z.number().min(20).max(100).optional(),
-    }).parse(input),
+    z
+      .object({
+        object_id: z.string().uuid(),
+        manual_temperature: z.number().min(20).max(100).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: before } = await supabaseAdmin
-      .from("objects").select("temperature").eq("id", data.object_id).single();
+      .from("objects")
+      .select("temperature")
+      .eq("id", data.object_id)
+      .single();
     // 唯一入口；手动温度作为 admin floor 传入，规则地板永远不被绕过
     const r = await recomputeObjectWithEngine(
       data.object_id,
       data.manual_temperature !== undefined ? "manual_admin" : "recompute",
-      null, context.userId,
+      null,
+      context.userId,
       { adminMinimum: data.manual_temperature ?? null },
     );
     if (!r) throw new Error("对象不存在或已冻结");
     if (data.manual_temperature !== undefined) {
-      await writeAuditLog(context.userId, "manual_temperature", "object", data.object_id,
-        before, { temperature: r.temperature, admin_input: data.manual_temperature },
-        "管理员手动覆盖（受规则最低温度约束）");
+      await writeAuditLog(
+        context.userId,
+        "manual_temperature",
+        "object",
+        data.object_id,
+        before,
+        { temperature: r.temperature, admin_input: data.manual_temperature },
+        "管理员手动覆盖（受规则最低温度约束）",
+      );
     }
     return { temperature: r.temperature };
   });
@@ -652,72 +1022,208 @@ export const freezeObject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     await supabaseAdmin.from("objects").update({ frozen: data.frozen }).eq("id", data.object_id);
-    await writeAuditLog(context.userId, data.frozen ? "freeze" : "unfreeze", "object", data.object_id, null, null);
+    await writeAuditLog(
+      context.userId,
+      data.frozen ? "freeze" : "unfreeze",
+      "object",
+      data.object_id,
+      null,
+      null,
+    );
     return { ok: true };
   });
 
 // ===== 隐藏 / 显示对象 =====
 export const hideObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ object_id: z.string().uuid(), hidden: z.boolean() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ object_id: z.string().uuid(), hidden: z.boolean() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    await supabaseAdmin.from("objects")
-      .update({ hidden: data.hidden })
-      .eq("id", data.object_id);
-    await writeAuditLog(context.userId, data.hidden ? "hide" : "show", "object", data.object_id, null, null);
+    await supabaseAdmin.from("objects").update({ hidden: data.hidden }).eq("id", data.object_id);
+    await writeAuditLog(
+      context.userId,
+      data.hidden ? "hide" : "show",
+      "object",
+      data.object_id,
+      null,
+      null,
+    );
     return { ok: true };
   });
 
 // ===== 设置/取消 公开预览（未登录访客可见）=====
 export const setObjectPublicPreview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ object_id: z.string().uuid(), is_public_preview: z.boolean() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ object_id: z.string().uuid(), is_public_preview: z.boolean() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    await supabaseAdmin.from("objects" as never)
+    await supabaseAdmin
+      .from("objects" as never)
       .update({ is_public_preview: data.is_public_preview } as never)
       .eq("id", data.object_id);
-    await writeAuditLog(context.userId, data.is_public_preview ? "set_public_preview" : "unset_public_preview", "object", data.object_id, null, null);
+    await writeAuditLog(
+      context.userId,
+      data.is_public_preview ? "set_public_preview" : "unset_public_preview",
+      "object",
+      data.object_id,
+      null,
+      null,
+    );
     return { ok: true };
   });
 
 // ===== 获取未登录访客可见的预览对象（最多 2 条）=====
-export const getPublicPreviewObjects = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { data: marked } = await supabaseAdmin
+export const getPublicPreviewObjects = createServerFn({ method: "GET" }).handler(async () => {
+  const { data: marked } = await supabaseAdmin
+    .from("objects")
+    .select("id, name, type, temperature, observation_count, ai_summary, is_public_preview")
+    .eq("status", "published")
+    .eq("hidden", false)
+    .eq("is_public_preview" as never, true as never)
+    .order("temperature", { ascending: false })
+    .limit(2);
+  let items = (marked ?? []) as any[];
+  if (items.length < 2) {
+    const excludeIds = items.map((i) => i.id);
+    let q = supabaseAdmin
       .from("objects")
       .select("id, name, type, temperature, observation_count, ai_summary, is_public_preview")
-      .eq("status", "published").eq("hidden", false)
-      .eq("is_public_preview" as never, true as never)
+      .eq("status", "published")
+      .eq("hidden", false)
       .order("temperature", { ascending: false })
-      .limit(2);
-    let items = (marked ?? []) as any[];
-    if (items.length < 2) {
-      const excludeIds = items.map((i) => i.id);
-      let q = supabaseAdmin
-        .from("objects")
-        .select("id, name, type, temperature, observation_count, ai_summary, is_public_preview")
-        .eq("status", "published").eq("hidden", false)
-        .order("temperature", { ascending: false })
-        .limit(2 - items.length);
-      if (excludeIds.length) q = q.not("id", "in", `(${excludeIds.join(",")})`);
-      const { data: fill } = await q;
-      items = items.concat(fill ?? []);
-    }
-    return { items: items.slice(0, 2) };
+      .limit(2 - items.length);
+    if (excludeIds.length) q = q.not("id", "in", `(${excludeIds.join(",")})`);
+    const { data: fill } = await q;
+    items = items.concat(fill ?? []);
+  }
+  return { items: items.slice(0, 2) };
+});
+
+// ===== 公开对象列表：未登录也可浏览全部已发布对象 =====
+export const getPublicObjects = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        q: z.string().max(120).optional().default(""),
+        type: z.string().max(80).optional().default(""),
+        sort: z.enum(["temp", "recent"]).optional().default("temp"),
+        limit: z.number().int().min(1).max(120).optional().default(60),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data }) => {
+    let query = supabaseAdmin
+      .from("objects")
+      .select(
+        "id, name, type, temperature, observation_count, ai_summary, description, top_tags, heat_sources, cooling_sources, updated_at",
+      )
+      .eq("status", "published")
+      .eq("hidden", false);
+
+    if (data.type) query = query.eq("type", data.type as never);
+    if (data.q.trim()) query = query.ilike("name", `%${data.q.trim()}%`);
+
+    query =
+      data.sort === "temp"
+        ? query.order("temperature", { ascending: false })
+        : query.order("updated_at", { ascending: false });
+
+    const { data: items, error } = await query.limit(data.limit);
+    if (error) throw new Error(error.message);
+    return { items: items ?? [] };
+  });
+
+const PUBLIC_OBJECT_OBSERVATION_COLUMNS =
+  "id, cleaned_content, content, scene, tags, evidence_level, summary, reference_url, screenshot_url, created_at";
+
+async function fetchPublicObjectObservations(objectId: string, offset: number, limit: number) {
+  const {
+    data: observations,
+    error,
+    count,
+  } = await supabaseAdmin
+    .from("observations")
+    .select(PUBLIC_OBJECT_OBSERVATION_COLUMNS, { count: "exact" })
+    .eq("object_id", objectId)
+    .eq("status", "approved")
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw new Error(error.message);
+  return { observations: observations ?? [], total: count ?? 0 };
+}
+
+// ===== 公开对象详情：对象档案 + 已审核观察 =====
+export const getPublicObjectDetail = createServerFn({ method: "GET" })
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    const { data: object, error: objectError } = await supabaseAdmin
+      .from("objects")
+      .select(PUBLIC_OBJECT_COLUMNS)
+      .eq("id", data.id)
+      .eq("status", "published")
+      .eq("hidden", false)
+      .maybeSingle();
+    if (objectError) throw new Error(objectError.message);
+    if (!object) return { object: null, observations: [], observationTotal: 0 };
+
+    const { observations, total } = await fetchPublicObjectObservations(data.id, 0, 50);
+    return { object, observations, observationTotal: total };
+  });
+
+// ===== 公开对象观察分页 =====
+export const getPublicObjectObservations = createServerFn({ method: "GET" })
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        offset: z.number().int().min(0).default(0),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { data: object, error: objectError } = await supabaseAdmin
+      .from("objects")
+      .select("id")
+      .eq("id", data.id)
+      .eq("status", "published")
+      .eq("hidden", false)
+      .maybeSingle();
+    if (objectError) throw new Error(objectError.message);
+    if (!object) return { observations: [], total: 0 };
+
+    return fetchPublicObjectObservations(data.id, data.offset, data.limit);
   });
 
 // ===== 删除对象（admin）=====
 export const deleteObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ object_id: z.string().uuid(), reason: z.string().max(500).optional() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ object_id: z.string().uuid(), reason: z.string().max(500).optional() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: before } = await supabaseAdmin.from("objects").select("*").eq("id", data.object_id).single();
+    const { data: before } = await supabaseAdmin
+      .from("objects")
+      .select("*")
+      .eq("id", data.object_id)
+      .single();
     await supabaseAdmin.from("observations").delete().eq("object_id", data.object_id);
     await supabaseAdmin.from("objects").delete().eq("id", data.object_id);
-    await writeAuditLog(context.userId, "delete", "object", data.object_id, before, null, data.reason ?? null);
+    await writeAuditLog(
+      context.userId,
+      "delete",
+      "object",
+      data.object_id,
+      before,
+      null,
+      data.reason ?? null,
+    );
     return { ok: true };
   });
 
@@ -725,18 +1231,34 @@ export const deleteObject = createServerFn({ method: "POST" })
 export const mergeObjects = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      source_id: z.string().uuid(), target_id: z.string().uuid(), reason: z.string().max(500).optional(),
-    }).parse(input),
+    z
+      .object({
+        source_id: z.string().uuid(),
+        target_id: z.string().uuid(),
+        reason: z.string().max(500).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     if (data.source_id === data.target_id) throw new Error("源对象与目标相同");
-    await supabaseAdmin.from("observations").update({ object_id: data.target_id }).eq("object_id", data.source_id);
-    await supabaseAdmin.from("objects").update({ merged_into: data.target_id, hidden: true })
+    await supabaseAdmin
+      .from("observations")
+      .update({ object_id: data.target_id })
+      .eq("object_id", data.source_id);
+    await supabaseAdmin
+      .from("objects")
+      .update({ merged_into: data.target_id, hidden: true })
       .eq("id", data.source_id);
-    await writeAuditLog(context.userId, "merge", "object", data.source_id,
-      { source_id: data.source_id }, { target_id: data.target_id }, data.reason ?? null);
+    await writeAuditLog(
+      context.userId,
+      "merge",
+      "object",
+      data.source_id,
+      { source_id: data.source_id },
+      { target_id: data.target_id },
+      data.reason ?? null,
+    );
     await recomputeObjectInternal(data.target_id).catch(() => {});
     await recomputeObjectInternal(data.source_id).catch(() => {});
     return { ok: true };
@@ -746,11 +1268,15 @@ export const mergeObjects = createServerFn({ method: "POST" })
 export const updateObjectCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      object_id: z.string().uuid(),
-      type: z.enum(["brand", "product", "service", "organization", "film", "game", "show", "event"]).optional(),
-      category: z.string().max(80).optional(),
-    }).parse(input),
+    z
+      .object({
+        object_id: z.string().uuid(),
+        type: z
+          .enum(["brand", "product", "service", "organization", "film", "game", "show", "event"])
+          .optional(),
+        category: z.string().max(80).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
@@ -758,7 +1284,10 @@ export const updateObjectCategory = createServerFn({ method: "POST" })
     if (data.type) patch.type = data.type;
     if (data.category !== undefined) patch.category = data.category || null;
     if (!Object.keys(patch).length) return { ok: true };
-    await supabaseAdmin.from("objects").update(patch as never).eq("id", data.object_id);
+    await supabaseAdmin
+      .from("objects")
+      .update(patch as never)
+      .eq("id", data.object_id);
     await writeAuditLog(context.userId, "update_category", "object", data.object_id, null, patch);
     return { ok: true };
   });
@@ -767,47 +1296,82 @@ export const updateObjectCategory = createServerFn({ method: "POST" })
 export const reviewObservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      action: z.enum(["approve", "reject"]),
-      rejection_reason: z.enum(["too_short","no_facts","pure_emotion","duplicate","advertisement","personal_attack","defamation","off_topic"]).optional(),
-      note: z.string().max(500).optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        action: z.enum(["approve", "reject"]),
+        rejection_reason: z
+          .enum([
+            "too_short",
+            "no_facts",
+            "pure_emotion",
+            "duplicate",
+            "advertisement",
+            "personal_attack",
+            "defamation",
+            "off_topic",
+          ])
+          .optional(),
+        note: z.string().max(500).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: before } = await supabaseAdmin.from("observations")
-      .select("user_id, object_id, status, reference_url").eq("id", data.id).single();
+    const { data: before } = await supabaseAdmin
+      .from("observations")
+      .select("user_id, object_id, status, reference_url")
+      .eq("id", data.id)
+      .single();
     if (!before) throw new Error("观察不存在");
     if (data.action === "reject" && !data.rejection_reason) throw new Error("驳回需选择原因");
     const status = data.action === "approve" ? "approved" : "rejected";
     const { error } = await supabaseAdmin
       .from("observations")
       .update({
-        status, admin_note: data.note ?? null,
+        status,
+        admin_note: data.note ?? null,
         rejection_reason: data.action === "reject" ? data.rejection_reason : null,
       } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
 
     // 信誉变更
-    let delta = 0; let reason = "review";
+    let delta = 0;
+    let reason = "review";
     if (data.action === "approve") {
-      delta = before.reference_url ? 10 : 5; reason = "approved";
+      delta = before.reference_url ? 10 : 5;
+      reason = "approved";
     } else {
       const map: Record<string, number> = {
-        advertisement: -20, personal_attack: -30, defamation: -30,
-        too_short: -10, no_facts: -10, pure_emotion: -10, duplicate: -10, off_topic: -10,
+        advertisement: -20,
+        personal_attack: -30,
+        defamation: -30,
+        too_short: -10,
+        no_facts: -10,
+        pure_emotion: -10,
+        duplicate: -10,
+        off_topic: -10,
       };
       delta = map[data.rejection_reason!] ?? -10;
       reason = data.rejection_reason!;
     }
     await supabaseAdmin.rpc("apply_reputation_delta", {
-      _user: before.user_id, _delta: delta, _reason: reason, _obs: data.id,
+      _user: before.user_id,
+      _delta: delta,
+      _reason: reason,
+      _obs: data.id,
     });
 
-    await writeAuditLog(context.userId, `review_${data.action}`, "observation", data.id,
-      { status: before.status }, { status, rejection_reason: data.rejection_reason }, data.note ?? null);
+    await writeAuditLog(
+      context.userId,
+      `review_${data.action}`,
+      "observation",
+      data.id,
+      { status: before.status },
+      { status, rejection_reason: data.rejection_reason },
+      data.note ?? null,
+    );
 
     // approve 后或"曾经 approved → reject"都需要重算
     if (data.action === "approve" || before.status === "approved") {
@@ -820,18 +1384,31 @@ export const reviewObservation = createServerFn({ method: "POST" })
 export const adjustReputation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      user_id: z.string().uuid(),
-      delta: z.number().int().min(-100).max(100),
-      reason: z.string().min(1).max(200),
-    }).parse(input),
+    z
+      .object({
+        user_id: z.string().uuid(),
+        delta: z.number().int().min(-100).max(100),
+        reason: z.string().min(1).max(200),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     await supabaseAdmin.rpc("apply_reputation_delta", {
-      _user: data.user_id, _delta: data.delta, _reason: `admin_adjust:${data.reason}`, _obs: null as never,
+      _user: data.user_id,
+      _delta: data.delta,
+      _reason: `admin_adjust:${data.reason}`,
+      _obs: null as never,
     });
-    await writeAuditLog(context.userId, "adjust_reputation", "user", data.user_id, null, { delta: data.delta }, data.reason);
+    await writeAuditLog(
+      context.userId,
+      "adjust_reputation",
+      "user",
+      data.user_id,
+      null,
+      { delta: data.delta },
+      data.reason,
+    );
     return { ok: true };
   });
 
@@ -842,12 +1419,31 @@ export const getAdminAnalytics = createServerFn({ method: "GET" })
     await assertAdmin(context.userId);
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
     const [obs30, approved30, high30, objCount, topObj, topUsers] = await Promise.all([
-      supabaseAdmin.from("observations").select("id, status, created_at, risk_level", { count: "exact" }).gte("created_at", since),
-      supabaseAdmin.from("observations").select("id", { count: "exact", head: true }).gte("created_at", since).eq("status", "approved"),
-      supabaseAdmin.from("observations").select("id", { count: "exact", head: true }).gte("created_at", since).eq("risk_level", "high"),
+      supabaseAdmin
+        .from("observations")
+        .select("id, status, created_at, risk_level", { count: "exact" })
+        .gte("created_at", since),
+      supabaseAdmin
+        .from("observations")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", since)
+        .eq("status", "approved"),
+      supabaseAdmin
+        .from("observations")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", since)
+        .eq("risk_level", "high"),
       supabaseAdmin.from("objects").select("id", { count: "exact", head: true }),
-      supabaseAdmin.from("objects").select("id, name, temperature, observation_count").order("observation_count", { ascending: false }).limit(5),
-      supabaseAdmin.from("profiles").select("id, email, display_name, reputation").order("reputation", { ascending: false }).limit(5),
+      supabaseAdmin
+        .from("objects")
+        .select("id, name, temperature, observation_count")
+        .order("observation_count", { ascending: false })
+        .limit(5),
+      supabaseAdmin
+        .from("profiles")
+        .select("id, email, display_name, reputation")
+        .order("reputation", { ascending: false })
+        .limit(5),
     ]);
     const total30 = obs30.count ?? 0;
     const approveRate = total30 > 0 ? Math.round(((approved30.count ?? 0) / total30) * 100) : 0;
@@ -867,32 +1463,48 @@ export const listAuditLogs = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
     const { data } = await supabaseAdmin
-      .from("audit_logs").select("*").order("created_at", { ascending: false }).limit(200);
+      .from("audit_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
     return data ?? [];
   });
-
-
 
 // ===== 管理员从申请创建对象（保留为兼容入口） =====
 export const createObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      name: z.string().trim().min(1).max(120),
-      type: z.enum(["brand", "product", "service", "organization", "film", "game", "show", "event"]),
-      description: z.string().max(1000).optional(),
-      request_id: z.string().uuid().optional(),
-    }).parse(input),
+    z
+      .object({
+        name: z.string().trim().min(1).max(120),
+        type: z.enum([
+          "brand",
+          "product",
+          "service",
+          "organization",
+          "film",
+          "game",
+          "show",
+          "event",
+        ]),
+        description: z.string().max(1000).optional(),
+        request_id: z.string().uuid().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: obj, error } = await supabaseAdmin
       .from("objects")
       .insert({ name: data.name, type: data.type, description: data.description ?? null })
-      .select("id").single();
+      .select("id")
+      .single();
     if (error) throw new Error(error.message);
     if (data.request_id) {
-      await supabaseAdmin.from("object_requests").update({ status: "approved" }).eq("id", data.request_id);
+      await supabaseAdmin
+        .from("object_requests")
+        .update({ status: "approved" })
+        .eq("id", data.request_id);
     }
     return { id: obj.id };
   });
@@ -907,7 +1519,6 @@ async function ingestReasonAsObservation(
   const text = reason.trim();
   if (!text) return { observation_id: null, temperature: null };
 
-
   const tags = detectTags(text);
   const hasReg = detectEvidenceA(text);
   let evidence_level: "A" | "B" | "C" | "D";
@@ -916,32 +1527,42 @@ async function ingestReasonAsObservation(
   else evidence_level = "C";
 
   const rule = calculateRuleMinimumTemperature({
-    tags, evidence_level, has_regulatory_penalty: hasReg, observation_content: text,
+    tags,
+    evidence_level,
+    has_regulatory_penalty: hasReg,
+    observation_content: text,
   });
 
   const summary = text.length > 80 ? text.slice(0, 78) + "…" : text;
   const confidence = evidence_level === "A" ? 0.95 : evidence_level === "B" ? 0.8 : 0.6;
   const source_status = hasReg ? "已验证线索" : "待补源";
 
-  const { data: ins, error } = await supabaseAdmin.from("observations").insert({
-    object_id,
-    user_id: actor_id,
-    content: text,
-    cleaned_content: text.slice(0, 1000),
-    summary,
-    evidence_level,
-    tags: tags as never,
-    confidence,
-    status: "approved",
-    admin_note: `对象申请通过 · ${noteSuffix}`,
-    source_status,
-    scene: "对象申请说明",
-  } as never).select("id").single();
+  const { data: ins, error } = await supabaseAdmin
+    .from("observations")
+    .insert({
+      object_id,
+      user_id: actor_id,
+      content: text,
+      cleaned_content: text.slice(0, 1000),
+      summary,
+      evidence_level,
+      tags: tags as never,
+      confidence,
+      status: "approved",
+      admin_note: `对象申请通过 · ${noteSuffix}`,
+      source_status,
+      scene: "对象申请说明",
+    } as never)
+    .select("id")
+    .single();
   if (error) throw new Error(error.message);
 
   // 统一入口已处理规则地板；不再二次直接写 objects.temperature
   const result = await recomputeObjectWithEngine(object_id, "request_approval", null, actor_id);
-  return { observation_id: (ins as { id: string }).id, temperature: result?.temperature ?? rule.rule_minimum_temperature };
+  return {
+    observation_id: (ins as { id: string }).id,
+    temperature: result?.temperature ?? rule.rule_minimum_temperature,
+  };
 }
 
 // ===== 管理员通过对象申请（完整流程：创建对象 + 写观察 + 重算温度） =====
@@ -951,14 +1572,22 @@ export const approveObjectRequest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const { data: req, error: rErr } = await supabaseAdmin
-      .from("object_requests").select("*").eq("id", data.request_id).single();
+      .from("object_requests")
+      .select("*")
+      .eq("id", data.request_id)
+      .single();
     if (rErr || !req) throw new Error("申请不存在");
     if (req.status !== "pending") throw new Error("该申请已处理");
 
     const { data: obj, error: oErr } = await supabaseAdmin
       .from("objects")
-      .insert({ name: req.requested_name, type: req.requested_type, description: req.reason ?? null })
-      .select("id").single();
+      .insert({
+        name: req.requested_name,
+        type: req.requested_type,
+        description: req.reason ?? null,
+      })
+      .select("id")
+      .single();
     if (oErr) throw new Error(oErr.message);
 
     const reason = (req.reason ?? "").trim();
@@ -970,7 +1599,10 @@ export const approveObjectRequest = createServerFn({ method: "POST" })
       temperature = r.temperature;
     }
 
-    await supabaseAdmin.from("object_requests").update({ status: "approved" }).eq("id", data.request_id);
+    await supabaseAdmin
+      .from("object_requests")
+      .update({ status: "approved" })
+      .eq("id", data.request_id);
     return { object_id: obj.id, observation_id, temperature };
   });
 
@@ -985,23 +1617,63 @@ export const backfillApprovedRequests = createServerFn({ method: "POST" })
       .eq("status", "approved")
       .not("reason", "is", null);
 
-    let scanned = 0, backfilled = 0, skipped = 0;
-    const details: Array<{ name: string; object_id: string | null; temperature: number | null; note?: string }> = [];
+    let scanned = 0,
+      backfilled = 0,
+      skipped = 0;
+    const details: Array<{
+      name: string;
+      object_id: string | null;
+      temperature: number | null;
+      note?: string;
+    }> = [];
 
-    for (const r of (reqs ?? []) as Array<{ id: string; requested_name: string; requested_type: string; reason: string | null }>) {
+    for (const r of (reqs ?? []) as Array<{
+      id: string;
+      requested_name: string;
+      requested_type: string;
+      reason: string | null;
+    }>) {
       scanned++;
       const reason = (r.reason ?? "").trim();
-      if (!reason) { skipped++; continue; }
+      if (!reason) {
+        skipped++;
+        continue;
+      }
       // 找对应对象（按名称精确匹配）
       const { data: objs } = await supabaseAdmin
-        .from("objects").select("id, observation_count").eq("name", r.requested_name).limit(1);
+        .from("objects")
+        .select("id, observation_count")
+        .eq("name", r.requested_name)
+        .limit(1);
       const obj = (objs ?? [])[0] as { id: string; observation_count: number } | undefined;
-      if (!obj) { skipped++; details.push({ name: r.requested_name, object_id: null, temperature: null, note: "未找到对象" }); continue; }
+      if (!obj) {
+        skipped++;
+        details.push({
+          name: r.requested_name,
+          object_id: null,
+          temperature: null,
+          note: "未找到对象",
+        });
+        continue;
+      }
 
       // 去重：已有 admin_note 含「对象申请通过」的观察则跳过
       const { data: existing } = await supabaseAdmin
-        .from("observations").select("id").eq("object_id", obj.id).ilike("admin_note", "对象申请通过%").limit(1);
-      if (existing && existing.length > 0) { skipped++; details.push({ name: r.requested_name, object_id: obj.id, temperature: null, note: "已存在观察" }); continue; }
+        .from("observations")
+        .select("id")
+        .eq("object_id", obj.id)
+        .ilike("admin_note", "对象申请通过%")
+        .limit(1);
+      if (existing && existing.length > 0) {
+        skipped++;
+        details.push({
+          name: r.requested_name,
+          object_id: obj.id,
+          temperature: null,
+          note: "已存在观察",
+        });
+        continue;
+      }
 
       try {
         const res = await ingestReasonAsObservation(obj.id, reason, context.userId, "历史回填");
@@ -1009,7 +1681,12 @@ export const backfillApprovedRequests = createServerFn({ method: "POST" })
         details.push({ name: r.requested_name, object_id: obj.id, temperature: res.temperature });
       } catch (e) {
         skipped++;
-        details.push({ name: r.requested_name, object_id: obj.id, temperature: null, note: (e as Error).message });
+        details.push({
+          name: r.requested_name,
+          object_id: obj.id,
+          temperature: null,
+          note: (e as Error).message,
+        });
       }
     }
     return { scanned, backfilled, skipped, details };
@@ -1018,10 +1695,15 @@ export const backfillApprovedRequests = createServerFn({ method: "POST" })
 // ===== 拒绝对象申请 =====
 export const rejectRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid(), note: z.string().max(500).optional() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), note: z.string().max(500).optional() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    await supabaseAdmin.from("object_requests").update({ status: "rejected", admin_note: data.note ?? null }).eq("id", data.id);
+    await supabaseAdmin
+      .from("object_requests")
+      .update({ status: "rejected", admin_note: data.note ?? null })
+      .eq("id", data.id);
     return { ok: true };
   });
 
@@ -1029,11 +1711,22 @@ export const rejectRequest = createServerFn({ method: "POST" })
 export const requestObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      requested_name: z.string().trim().min(1).max(120),
-      requested_type: z.enum(["brand", "product", "service", "organization", "film", "game", "show", "event"]),
-      reason: z.string().max(500).optional(),
-    }).parse(input),
+    z
+      .object({
+        requested_name: z.string().trim().min(1).max(120),
+        requested_type: z.enum([
+          "brand",
+          "product",
+          "service",
+          "organization",
+          "film",
+          "game",
+          "show",
+          "event",
+        ]),
+        reason: z.string().max(500).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -1059,11 +1752,15 @@ function normalizeName(s: string): string {
 export const requestObjectFromSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      name: z.string().trim().min(1).max(120),
-      type: z.enum(["brand", "product", "service", "organization", "film", "game", "show", "event"]).optional(),
-      reason: z.string().max(500).optional(),
-    }).parse(input),
+    z
+      .object({
+        name: z.string().trim().min(1).max(120),
+        type: z
+          .enum(["brand", "product", "service", "organization", "film", "game", "show", "event"])
+          .optional(),
+        reason: z.string().max(500).optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -1113,9 +1810,13 @@ export const claimFirstAdmin = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { userId } = context;
     const { count } = await supabaseAdmin
-      .from("user_roles").select("*", { count: "exact", head: true }).eq("role", "admin");
+      .from("user_roles")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "admin");
     if ((count ?? 0) > 0) throw new Error("已存在管理员，无法自助声明");
-    const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: "admin" });
+    const { error } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: userId, role: "admin" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

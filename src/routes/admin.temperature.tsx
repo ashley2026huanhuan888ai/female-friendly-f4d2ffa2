@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -18,7 +18,14 @@ export const Route = createFileRoute("/admin/temperature")({
   component: TemperatureCenter,
 });
 
-interface Row { id: string; name: string; type: string; temperature: number; observation_count?: number; delta_30d?: number }
+interface Row {
+  id: string;
+  name: string;
+  type: string;
+  temperature: number;
+  observation_count?: number;
+  delta_30d?: number;
+}
 
 function TemperatureCenter() {
   const fetchDashboard = useServerFn(getTemperatureDashboard);
@@ -28,21 +35,43 @@ function TemperatureCenter() {
   const scan = useServerFn(scanAndFixTemperatures);
 
   const [data, setData] = useState<{
-    top_hot: Row[]; controversial: Row[]; top_heat_30d: Row[]; top_cool_30d: Row[];
+    top_hot: Row[];
+    controversial: Row[];
+    top_heat_30d: Row[];
+    top_cool_30d: Row[];
   } | null>(null);
   const [selected, setSelected] = useState<Row | null>(null);
-  const [expl, setExpl] = useState<{ breakdown: unknown; object: { heat_sources?: unknown; cooling_sources?: unknown } } | null>(null);
+  const [expl, setExpl] = useState<{
+    breakdown: unknown;
+    object: { heat_sources?: unknown; cooling_sources?: unknown };
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = () => fetchDashboard({}).then((d) => setData(d as never));
-  useEffect(() => { load(); }, []);
+  const load = useCallback(
+    () => fetchDashboard({}).then((d) => setData(d as never)),
+    [fetchDashboard],
+  );
+  useEffect(() => {
+    load();
+  }, [load]);
 
   useEffect(() => {
-    if (!selected) { setExpl(null); return; }
+    if (!selected) {
+      setExpl(null);
+      return;
+    }
     fetchExpl({ data: { object_id: selected.id } }).then((d) => setExpl(d as never));
   }, [selected, fetchExpl]);
 
-  const Section = ({ title, rows, showDelta }: { title: string; rows: Row[]; showDelta?: boolean }) => (
+  const Section = ({
+    title,
+    rows,
+    showDelta,
+  }: {
+    title: string;
+    rows: Row[];
+    showDelta?: boolean;
+  }) => (
     <div className="border border-border bg-card p-5">
       <h3 className="font-serif text-lg">{title}</h3>
       {rows.length === 0 ? (
@@ -56,11 +85,17 @@ function TemperatureCenter() {
                 <span className="ml-2 text-[10px] text-muted-foreground">{r.type}</span>
               </button>
               {showDelta && r.delta_30d !== undefined && (
-                <span className="font-mono text-xs tabular-nums" style={{ color: r.delta_30d >= 0 ? "var(--temp-hot)" : "var(--temp-cool)" }}>
-                  {r.delta_30d > 0 ? "+" : ""}{Number(r.delta_30d).toFixed(1)}°
+                <span
+                  className="font-mono text-xs tabular-nums"
+                  style={{ color: r.delta_30d >= 0 ? "var(--temp-hot)" : "var(--temp-cool)" }}
+                >
+                  {r.delta_30d > 0 ? "+" : ""}
+                  {Number(r.delta_30d).toFixed(1)}°
                 </span>
               )}
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">{Number(r.temperature).toFixed(1)}°</span>
+              <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                {Number(r.temperature).toFixed(1)}°
+              </span>
             </li>
           ))}
         </ul>
@@ -82,11 +117,21 @@ function TemperatureCenter() {
             onClick={async () => {
               setBusy(true);
               try {
-                const r = await scan({}) as { initial_legal_low: number; fixed: number; remaining_legal_low: number; remaining_phantom_comfort: number };
-                toast.success(`扫描完成：违规 ${r.initial_legal_low} → 修复 ${r.fixed} → 剩余 ${r.remaining_legal_low}（异常舒适 ${r.remaining_phantom_comfort}）`);
+                const r = (await scan({})) as {
+                  initial_legal_low: number;
+                  fixed: number;
+                  remaining_legal_low: number;
+                  remaining_phantom_comfort: number;
+                };
+                toast.success(
+                  `扫描完成：违规 ${r.initial_legal_low} → 修复 ${r.fixed} → 剩余 ${r.remaining_legal_low}（异常舒适 ${r.remaining_phantom_comfort}）`,
+                );
                 load();
-              } catch (e) { toast.error((e as Error).message); }
-              finally { setBusy(false); }
+              } catch (e) {
+                toast.error((e as Error).message);
+              } finally {
+                setBusy(false);
+              }
             }}
             disabled={busy}
             className="border border-foreground px-4 py-2 text-xs hover:bg-foreground hover:text-background disabled:opacity-50"
@@ -96,9 +141,15 @@ function TemperatureCenter() {
           <button
             onClick={async () => {
               setBusy(true);
-              try { const r = await cool({}); toast.success(`本轮自然冷却完成：${(r as { cooled: number }).cooled} 个对象`); load(); }
-              catch (e) { toast.error((e as Error).message); }
-              finally { setBusy(false); }
+              try {
+                const r = await cool({});
+                toast.success(`本轮自然冷却完成：${(r as { cooled: number }).cooled} 个对象`);
+                load();
+              } catch (e) {
+                toast.error((e as Error).message);
+              } finally {
+                setBusy(false);
+              }
             }}
             disabled={busy}
             className="border border-foreground px-4 py-2 text-xs hover:bg-foreground hover:text-background disabled:opacity-50"
@@ -120,7 +171,12 @@ function TemperatureCenter() {
           <div className="h-full w-full overflow-y-auto border-l border-border bg-background p-6 md:max-w-xl">
             <div className="flex items-center justify-between">
               <h2 className="font-serif text-2xl">{selected.name}</h2>
-              <button onClick={() => setSelected(null)} className="text-xs text-muted-foreground hover:text-foreground">关闭 ✕</button>
+              <button
+                onClick={() => setSelected(null)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                关闭 ✕
+              </button>
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
               当前 {Number(selected.temperature).toFixed(1)}° · {selected.type}
@@ -129,12 +185,20 @@ function TemperatureCenter() {
               onClick={async () => {
                 setBusy(true);
                 try {
-                  const r = await recompute({ data: { object_id: selected.id } }) as { temperature: number; delta: number };
-                  toast.success(`已重算：${r.temperature.toFixed(1)}°（${r.delta > 0 ? "+" : ""}${r.delta.toFixed(1)}°）`);
+                  const r = (await recompute({ data: { object_id: selected.id } })) as {
+                    temperature: number;
+                    delta: number;
+                  };
+                  toast.success(
+                    `已重算：${r.temperature.toFixed(1)}°（${r.delta > 0 ? "+" : ""}${r.delta.toFixed(1)}°）`,
+                  );
                   load();
                   fetchExpl({ data: { object_id: selected.id } }).then((d) => setExpl(d as never));
-                } catch (e) { toast.error((e as Error).message); }
-                finally { setBusy(false); }
+                } catch (e) {
+                  toast.error((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
               }}
               disabled={busy}
               className="mt-4 border border-foreground bg-foreground px-4 py-2 text-xs text-background hover:bg-accent disabled:opacity-50"
@@ -152,7 +216,9 @@ function TemperatureCenter() {
               />
             </div>
             <div className="mt-6">
-              <h3 className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">温度时间线</h3>
+              <h3 className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                温度时间线
+              </h3>
               <div className="mt-3">
                 <TemperatureTimeline objectId={selected.id} limit={50} />
               </div>

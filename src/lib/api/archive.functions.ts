@@ -46,9 +46,7 @@ export const searchArchive = createServerFn({ method: "POST" })
 
     if (data.q) {
       const term = `%${data.q.replace(/[%_]/g, "")}%`;
-      q = q.or(
-        `summary.ilike.${term},cleaned_content.ilike.${term},case_code.ilike.${term}`,
-      );
+      q = q.or(`summary.ilike.${term},cleaned_content.ilike.${term},case_code.ilike.${term}`);
     }
     if (data.categories?.length) q = q.in("archive_category", data.categories);
     if (data.evidence?.length) q = q.in("evidence_level", data.evidence);
@@ -83,7 +81,12 @@ export const searchArchive = createServerFn({ method: "POST" })
         impact_score: Number(r.impact_score) || 0,
         created_at: r.created_at,
         scene: r.scene,
-        object: { id: r.objects.id, name: r.objects.name, type: r.objects.type, temperature: Number(r.objects.temperature) },
+        object: {
+          id: r.objects.id,
+          name: r.objects.name,
+          type: r.objects.type,
+          temperature: Number(r.objects.temperature),
+        },
       })),
       total: count ?? items.length,
       page: data.page,
@@ -115,20 +118,29 @@ export const getCaseDetail = createServerFn({ method: "POST" })
       supabaseAdmin
         .from("observations")
         .select("id, case_code, summary, tags, evidence_level, created_at")
-        .eq("object_id", obj.id).eq("status", "approved").neq("id", row.id)
-        .order("created_at", { ascending: false }).limit(5),
+        .eq("object_id", obj.id)
+        .eq("status", "approved")
+        .neq("id", row.id)
+        .order("created_at", { ascending: false })
+        .limit(5),
       tags.length
         ? supabaseAdmin
             .from("observations")
             .select("id, case_code, summary, tags, evidence_level, created_at, objects(name)")
-            .overlaps("tags", tags).eq("status", "approved").neq("id", row.id)
-            .order("created_at", { ascending: false }).limit(6)
+            .overlaps("tags", tags)
+            .eq("status", "approved")
+            .neq("id", row.id)
+            .order("created_at", { ascending: false })
+            .limit(6)
         : Promise.resolve({ data: [] as any[] }),
       supabaseAdmin
         .from("observations")
         .select("id, case_code, summary, evidence_level, created_at, objects(name)")
-        .eq("archive_category", row.archive_category ?? "其他案例").eq("status", "approved").neq("id", row.id)
-        .order("created_at", { ascending: false }).limit(6),
+        .eq("archive_category", row.archive_category ?? "其他案例")
+        .eq("status", "approved")
+        .neq("id", row.id)
+        .order("created_at", { ascending: false })
+        .limit(6),
     ]);
 
     return {
@@ -150,8 +162,11 @@ export const getCaseDetail = createServerFn({ method: "POST" })
         screenshot_url: row.screenshot_url,
       },
       object: {
-        id: obj.id, name: obj.name, type: obj.type,
-        temperature: Number(obj.temperature), ai_summary: obj.ai_summary,
+        id: obj.id,
+        name: obj.name,
+        type: obj.type,
+        temperature: Number(obj.temperature),
+        ai_summary: obj.ai_summary,
       },
       related: {
         same_object: same_obj ?? [],
@@ -167,10 +182,13 @@ export const getObjectTimeline = createServerFn({ method: "POST" })
     const { data: rows } = await supabaseAdmin
       .from("observations")
       .select("id, case_code, summary, tags, evidence_level, impact_score, created_at")
-      .eq("object_id", data.object_id).eq("status", "approved")
+      .eq("object_id", data.object_id)
+      .eq("status", "approved")
       .order("created_at", { ascending: true });
     return (rows ?? []).map((r) => ({
-      id: r.id, case_code: r.case_code, summary: r.summary,
+      id: r.id,
+      case_code: r.case_code,
+      summary: r.summary,
       tags: (r.tags as string[]) ?? [],
       evidence_level: r.evidence_level,
       impact_score: Number(r.impact_score) || 0,
@@ -180,10 +198,12 @@ export const getObjectTimeline = createServerFn({ method: "POST" })
 
 export const getEvidenceLibrary = createServerFn({ method: "POST" })
   .inputValidator((i) =>
-    z.object({
-      page: z.number().int().min(1).default(1),
-      page_size: z.number().int().min(1).max(50).default(20),
-    }).parse(i),
+    z
+      .object({
+        page: z.number().int().min(1).default(1),
+        page_size: z.number().int().min(1).max(50).default(20),
+      })
+      .parse(i),
   )
   .handler(async ({ data }) => {
     const from = (data.page - 1) * data.page_size;
@@ -195,15 +215,19 @@ export const getEvidenceLibrary = createServerFn({ method: "POST" })
          objects!inner ( id, name, type, hidden, status )`,
         { count: "exact" },
       )
-      .eq("status", "approved").eq("evidence_level", "A")
-      .order("created_at", { ascending: false }).range(from, to);
+      .eq("status", "approved")
+      .eq("evidence_level", "A")
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     const items = ((rows ?? []) as any[]).filter(
       (r) => r.objects && !r.objects.hidden && r.objects.status === "published",
     );
     return {
       items: items.map((r) => ({
-        id: r.id, case_code: r.case_code, summary: r.summary,
+        id: r.id,
+        case_code: r.case_code,
+        summary: r.summary,
         tags: (r.tags as string[]) ?? [],
         archive_category: r.archive_category,
         reference_url: r.reference_url,

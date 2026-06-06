@@ -13,7 +13,9 @@ export const Route = createFileRoute("/topics")({
   }),
   component: TopicsPage,
   errorComponent: ({ error }) => (
-    <SiteLayout><div className="container-prose py-20">{error.message}</div></SiteLayout>
+    <SiteLayout>
+      <div className="container-prose py-20">{error.message}</div>
+    </SiteLayout>
   ),
 });
 
@@ -34,7 +36,9 @@ function TopicsPage() {
     <SiteLayout>
       <section className="border-b border-border">
         <div className="container-prose py-16">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Trending Topics</div>
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            Trending Topics
+          </div>
           <h1 className="mt-4 font-serif text-4xl">热议议题</h1>
           <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
             过去 30 天内，被持续观察的女性议题标签。点击任一标签查看案例、相关对象与趋势。
@@ -47,7 +51,9 @@ function TopicsPage() {
           {loading ? (
             <p className="py-20 text-center text-sm text-muted-foreground">加载中…</p>
           ) : items.length === 0 ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">近 30 天暂无足够观察形成趋势。</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">
+              近 30 天暂无足够观察形成趋势。
+            </p>
           ) : (
             <ul className="divide-y divide-border border-y border-border">
               {items.map((t) => (

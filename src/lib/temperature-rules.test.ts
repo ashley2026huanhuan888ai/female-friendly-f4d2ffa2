@@ -11,7 +11,17 @@ import { runEngine, type TagMeta } from "./temperature-engine";
 
 const emptyTagMap = new Map<string, TagMeta>();
 
-function obs(over: Partial<{ tags: string[]; evidence_level: string; content: string; created_at: string; confidence: number; id: string; cases_cited: string[] }>) {
+function obs(
+  over: Partial<{
+    tags: string[];
+    evidence_level: string;
+    content: string;
+    created_at: string;
+    confidence: number;
+    id: string;
+    cases_cited: string[];
+  }>,
+) {
   return {
     id: over.id ?? Math.random().toString(),
     evidence_level: over.evidence_level ?? "C",
@@ -25,16 +35,21 @@ function obs(over: Partial<{ tags: string[]; evidence_level: string; content: st
 
 function finalT(observations: Array<ReturnType<typeof obs>>, opts: { cooling?: number } = {}) {
   const engine = runEngine(observations, emptyTagMap, { cooling: opts.cooling ?? 0 });
-  const rule = aggregateRuleMinimum(observations.map((o) => ({
-    tags: o.tags, evidence_level: o.evidence_level, content: o.content,
-  })));
+  const rule = aggregateRuleMinimum(
+    observations.map((o) => ({
+      tags: o.tags,
+      evidence_level: o.evidence_level,
+      content: o.content,
+    })),
+  );
   return Math.max(engine.temperature, rule.rule_minimum_temperature);
 }
 
 describe("法律 / 监管强证据规则地板", () => {
   it("1. 行政处罚 + 罚款 + 处罚决定书 → final >= 90", () => {
     const r = calculateRuleMinimumTemperature({
-      tags: [], evidence_level: "B",
+      tags: [],
+      evidence_level: "B",
       observation_content: "本案涉及行政处罚，罚款 25 万元，处罚决定书已送达。",
     });
     expect(r.has_regulatory_penalty).toBe(true);
@@ -106,7 +121,9 @@ describe("8. 标签规范化", () => {
     const variants = ["objectification", "  女性物化 ", "女性物化"];
     for (const v of variants) {
       const r = calculateRuleMinimumTemperature({
-        tags: [v], evidence_level: "A", observation_content: "",
+        tags: [v],
+        evidence_level: "A",
+        observation_content: "",
       });
       expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(65);
     }
@@ -116,9 +133,19 @@ describe("8. 标签规范化", () => {
 describe("detectLegalPenalty 覆盖度", () => {
   it("应识别多种关键词", () => {
     for (const kw of [
-      "法院判决", "司法裁判", "劳动仲裁", "行政处罚", "市监局",
-      "处罚决定书", "处罚告知书", "立案查处", "罚款", "官方通报",
-      "违法事实成立", "责令整改", "约谈",
+      "法院判决",
+      "司法裁判",
+      "劳动仲裁",
+      "行政处罚",
+      "市监局",
+      "处罚决定书",
+      "处罚告知书",
+      "立案查处",
+      "罚款",
+      "官方通报",
+      "违法事实成立",
+      "责令整改",
+      "约谈",
     ]) {
       expect(detectLegalPenalty(`某事件涉及 ${kw}，需复核。`)).toBe(true);
     }
@@ -132,7 +159,13 @@ describe("detectLegalPenalty 覆盖度", () => {
 describe("强证据通过 tags 也能触发 >=90 地板", () => {
   it("内容中无关键词、tag 中含'行政处罚' → 仍触发 90", () => {
     const r = aggregateRuleMinimum([
-      { tags: ["行政处罚"], evidence_level: "B", content: "无关词。", summary: null, cleaned_content: null },
+      {
+        tags: ["行政处罚"],
+        evidence_level: "B",
+        content: "无关词。",
+        summary: null,
+        cleaned_content: null,
+      },
     ]);
     expect(r.has_regulatory_penalty).toBe(true);
     expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(LEGAL_PENALTY_MIN_TEMPERATURE);
@@ -140,14 +173,22 @@ describe("强证据通过 tags 也能触发 >=90 地板", () => {
 
   it("内容仅有'法院判决'tag → 触发 90", () => {
     const r = aggregateRuleMinimum([
-      { tags: ["法院判决"], evidence_level: "C", content: "客服态度差。", summary: null, cleaned_content: null },
+      {
+        tags: ["法院判决"],
+        evidence_level: "C",
+        content: "客服态度差。",
+        summary: null,
+        cleaned_content: null,
+      },
     ]);
     expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(LEGAL_PENALTY_MIN_TEMPERATURE);
   });
 
   it("AI 低温 + cooling -20 都不能压低 tag 触发的 90 地板", () => {
     const observations = [obs({ tags: ["行政处罚"], evidence_level: "B", content: "无关词。" })];
-    expect(finalT(observations, { cooling: -20 })).toBeGreaterThanOrEqual(LEGAL_PENALTY_MIN_TEMPERATURE);
+    expect(finalT(observations, { cooling: -20 })).toBeGreaterThanOrEqual(
+      LEGAL_PENALTY_MIN_TEMPERATURE,
+    );
   });
 });
 
@@ -180,5 +221,3 @@ describe("回归：绝味鸭脖案例", () => {
     expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(45);
   });
 });
-
-

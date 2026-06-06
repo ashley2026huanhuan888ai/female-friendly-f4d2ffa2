@@ -25,7 +25,12 @@ export function FeedEventCard({ ev }: { ev: Event }) {
   const heating = ev.delta > 0;
   const band = bandOf(ev.temperature_after);
   const reasonText = REASON_LABEL[ev.reason] ?? ev.reason;
-  const date = new Date(ev.created_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const date = new Date(ev.created_at).toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
     <Link
@@ -34,7 +39,6 @@ export function FeedEventCard({ ev }: { ev: Event }) {
       aria-label={`查看对象详情：${ev.object.name}`}
       className="block cursor-pointer border border-border bg-card p-5 transition-all hover:border-foreground/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -49,11 +53,13 @@ export function FeedEventCard({ ev }: { ev: Event }) {
             <span className="text-foreground">{Number(ev.temperature_after).toFixed(0)}°C</span>
             <span
               className={`ml-1 px-1.5 py-0.5 text-xs ${
-                heating ? "bg-[color-mix(in_oklab,var(--temp-hot)_18%,transparent)] text-foreground"
+                heating
+                  ? "bg-[color-mix(in_oklab,var(--temp-hot)_18%,transparent)] text-foreground"
                   : "bg-[color-mix(in_oklab,var(--temp-cool)_18%,transparent)] text-foreground"
               }`}
             >
-              {heating ? "+" : ""}{ev.delta}°C
+              {heating ? "+" : ""}
+              {ev.delta}°C
             </span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">

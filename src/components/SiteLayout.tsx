@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
 
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/components/auth-context";
 
 const PRIMARY_NAV = [
   { to: "/objects", label: "对象" },
@@ -21,9 +21,9 @@ const SECONDARY_NAV = [
 ] as const;
 
 export function SiteLayout({ children }: { children: ReactNode }) {
-  const { ready: authReady, email, isAdmin, unread, signOut: authSignOut } = useAuth();
+  const { email, isAdmin, unread, signOut: authSignOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  
+
   const router = useRouter();
 
   // 路由变化时关闭移动菜单
@@ -50,7 +50,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           {/* 桌面端主导航 */}
           <nav className="hidden items-center gap-5 text-sm md:flex">
             {PRIMARY_NAV.map((l) => (
-              <Link key={l.to} to={l.to} className="whitespace-pre-line text-muted-foreground hover:text-foreground">
+              <Link
+                key={l.to}
+                to={l.to}
+                className="whitespace-pre-line text-muted-foreground hover:text-foreground"
+              >
                 {l.label}
               </Link>
             ))}
@@ -65,13 +69,18 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           {/* 右侧账号区（桌面） */}
           <div className="hidden items-center gap-3 text-sm md:flex">
             {email && (
-              <Link to="/admin" className={isAdmin ? "text-accent hover:text-accent/80" : "text-muted-foreground hover:text-foreground"}>
+              <Link
+                to="/admin"
+                className={
+                  isAdmin
+                    ? "text-accent hover:text-accent/80"
+                    : "text-muted-foreground hover:text-foreground"
+                }
+              >
                 {isAdmin ? "管理后台" : "管理入口"}
               </Link>
             )}
-            {!authReady ? (
-              <span className="text-muted-foreground">同步中…</span>
-            ) : email ? (
+            {email ? (
               <>
                 <Link to="/me" className="relative text-muted-foreground hover:text-foreground">
                   我的
@@ -97,7 +106,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
           {/* 移动端：登录/注册 + 汉堡 */}
           <div className="flex items-center gap-2 md:hidden">
-            {!authReady ? null : !email && (
+            {!email && (
               <Link
                 to="/login"
                 className="border border-foreground/80 px-2.5 py-1 text-xs text-foreground"
@@ -105,7 +114,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 登录 / 注册
               </Link>
             )}
-            {authReady && email && (
+            {email && (
               <Link to="/me" className="relative text-xs text-muted-foreground">
                 我的
                 {unread > 0 && (
@@ -122,9 +131,15 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               className="flex h-9 w-9 items-center justify-center border border-border text-foreground"
             >
               <span className="relative block h-3 w-4">
-                <span className={`absolute left-0 top-0 h-0.5 w-4 bg-current transition ${menuOpen ? "translate-y-1.5 rotate-45" : ""}`} />
-                <span className={`absolute left-0 top-1.5 h-0.5 w-4 bg-current transition ${menuOpen ? "opacity-0" : ""}`} />
-                <span className={`absolute left-0 top-3 h-0.5 w-4 bg-current transition ${menuOpen ? "-translate-y-1.5 -rotate-45" : ""}`} />
+                <span
+                  className={`absolute left-0 top-0 h-0.5 w-4 bg-current transition ${menuOpen ? "translate-y-1.5 rotate-45" : ""}`}
+                />
+                <span
+                  className={`absolute left-0 top-1.5 h-0.5 w-4 bg-current transition ${menuOpen ? "opacity-0" : ""}`}
+                />
+                <span
+                  className={`absolute left-0 top-3 h-0.5 w-4 bg-current transition ${menuOpen ? "-translate-y-1.5 -rotate-45" : ""}`}
+                />
               </span>
             </button>
           </div>
@@ -143,7 +158,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   {l.label}
                 </Link>
               ))}
-              <div className="border-b border-border/50 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">更多</div>
+              <div className="border-b border-border/50 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                更多
+              </div>
               {SECONDARY_NAV.map((l) => (
                 <Link
                   key={l.to}
@@ -158,10 +175,16 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   <Link to="/admin" className="border-b border-border/50 py-3 text-accent">
                     管理后台
                   </Link>
-                  <Link to="/admin/observations" className="border-b border-border/50 py-3 pl-4 text-sm text-muted-foreground">
+                  <Link
+                    to="/admin/observations"
+                    className="border-b border-border/50 py-3 pl-4 text-sm text-muted-foreground"
+                  >
                     · 观察审核
                   </Link>
-                  <Link to="/admin/requests" className="border-b border-border/50 py-3 pl-4 text-sm text-muted-foreground">
+                  <Link
+                    to="/admin/requests"
+                    className="border-b border-border/50 py-3 pl-4 text-sm text-muted-foreground"
+                  >
                     · 对象申请审核
                   </Link>
                 </>
@@ -171,17 +194,12 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   管理入口
                 </Link>
               )}
-              {!authReady ? (
-                <div className="py-3 text-muted-foreground">同步登录状态中…</div>
-              ) : email ? (
+              {email ? (
                 <>
                   <Link to="/me" className="border-b border-border/50 py-3 text-foreground">
                     我的{unread > 0 ? `（${unread > 99 ? "99+" : unread}）` : ""}
                   </Link>
-                  <button
-                    onClick={signOut}
-                    className="py-3 text-left text-muted-foreground"
-                  >
+                  <button onClick={signOut} className="py-3 text-left text-muted-foreground">
                     退出（{email}）
                   </button>
                 </>

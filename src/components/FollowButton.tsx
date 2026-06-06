@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Link, useRouter } from "@tanstack/react-router";
-import { useAuth } from "@/components/AuthProvider";
+import { useAuth } from "@/components/auth-context";
 import { toast } from "sonner";
 import { followObject, unfollowObject, isFollowing } from "@/lib/api/observation-center.functions";
 
@@ -17,15 +17,22 @@ export function FollowButton({ objectId }: { objectId: string }) {
 
   useEffect(() => {
     if (!ready) return;
-    if (!user) { setLoading(false); return; }
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
         const r = await check({ data: { object_id: objectId } });
         if (!cancelled) setFollowing(r.following);
-      } finally { if (!cancelled) setLoading(false); }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [ready, user, objectId, check]);
 
   if (loading) return null;
@@ -39,14 +46,18 @@ export function FollowButton({ objectId }: { objectId: string }) {
     try {
       if (following) {
         await unfollow({ data: { object_id: objectId } });
-        setFollowing(false); toast.success("已取消关注");
+        setFollowing(false);
+        toast.success("已取消关注");
       } else {
         await follow({ data: { object_id: objectId } });
-        setFollowing(true); toast.success("已加入观察列表");
+        setFollowing(true);
+        toast.success("已加入观察列表");
       }
     } catch (e) {
       toast.error((e as Error).message);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const redirect = router.state.location.pathname;
@@ -74,7 +85,9 @@ export function FollowButton({ objectId }: { objectId: string }) {
             className="w-full max-w-md border border-border bg-paper p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">需要登录</div>
+            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              需要登录
+            </div>
             <h3 className="mt-2 font-serif text-xl">登录后关注对象</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               登录后可以收藏对象，并查看温度变化提醒。

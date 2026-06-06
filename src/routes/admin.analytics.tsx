@@ -10,7 +10,11 @@ type Stats = Awaited<ReturnType<typeof getAdminAnalytics>>;
 function Analytics() {
   const fetchStats = useServerFn(getAdminAnalytics);
   const [s, setS] = useState<Stats | null>(null);
-  useEffect(() => { fetchStats({}).then(setS).catch(() => setS(null)); }, []);
+  useEffect(() => {
+    fetchStats({})
+      .then(setS)
+      .catch(() => setS(null));
+  }, [fetchStats]);
 
   if (!s) return <div className="container-prose py-12 text-sm text-muted-foreground">加载中…</div>;
 
@@ -40,7 +44,10 @@ function Analytics() {
           <h2 className="text-sm font-medium">最活跃对象</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {s.top_objects.map((o) => (
-              <li key={o.id} className="flex items-center justify-between border-b border-border/60 py-1.5">
+              <li
+                key={o.id}
+                className="flex items-center justify-between border-b border-border/60 py-1.5"
+              >
                 <span>{o.name}</span>
                 <span className="text-xs tabular-nums text-muted-foreground">
                   {o.observation_count} 条 · {Number(o.temperature).toFixed(0)}°
@@ -54,7 +61,10 @@ function Analytics() {
           <h2 className="text-sm font-medium">高信誉用户</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {s.top_users.map((u) => (
-              <li key={u.id} className="flex items-center justify-between border-b border-border/60 py-1.5">
+              <li
+                key={u.id}
+                className="flex items-center justify-between border-b border-border/60 py-1.5"
+              >
                 <span>{u.display_name || u.email || u.id.slice(0, 8)}</span>
                 <span className="text-xs tabular-nums text-accent">{u.reputation}</span>
               </li>

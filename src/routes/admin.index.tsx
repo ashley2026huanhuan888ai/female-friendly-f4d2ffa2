@@ -12,8 +12,14 @@ function Overview() {
     (async () => {
       const [o, p, r] = await Promise.all([
         supabase.from("objects").select("*", { count: "exact", head: true }),
-        supabase.from("observations").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("object_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase
+          .from("observations")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending"),
+        supabase
+          .from("object_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending"),
       ]);
       setStats({ objects: o.count ?? 0, pendingObs: p.count ?? 0, pendingReq: r.count ?? 0 });
     })();

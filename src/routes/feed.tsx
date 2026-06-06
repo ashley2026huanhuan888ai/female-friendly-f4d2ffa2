@@ -14,7 +14,9 @@ export const Route = createFileRoute("/feed")({
   }),
   component: FeedPage,
   errorComponent: ({ error }) => (
-    <SiteLayout><div className="container-prose py-20">{error.message}</div></SiteLayout>
+    <SiteLayout>
+      <div className="container-prose py-20">{error.message}</div>
+    </SiteLayout>
   ),
 });
 
@@ -51,7 +53,9 @@ function FeedPage() {
                 key={k}
                 onClick={() => setKind(k)}
                 className={`px-4 py-2 text-xs uppercase tracking-wider ${
-                  kind === k ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  kind === k
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {k === "all" ? "全部" : k === "heating" ? "升温" : "降温"}
@@ -69,7 +73,9 @@ function FeedPage() {
             <p className="py-20 text-center text-sm text-muted-foreground">暂无温度变化记录。</p>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
-              {events.map((e) => <FeedEventCard key={e.id} ev={e} />)}
+              {events.map((e) => (
+                <FeedEventCard key={e.id} ev={e} />
+              ))}
             </div>
           )}
         </div>

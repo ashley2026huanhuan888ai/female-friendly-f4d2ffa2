@@ -3,12 +3,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { runEngine, type EngineObservation, type TagMeta, type EngineResult } from "@/lib/temperature-engine";
+import {
+  runEngine,
+  type EngineObservation,
+  type TagMeta,
+  type EngineResult,
+} from "@/lib/temperature-engine";
 import { aggregateRuleMinimum, normalizeTags } from "@/lib/temperature-rules";
 
 async function assertAdmin(userId: string) {
   const { data: roles } = await supabaseAdmin
-    .from("user_roles").select("role").eq("user_id", userId).eq("role", "admin");
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin");
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
@@ -19,7 +27,12 @@ async function loadTagMap(): Promise<Map<string, TagMeta>> {
     .eq("active", true);
   const m = new Map<string, TagMeta>();
   for (const t of (data ?? []) as Array<TagMeta & { active: boolean }>) {
-    m.set(t.name_zh, { code: t.code, name_zh: t.name_zh, weight: Number(t.weight), polarity: t.polarity });
+    m.set(t.name_zh, {
+      code: t.code,
+      name_zh: t.name_zh,
+      weight: Number(t.weight),
+      polarity: t.polarity,
+    });
   }
   return m;
 }
@@ -41,19 +54,31 @@ async function recomputeAndPersist(
   adminMinimum: number | null = null,
 ): Promise<FullEngine | null> {
   const { data: obj } = await supabaseAdmin
-    .from("objects").select("id, temperature, frozen, last_cooled_at").eq("id", object_id).single();
+    .from("objects")
+    .select("id, temperature, frozen, last_cooled_at")
+    .eq("id", object_id)
+    .single();
   if (!obj || obj.frozen) return null;
 
   const { data: rows } = await supabaseAdmin
     .from("observations")
-    .select("id, evidence_level, confidence, tags, cases_cited, created_at, content, summary, cleaned_content")
-    .eq("object_id", object_id).eq("status", "approved")
+    .select(
+      "id, evidence_level, confidence, tags, cases_cited, created_at, content, summary, cleaned_content",
+    )
+    .eq("object_id", object_id)
+    .eq("status", "approved")
     .order("created_at", { ascending: false });
 
   const rawRows = (rows ?? []) as never as Array<{
-    id: string; evidence_level: string | null; confidence: number | string;
-    tags: unknown; cases_cited: unknown; created_at: string;
-    content: string | null; summary: string | null; cleaned_content: string | null;
+    id: string;
+    evidence_level: string | null;
+    confidence: number | string;
+    tags: unknown;
+    cases_cited: unknown;
+    created_at: string;
+    content: string | null;
+    summary: string | null;
+    cleaned_content: string | null;
   }>;
 
   const observations: EngineObservation[] = rawRows.map((o) => ({
@@ -69,20 +94,31 @@ async function recomputeAndPersist(
 
   // approved observations = 0 → unmeasured，不写舒适默认值
   if (observations.length === 0) {
-    await supabaseAdmin.from("objects").update({
-      heat_sources: [] as never,
-      cooling_sources: [] as never,
-      observation_count: 0,
-      // 不更新 temperature；UI 以 observation_count===0 显示"未测量/暂无温度"
-    } as never).eq("id", object_id);
+    await supabaseAdmin
+      .from("objects")
+      .update({
+        heat_sources: [] as never,
+        cooling_sources: [] as never,
+        observation_count: 0,
+        // 不更新 temperature；UI 以 observation_count===0 显示"未测量/暂无温度"
+      } as never)
+      .eq("id", object_id);
     return {
       object_id,
       before,
       delta: 0,
       temperature: before,
       breakdown: {
-        base: 20, knowledge: 0, positive: 0, evidence: 0, case: 0,
-        trend: 0, diversity: 1, cooling: 0, active_count: 0, total_count: 0,
+        base: 20,
+        knowledge: 0,
+        positive: 0,
+        evidence: 0,
+        case: 0,
+        trend: 0,
+        diversity: 1,
+        cooling: 0,
+        active_count: 0,
+        total_count: 0,
         ai_temperature: before,
         rule_minimum_temperature: 20,
         triggered_rules: [],
@@ -124,18 +160,23 @@ async function recomputeAndPersist(
 
   const delta = Math.round((finalTemperature - before) * 10) / 10;
 
-  await supabaseAdmin.from("objects").update({
-    temperature: finalTemperature,
-    heat_sources: result.heat_sources as never,
-    cooling_sources: result.cooling_sources as never,
-    observation_count: result.breakdown.active_count,
-    ...(extraCooling !== 0 ? { last_cooled_at: new Date().toISOString() } : {}),
-  } as never).eq("id", object_id);
+  await supabaseAdmin
+    .from("objects")
+    .update({
+      temperature: finalTemperature,
+      heat_sources: result.heat_sources as never,
+      cooling_sources: result.cooling_sources as never,
+      observation_count: result.breakdown.active_count,
+      ...(extraCooling !== 0 ? { last_cooled_at: new Date().toISOString() } : {}),
+    } as never)
+    .eq("id", object_id);
 
   if (delta !== 0 || extraCooling !== 0 || ruleMinimum > 20 || adminMin > 0) {
     await supabaseAdmin.from("temperature_events" as never).insert({
-      object_id, observation_id,
-      delta, temperature_after: finalTemperature,
+      object_id,
+      observation_id,
+      delta,
+      temperature_after: finalTemperature,
       reason: ruleMinimum > aiTemperature ? `${reason}+rule_min` : reason,
       breakdown: result.breakdown as never,
       actor_id,
@@ -154,8 +195,12 @@ export async function recomputeObjectWithEngine(
   opts: { extraCooling?: number; adminMinimum?: number | null } = {},
 ) {
   return recomputeAndPersist(
-    object_id, reason, actor_id, observation_id,
-    opts.extraCooling ?? 0, opts.adminMinimum ?? null,
+    object_id,
+    reason,
+    actor_id,
+    observation_id,
+    opts.extraCooling ?? 0,
+    opts.adminMinimum ?? null,
   );
 }
 
@@ -176,8 +221,11 @@ export const getTemperatureExplanation = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: obj } = await supabaseAdmin
       .from("objects")
-      .select("id, name, temperature, heat_sources, cooling_sources, observation_count, last_cooled_at, frozen")
-      .eq("id", data.object_id).single();
+      .select(
+        "id, name, temperature, heat_sources, cooling_sources, observation_count, last_cooled_at, frozen",
+      )
+      .eq("id", data.object_id)
+      .single();
     if (!obj) throw new Error("对象不存在");
     const { data: latest } = await supabaseAdmin
       .from("temperature_events" as never)
@@ -188,14 +236,16 @@ export const getTemperatureExplanation = createServerFn({ method: "GET" })
       .maybeSingle();
     return {
       object: obj,
-      breakdown: ((latest as { breakdown?: unknown } | null)?.breakdown) ?? null,
+      breakdown: (latest as { breakdown?: unknown } | null)?.breakdown ?? null,
       last_event: latest ?? null,
     };
   });
 
 export const getTemperatureTimeline = createServerFn({ method: "GET" })
   .inputValidator((input) =>
-    z.object({ object_id: z.string().uuid(), limit: z.number().int().min(1).max(200).optional() }).parse(input),
+    z
+      .object({ object_id: z.string().uuid(), limit: z.number().int().min(1).max(200).optional() })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const { data: events } = await supabaseAdmin
@@ -220,12 +270,17 @@ export const runCoolingCycle = createServerFn({ method: "POST" })
       .eq("hidden", false)
       .gt("temperature", 22);
     let cooled = 0;
-    for (const o of (objs ?? []) as Array<{ id: string; temperature: number; last_cooled_at: string | null }>) {
+    for (const o of (objs ?? []) as Array<{
+      id: string;
+      temperature: number;
+      last_cooled_at: string | null;
+    }>) {
       if (o.last_cooled_at && o.last_cooled_at > cutoff) continue;
       const { count } = await supabaseAdmin
         .from("observations")
         .select("id", { count: "exact", head: true })
-        .eq("object_id", o.id).eq("status", "approved")
+        .eq("object_id", o.id)
+        .eq("status", "approved")
         .gte("created_at", cutoff);
       if ((count ?? 0) > 0) continue;
       const dropAmount = Number(o.temperature) > 60 ? -3 : Number(o.temperature) > 40 ? -2 : -1;
@@ -241,14 +296,21 @@ export const getTemperatureDashboard = createServerFn({ method: "GET" })
     await assertAdmin(context.userId);
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
     const [topHot, controversial, recentEvents] = await Promise.all([
-      supabaseAdmin.from("objects")
+      supabaseAdmin
+        .from("objects")
         .select("id, name, type, temperature, observation_count")
-        .eq("hidden", false).order("temperature", { ascending: false }).limit(10),
-      supabaseAdmin.from("objects")
+        .eq("hidden", false)
+        .order("temperature", { ascending: false })
+        .limit(10),
+      supabaseAdmin
+        .from("objects")
         .select("id, name, type, temperature, observation_count")
-        .eq("hidden", false).gte("temperature", 60)
-        .order("observation_count", { ascending: false }).limit(10),
-      supabaseAdmin.from("temperature_events" as never)
+        .eq("hidden", false)
+        .gte("temperature", 60)
+        .order("observation_count", { ascending: false })
+        .limit(10),
+      supabaseAdmin
+        .from("temperature_events" as never)
         .select("object_id, delta, temperature_after, reason, created_at")
         .gte("created_at", since)
         .order("created_at", { ascending: false })
@@ -261,16 +323,24 @@ export const getTemperatureDashboard = createServerFn({ method: "GET" })
     }
     const sorted = [...byObj.entries()].sort((a, b) => b[1] - a[1]);
     const heatIds = sorted.slice(0, 5).map(([id]) => id);
-    const coolIds = [...sorted].reverse().slice(0, 5).filter(([_, v]) => v < 0).map(([id]) => id);
+    const coolIds = [...sorted]
+      .reverse()
+      .slice(0, 5)
+      .filter(([_, v]) => v < 0)
+      .map(([id]) => id);
 
     const fetchByIds = async (ids: string[]) => {
       if (ids.length === 0) return [];
-      const { data } = await supabaseAdmin.from("objects")
-        .select("id, name, type, temperature").in("id", ids);
-      return ids.map((id) => {
-        const o = data?.find((x) => x.id === id);
-        return o ? { ...o, delta_30d: byObj.get(id) ?? 0 } : null;
-      }).filter(Boolean);
+      const { data } = await supabaseAdmin
+        .from("objects")
+        .select("id, name, type, temperature")
+        .in("id", ids);
+      return ids
+        .map((id) => {
+          const o = data?.find((x) => x.id === id);
+          return o ? { ...o, delta_30d: byObj.get(id) ?? 0 } : null;
+        })
+        .filter(Boolean);
     };
     const [topHeat, topCool] = await Promise.all([fetchByIds(heatIds), fetchByIds(coolIds)]);
 
@@ -299,14 +369,22 @@ export const scanAndFixTemperatures = createServerFn({ method: "POST" })
         .from("objects")
         .select("id, temperature, observation_count, frozen, hidden")
         .eq("frozen", false);
-      for (const o of (objs ?? []) as Array<{ id: string; temperature: number; observation_count: number }>) {
+      for (const o of (objs ?? []) as Array<{
+        id: string;
+        temperature: number;
+        observation_count: number;
+      }>) {
         const { data: obs } = await supabaseAdmin
           .from("observations")
           .select("evidence_level, tags, content, summary, cleaned_content")
-          .eq("object_id", o.id).eq("status", "approved");
+          .eq("object_id", o.id)
+          .eq("status", "approved");
         const list = (obs ?? []) as never as Array<{
-          evidence_level: string | null; tags: unknown;
-          content: string | null; summary: string | null; cleaned_content: string | null;
+          evidence_level: string | null;
+          tags: unknown;
+          content: string | null;
+          summary: string | null;
+          cleaned_content: string | null;
         }>;
         if (list.length === 0) {
           if (Number(o.temperature) >= 22 && Number(o.temperature) <= 28) {
@@ -318,7 +396,9 @@ export const scanAndFixTemperatures = createServerFn({ method: "POST" })
           list.map((x) => ({
             tags: normalizeTags(Array.isArray(x.tags) ? (x.tags as string[]) : []),
             evidence_level: x.evidence_level,
-            content: x.content, summary: x.summary, cleaned_content: x.cleaned_content,
+            content: x.content,
+            summary: x.summary,
+            cleaned_content: x.cleaned_content,
           })),
         );
         if (rule.has_regulatory_penalty && Number(o.temperature) < rule.rule_minimum_temperature) {
@@ -334,7 +414,9 @@ export const scanAndFixTemperatures = createServerFn({ method: "POST" })
       try {
         await recomputeAndPersist(id, "backfill_scan", context.userId, null, 0);
         fixed++;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     const after = await findViolations();
     return {

@@ -32,10 +32,7 @@ export function TemperatureBreakdown({ data }: { data: Breakdown | null }) {
       </div>
     );
   }
-  const max = Math.max(
-    1,
-    ...ROWS.map((r) => Math.abs(Number(data[r.key]) || 0)),
-  );
+  const max = Math.max(1, ...ROWS.map((r) => Math.abs(Number(data[r.key]) || 0)));
   return (
     <div className="border border-border bg-card p-6">
       <div className="flex items-baseline justify-between">
@@ -44,7 +41,8 @@ export function TemperatureBreakdown({ data }: { data: Breakdown | null }) {
             为什么是这个温度？
           </div>
           <div className="mt-1 font-mono text-xs text-muted-foreground">
-            基准 {data.base}° · 多样性 ×{data.diversity} · 参与观察 {data.active_count}/{data.total_count}
+            基准 {data.base}° · 多样性 ×{data.diversity} · 参与观察 {data.active_count}/
+            {data.total_count}
           </div>
         </div>
       </div>
@@ -69,8 +67,11 @@ export function TemperatureBreakdown({ data }: { data: Breakdown | null }) {
                   }}
                 />
               </div>
-              <div className={`text-right font-mono text-xs tabular-nums ${pos ? "text-foreground" : "text-muted-foreground"}`}>
-                {signed > 0 ? "+" : ""}{signed.toFixed(1)}
+              <div
+                className={`text-right font-mono text-xs tabular-nums ${pos ? "text-foreground" : "text-muted-foreground"}`}
+              >
+                {signed > 0 ? "+" : ""}
+                {signed.toFixed(1)}
               </div>
             </div>
           );
@@ -78,7 +79,9 @@ export function TemperatureBreakdown({ data }: { data: Breakdown | null }) {
       </div>
       {(data.rule_minimum_temperature ?? 0) > 20 && (
         <div className="mt-5 border-t border-border pt-4">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">规则最低温度</div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            规则最低温度
+          </div>
           <div className="mt-2 grid grid-cols-3 gap-3 font-mono text-xs">
             <div>
               <div className="text-muted-foreground">AI 温度</div>
@@ -112,7 +115,8 @@ export function TemperatureBreakdown({ data }: { data: Breakdown | null }) {
         </div>
       )}
       <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-        所有数值均来自已审核观察 + 知识库标签权重 + AI 引用的原则与案例。每次温度变化均写入审计事件，可追溯、可复核。
+        所有数值均来自已审核观察 + 知识库标签权重 + AI
+        引用的原则与案例。每次温度变化均写入审计事件，可追溯、可复核。
       </p>
     </div>
   );

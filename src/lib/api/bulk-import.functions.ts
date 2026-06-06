@@ -12,11 +12,22 @@ import {
 
 async function assertAdmin(userId: string) {
   const { data: roles } = await supabaseAdmin
-    .from("user_roles").select("role").eq("user_id", userId).eq("role", "admin");
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin");
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
-type ObjectType = "brand" | "product" | "service" | "organization" | "film" | "game" | "show" | "event";
+type ObjectType =
+  | "brand"
+  | "product"
+  | "service"
+  | "organization"
+  | "film"
+  | "game"
+  | "show"
+  | "event";
 
 // 关键词唯一来源：temperature-rules.LEGAL_REGULATORY_PATTERNS
 const REGULATORY_KW = LEGAL_REGULATORY_PATTERNS;
@@ -82,7 +93,9 @@ function extractAmount(text: string): string | null {
 }
 
 function extractAuthority(text: string): string | null {
-  const m = text.match(/([^。\n：:，,（(\s]{2,30}?(?:市监局|市场监管局|监管局|法院|检察院|网信办|工商局))/);
+  const m = text.match(
+    /([^。\n：:，,（(\s]{2,30}?(?:市监局|市场监管局|监管局|法院|检察院|网信办|工商局))/,
+  );
   return m ? m[1] : null;
 }
 
@@ -133,12 +146,27 @@ interface ParsedRecord {
   fingerprint: string;
 }
 
-function fingerprint(r: { object_name: string; year: number | null; regulatory_authority: string | null; penalty_amount: string | null; violation_summary: string | null }): string {
-  return [normalizeName(r.object_name), r.year ?? "", r.regulatory_authority ?? "", r.penalty_amount ?? "", (r.violation_summary ?? "").slice(0, 50)].join("|");
+function fingerprint(r: {
+  object_name: string;
+  year: number | null;
+  regulatory_authority: string | null;
+  penalty_amount: string | null;
+  violation_summary: string | null;
+}): string {
+  return [
+    normalizeName(r.object_name),
+    r.year ?? "",
+    r.regulatory_authority ?? "",
+    r.penalty_amount ?? "",
+    (r.violation_summary ?? "").slice(0, 50),
+  ].join("|");
 }
 
 function parseBlock(block: string): ParsedRecord | null {
-  const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+  const lines = block
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (lines.length === 0) return null;
 
   const header = lines[0];
@@ -163,7 +191,7 @@ function parseBlock(block: string): ParsedRecord | null {
   const original = extractQuoted(fullText);
 
   const tags = detectTags(fullText);
-  const evidence_level: "A" | "B" | "C" | "D" = evidenceA ? "A" : (violation_summary ? "B" : "C");
+  const evidence_level: "A" | "B" | "C" | "D" = evidenceA ? "A" : violation_summary ? "B" : "C";
   const source_status = detectVerified(fullText);
   const object_type = guessType(object_name, fullText);
 
@@ -180,7 +208,9 @@ function parseBlock(block: string): ParsedRecord | null {
     object_type,
     regulatory_authority: authority,
     penalty_amount: amount,
-    penalty_description: penaltyLine ? penaltyLine.replace(/^(罚单|处罚|监管)\s*[：:]\s*/, "") : null,
+    penalty_description: penaltyLine
+      ? penaltyLine.replace(/^(罚单|处罚|监管)\s*[：:]\s*/, "")
+      : null,
     violation_summary,
     original_problematic_text: original,
     evidence_level,
@@ -202,7 +232,9 @@ function splitBlocks(text: string): string[] {
     .filter(Boolean);
 }
 
-async function matchObject(name: string): Promise<{ id: string | null; matched_name: string | null; confidence: number }> {
+async function matchObject(
+  name: string,
+): Promise<{ id: string | null; matched_name: string | null; confidence: number }> {
   const norm = normalizeName(name);
   if (!norm) return { id: null, matched_name: null, confidence: 0 };
   // 取候选 ilike
@@ -240,13 +272,15 @@ export const previewBulkImport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const blocks = splitBlocks(data.text);
-    const records: Array<ParsedRecord & {
-      match_status: "匹配成功" | "需人工确认" | "新对象";
-      matched_object_id: string | null;
-      matched_object_name: string | null;
-      match_confidence: number;
-      duplicate: boolean;
-    }> = [];
+    const records: Array<
+      ParsedRecord & {
+        match_status: "匹配成功" | "需人工确认" | "新对象";
+        matched_object_id: string | null;
+        matched_object_name: string | null;
+        match_confidence: number;
+        duplicate: boolean;
+      }
+    > = [];
     for (const b of blocks) {
       const rec = parseBlock(b);
       if (!rec) continue;
@@ -285,7 +319,16 @@ export const previewBulkImport = createServerFn({ method: "POST" })
 
 const CommitItemSchema = z.object({
   object_name: z.string().min(1).max(200),
-  object_type: z.enum(["brand", "product", "service", "organization", "film", "game", "show", "event"]),
+  object_type: z.enum([
+    "brand",
+    "product",
+    "service",
+    "organization",
+    "film",
+    "game",
+    "show",
+    "event",
+  ]),
   matched_object_id: z.string().uuid().nullable(),
   create_new: z.boolean(),
   year: z.number().nullable().optional(),
@@ -304,7 +347,9 @@ const CommitItemSchema = z.object({
 
 export const commitBulkImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ items: z.array(CommitItemSchema).min(1).max(200) }).parse(input))
+  .inputValidator((input) =>
+    z.object({ items: z.array(CommitItemSchema).min(1).max(200) }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
 
@@ -379,7 +424,10 @@ export const commitBulkImport = createServerFn({ method: "POST" })
 
         // 唯一温度入口；admin_temperature 作为额外 floor 传入
         const result = await recomputeObjectWithEngine(
-          objectId!, "bulk_import", null, context.userId,
+          objectId!,
+          "bulk_import",
+          null,
+          context.userId,
           { adminMinimum: it.admin_temperature ?? null },
         );
         const final = result?.temperature ?? null;
@@ -391,7 +439,9 @@ export const commitBulkImport = createServerFn({ method: "POST" })
           object_name: it.object_name,
           object_id: objectId,
           final_temperature: final,
-          triggered_rules: Array.isArray(bd.triggered_rules) ? (bd.triggered_rules as string[]) : [],
+          triggered_rules: Array.isArray(bd.triggered_rules)
+            ? (bd.triggered_rules as string[])
+            : [],
           evidence_level: it.evidence_level,
           tags: it.tags,
         });

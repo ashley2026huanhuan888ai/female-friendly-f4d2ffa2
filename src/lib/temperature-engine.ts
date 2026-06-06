@@ -26,16 +26,16 @@ export interface SourceContribution {
 }
 
 export interface TemperatureBreakdown {
-  base: number;            // 20
-  knowledge: number;       // 负面标签贡献（>=0）
-  positive: number;        // 正向标签贡献（>=0，从总温度中扣减）
-  evidence: number;        // 证据质量加成
-  case: number;            // 案例引用贡献
-  trend: number;           // 趋势贡献（可正可负）
-  diversity: number;       // 多样性乘数
-  cooling: number;         // 自然降温（<=0）
-  active_count: number;    // 参与计算的观察数（A/B/C）
-  total_count: number;     // 全部已通过观察数
+  base: number; // 20
+  knowledge: number; // 负面标签贡献（>=0）
+  positive: number; // 正向标签贡献（>=0，从总温度中扣减）
+  evidence: number; // 证据质量加成
+  case: number; // 案例引用贡献
+  trend: number; // 趋势贡献（可正可负）
+  diversity: number; // 多样性乘数
+  cooling: number; // 自然降温（<=0）
+  active_count: number; // 参与计算的观察数（A/B/C）
+  total_count: number; // 全部已通过观察数
 }
 
 export interface EngineResult {
@@ -53,7 +53,14 @@ function trendImpact(observations: EngineObservation[]): number {
   const now = Date.now();
   const day14 = 14 * 86400_000;
   const recent = observations.filter((o) => now - new Date(o.created_at).getTime() <= day14).length;
-  const baseline = observations.length / Math.max(1, Math.ceil((now - new Date(observations[observations.length - 1].created_at).getTime()) / day14));
+  const baseline =
+    observations.length /
+    Math.max(
+      1,
+      Math.ceil(
+        (now - new Date(observations[observations.length - 1].created_at).getTime()) / day14,
+      ),
+    );
   if (recent === 0) return -2;
   const ratio = recent / Math.max(0.5, baseline);
   // 近期密度 > 1.5×历史均值 → 升温；< 0.5× → 降温
@@ -76,9 +83,16 @@ export function runEngine(
     return {
       temperature: clamp(base + (opts.cooling ?? 0), 20, 100),
       breakdown: {
-        base, knowledge: 0, positive: 0, evidence: 0, case: 0,
-        trend: 0, diversity: 1, cooling: opts.cooling ?? 0,
-        active_count: 0, total_count,
+        base,
+        knowledge: 0,
+        positive: 0,
+        evidence: 0,
+        case: 0,
+        trend: 0,
+        diversity: 1,
+        cooling: opts.cooling ?? 0,
+        active_count: 0,
+        total_count,
       },
       heat_sources: [],
       cooling_sources: [],
@@ -87,7 +101,10 @@ export function runEngine(
 
   const heatBy = new Map<string, { d: number; c: number }>();
   const coolBy = new Map<string, { d: number; c: number }>();
-  let sumHeat = 0, sumCool = 0, sumEv = 0, sumCase = 0;
+  let sumHeat = 0,
+    sumCool = 0,
+    sumEv = 0,
+    sumCase = 0;
 
   for (const o of active) {
     const evF = EVIDENCE_FACTOR[o.evidence_level ?? "D"] ?? 0;
@@ -120,15 +137,14 @@ export function runEngine(
   const trend = trendImpact(active);
   const cooling = opts.cooling ?? 0;
 
-  const raw =
-    base +
-    (avgHeat - avgCool + avgEv + avgCase) * diversity +
-    trend +
-    cooling;
+  const raw = base + (avgHeat - avgCool + avgEv + avgCase) * diversity + trend + cooling;
 
   const temperature = clamp(r1(raw), 20, 100);
 
-  const toSources = (m: Map<string, { d: number; c: number }>, sign: 1 | -1): SourceContribution[] =>
+  const toSources = (
+    m: Map<string, { d: number; c: number }>,
+    sign: 1 | -1,
+  ): SourceContribution[] =>
     [...m.entries()]
       .map(([tag, { d, c }]) => ({ tag, delta: r1(sign * (d / N) * diversity), count: c }))
       .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))

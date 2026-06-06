@@ -2,18 +2,21 @@ import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-r
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { ObjectCard } from "@/components/ObjectCard";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
-import { useAuth } from "@/components/AuthProvider";
-import { GuestPreviewList, GuestLoginPrompt, GUEST_NOTE } from "@/components/PreviewGate";
-import { requestObjectFromSearch } from "@/lib/api/platform.functions";
+import { useAuth } from "@/components/auth-context";
+import { getPublicObjects, requestObjectFromSearch } from "@/lib/api/platform.functions";
+
+type ObjectsSearch = {
+  q?: string;
+  pending?: string;
+};
 
 export const Route = createFileRoute("/objects")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    q: (s.q as string) ?? "",
-    pending: (s.pending as string) ?? "",
+  validateSearch: (s: Record<string, unknown>): ObjectsSearch => ({
+    q: typeof s.q === "string" ? s.q : undefined,
+    pending: typeof s.pending === "string" ? s.pending : undefined,
   }),
   head: () => ({
     meta: [
@@ -26,33 +29,39 @@ export const Route = createFileRoute("/objects")({
 
 function AllObjects() {
   const { q: initialQ, pending: pendingQ } = Route.useSearch();
-  const [qInput, setQInput] = useState(initialQ || pendingQ);
-  const [q, setQ] = useState(initialQ || pendingQ);
+  const [qInput, setQInput] = useState(initialQ || pendingQ || "");
+  const [q, setQ] = useState(initialQ || pendingQ || "");
   const [type, setType] = useState<string>("");
   const [sort, setSort] = useState<"temp" | "recent">("temp");
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const { ready, user } = useAuth();
-  const isGuest = ready && !user;
   const navigate = useNavigate();
   const router = useRouter();
   const requestFn = useServerFn(requestObjectFromSearch);
+  const getObjects = useServerFn(getPublicObjects);
 
   useEffect(() => {
-    if (isGuest) return;
+    let cancelled = false;
     setLoading(true);
-    let query = supabase.from("objects").select("id,name,type,temperature,observation_count,ai_summary");
-    if (type) query = query.eq("type", type as any);
-    if (q.trim()) query = query.ilike("name", `%${q.trim()}%`);
-    query = sort === "temp"
-      ? query.order("temperature", { ascending: false })
-      : query.order("updated_at", { ascending: false });
-    query.limit(60).then(({ data }) => {
-      setItems(data ?? []);
-      setLoading(false);
-    });
-  }, [q, type, sort, isGuest]);
+    getObjects({ data: { q, type, sort, limit: 60 } })
+      .then((res) => {
+        if (cancelled) return;
+        setItems(res.items ?? []);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        toast.error(err instanceof Error ? err.message : "对象列表加载失败");
+        setItems([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [q, type, sort, getObjects]);
 
   // 登录后若带 pending 参数，自动继续申请
   useEffect(() => {
@@ -67,7 +76,10 @@ function AllObjects() {
     if (!trimmed) return;
     if (!user) {
       toast.info("请先登录后再申请建立对象");
-      navigate({ to: "/login", search: { redirect: `/objects?pending=${encodeURIComponent(trimmed)}` } as any });
+      navigate({
+        to: "/login",
+        search: { redirect: `/objects?pending=${encodeURIComponent(trimmed)}` } as any,
+      });
       return;
     }
     setRequesting(true);
@@ -75,7 +87,7 @@ function AllObjects() {
       const res = await requestFn({ data: { name: trimmed } });
       if (res.status === "object_exists") {
         toast.success(`对象「${res.name}」已存在，正在打开详情页`);
-        navigate({ to: "/objects/$id", params: { id: res.objectId } });
+        navigate({ to: "/objects/$id", params: { id: res.objectId }, search: {} });
       } else if (res.status === "request_exists") {
         toast.info(`「${res.name}」已有人申请建立，正在等待审核`);
       } else if (res.status === "created") {
@@ -91,25 +103,6 @@ function AllObjects() {
     }
   }
 
-  if (isGuest) {
-    return (
-      <SiteLayout>
-        <section className="border-b border-border">
-          <div className="container-prose py-12">
-            <h1 className="font-serif text-4xl">全部对象</h1>
-            <p className="mt-3 text-sm text-muted-foreground">{GUEST_NOTE}</p>
-          </div>
-        </section>
-        <section className="py-12">
-          <div className="container-prose">
-            <GuestPreviewList />
-            <div className="mt-8"><GuestLoginPrompt /></div>
-          </div>
-        </section>
-      </SiteLayout>
-    );
-  }
-
   const searchedKeyword = q.trim();
   const showEmptyWithRequest = !loading && searchedKeyword && items.length === 0;
 
@@ -119,11 +112,17 @@ function AllObjects() {
         <div className="container-prose py-16">
           <h1 className="font-serif text-4xl">全部对象</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            找不到？<Link to="/request-object" className="underline">增加新测评对象</Link>
+            找不到？
+            <Link to="/request-object" className="underline">
+              增加新测评对象
+            </Link>
           </p>
 
           <form
-            onSubmit={(e) => { e.preventDefault(); setQ(qInput); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              setQ(qInput);
+            }}
             className="mt-10 grid gap-3 md:grid-cols-[1fr_auto_auto_auto]"
           >
             <input
@@ -139,7 +138,9 @@ function AllObjects() {
             >
               <option value="">全部类型</option>
               {Object.entries(OBJECT_TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
+                <option key={k} value={k}>
+                  {v}
+                </option>
               ))}
             </select>
             <select
@@ -159,7 +160,6 @@ function AllObjects() {
           </form>
         </div>
       </section>
-
 
       <section className="py-12">
         <div className="container-prose">
@@ -183,7 +183,9 @@ function AllObjects() {
             <p className="py-16 text-center text-sm text-muted-foreground">暂无对象</p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {items.map((o: any) => <ObjectCard key={o.id} {...o} showActions />)}
+              {items.map((o: any) => (
+                <ObjectCard key={o.id} {...o} showActions />
+              ))}
             </div>
           )}
         </div>

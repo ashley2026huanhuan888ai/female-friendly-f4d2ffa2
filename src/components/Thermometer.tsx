@@ -61,9 +61,7 @@ export function Thermometer({ value, size = "md", showLabel = true, unmeasured =
             {v.toFixed(0)}
             <span className="text-base text-muted-foreground">°C</span>
           </div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            {band.label}
-          </div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">{band.label}</div>
         </div>
       )}
     </div>

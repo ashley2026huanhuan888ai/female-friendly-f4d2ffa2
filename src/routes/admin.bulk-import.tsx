@@ -9,11 +9,25 @@ export const Route = createFileRoute("/admin/bulk-import")({
   component: BulkImportPage,
 });
 
-type ObjectType = "brand" | "product" | "service" | "organization" | "film" | "game" | "show" | "event";
+type ObjectType =
+  | "brand"
+  | "product"
+  | "service"
+  | "organization"
+  | "film"
+  | "game"
+  | "show"
+  | "event";
 
 const TYPE_LABELS: Record<ObjectType, string> = {
-  brand: "品牌", product: "产品", service: "服务", organization: "组织",
-  film: "影视", game: "游戏", show: "节目", event: "事件",
+  brand: "品牌",
+  product: "产品",
+  service: "服务",
+  organization: "组织",
+  film: "影视",
+  game: "游戏",
+  show: "节目",
+  event: "事件",
 };
 
 interface PreviewRow {
@@ -58,13 +72,16 @@ function BulkImportPage() {
   const [summary, setSummary] = useState<Awaited<ReturnType<typeof commit>> | null>(null);
 
   const onPreview = async () => {
-    if (!text.trim()) { toast.error("请粘贴内容"); return; }
+    if (!text.trim()) {
+      toast.error("请粘贴内容");
+      return;
+    }
     setLoading(true);
     try {
       const r = await preview({ data: { text } });
       const mapped: PreviewRow[] = r.records.map((x) => ({
         ...x,
-        _action: x.duplicate ? "skip" : (x.match_status === "新对象" ? "new" : "import"),
+        _action: x.duplicate ? "skip" : x.match_status === "新对象" ? "new" : "import",
         _admin_temperature: null,
       }));
       setRows(mapped);
@@ -72,29 +89,36 @@ function BulkImportPage() {
       toast.success(`解析出 ${mapped.length} 条记录`);
     } catch (e) {
       toast.error((e as Error).message);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onCommit = async () => {
-    const items = rows.filter((r) => r._action !== "skip").map((r) => ({
-      object_name: r.object_name,
-      object_type: r.object_type,
-      matched_object_id: r._action === "new" ? null : r.matched_object_id,
-      create_new: r._action === "new",
-      year: r.year,
-      regulatory_authority: r.regulatory_authority,
-      penalty_amount: r.penalty_amount,
-      penalty_description: r.penalty_description,
-      violation_summary: r.violation_summary,
-      original_problematic_text: r.original_problematic_text,
-      evidence_level: r.evidence_level,
-      source_status: r.source_status,
-      tags: r.tags,
-      raw_block: r.raw_block,
-      fingerprint: r.fingerprint,
-      admin_temperature: r._admin_temperature,
-    }));
-    if (items.length === 0) { toast.error("没有可导入项"); return; }
+    const items = rows
+      .filter((r) => r._action !== "skip")
+      .map((r) => ({
+        object_name: r.object_name,
+        object_type: r.object_type,
+        matched_object_id: r._action === "new" ? null : r.matched_object_id,
+        create_new: r._action === "new",
+        year: r.year,
+        regulatory_authority: r.regulatory_authority,
+        penalty_amount: r.penalty_amount,
+        penalty_description: r.penalty_description,
+        violation_summary: r.violation_summary,
+        original_problematic_text: r.original_problematic_text,
+        evidence_level: r.evidence_level,
+        source_status: r.source_status,
+        tags: r.tags,
+        raw_block: r.raw_block,
+        fingerprint: r.fingerprint,
+        admin_temperature: r._admin_temperature,
+      }));
+    if (items.length === 0) {
+      toast.error("没有可导入项");
+      return;
+    }
     setLoading(true);
     try {
       const s = await commit({ data: { items } });
@@ -102,11 +126,13 @@ function BulkImportPage() {
       toast.success(`已导入 ${s.imported} 条`);
     } catch (e) {
       toast.error((e as Error).message);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateRow = (i: number, patch: Partial<PreviewRow>) => {
-    setRows((rs) => rs.map((r, idx) => idx === i ? { ...r, ...patch } : r));
+    setRows((rs) => rs.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   };
 
   return (
@@ -147,8 +173,26 @@ function BulkImportPage() {
           <table className="w-full border-collapse text-xs">
             <thead className="bg-muted">
               <tr>
-                {["状态","操作","解析对象","匹配","年份","类型","机构","金额","违法点","原文","证据","来源","标签","建议°C","手动°C"].map((h) => (
-                  <th key={h} className="border border-border px-2 py-1 text-left font-medium">{h}</th>
+                {[
+                  "状态",
+                  "操作",
+                  "解析对象",
+                  "匹配",
+                  "年份",
+                  "类型",
+                  "机构",
+                  "金额",
+                  "违法点",
+                  "原文",
+                  "证据",
+                  "来源",
+                  "标签",
+                  "建议°C",
+                  "手动°C",
+                ].map((h) => (
+                  <th key={h} className="border border-border px-2 py-1 text-left font-medium">
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -156,17 +200,26 @@ function BulkImportPage() {
               {rows.map((r, i) => (
                 <tr key={i} className={r.duplicate ? "bg-yellow-50 dark:bg-yellow-900/20" : ""}>
                   <td className="border border-border px-2 py-1">
-                    <span className={
-                      r.match_status === "匹配成功" ? "text-green-600" :
-                      r.match_status === "需人工确认" ? "text-orange-600" : "text-blue-600"
-                    }>{r.match_status}</span>
+                    <span
+                      className={
+                        r.match_status === "匹配成功"
+                          ? "text-green-600"
+                          : r.match_status === "需人工确认"
+                            ? "text-orange-600"
+                            : "text-blue-600"
+                      }
+                    >
+                      {r.match_status}
+                    </span>
                     {r.duplicate && <div className="text-yellow-700">可能重复</div>}
                     {r.source_status === "待补源" && <div className="text-orange-600">待补源</div>}
                   </td>
                   <td className="border border-border px-2 py-1">
                     <select
                       value={r._action}
-                      onChange={(e) => updateRow(i, { _action: e.target.value as PreviewRow["_action"] })}
+                      onChange={(e) =>
+                        updateRow(i, { _action: e.target.value as PreviewRow["_action"] })
+                      }
                       className="border border-border bg-background text-xs"
                     >
                       {r.matched_object_id && <option value="import">使用匹配对象</option>}
@@ -175,35 +228,74 @@ function BulkImportPage() {
                     </select>
                   </td>
                   <td className="border border-border px-2 py-1">
-                    <input value={r.object_name} onChange={(e) => updateRow(i, { object_name: e.target.value })}
-                      className="w-32 border-0 bg-transparent" />
+                    <input
+                      value={r.object_name}
+                      onChange={(e) => updateRow(i, { object_name: e.target.value })}
+                      className="w-32 border-0 bg-transparent"
+                    />
                   </td>
                   <td className="border border-border px-2 py-1">
                     {r.matched_object_id && r.matched_object_name ? (
-                      <Link to="/objects/$id" params={{ id: r.matched_object_id }} target="_blank" className="underline-offset-2 hover:underline">{r.matched_object_name}</Link>
-                    ) : (r.matched_object_name ?? "—")}
-                    {r.match_confidence > 0 && <div className="text-muted-foreground">{r.match_confidence.toFixed(2)}</div>}
+                      <Link
+                        to="/objects/$id"
+                        params={{ id: r.matched_object_id }}
+                        target="_blank"
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {r.matched_object_name}
+                      </Link>
+                    ) : (
+                      (r.matched_object_name ?? "—")
+                    )}
+                    {r.match_confidence > 0 && (
+                      <div className="text-muted-foreground">{r.match_confidence.toFixed(2)}</div>
+                    )}
                   </td>
                   <td className="border border-border px-2 py-1">{r.year ?? "—"}</td>
                   <td className="border border-border px-2 py-1">
-                    <select value={r.object_type} onChange={(e) => updateRow(i, { object_type: e.target.value as ObjectType })}
-                      className="border border-border bg-background text-xs">
-                      {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    <select
+                      value={r.object_type}
+                      onChange={(e) => updateRow(i, { object_type: e.target.value as ObjectType })}
+                      className="border border-border bg-background text-xs"
+                    >
+                      {Object.entries(TYPE_LABELS).map(([k, v]) => (
+                        <option key={k} value={k}>
+                          {v}
+                        </option>
+                      ))}
                     </select>
                   </td>
-                  <td className="border border-border px-2 py-1">{r.regulatory_authority ?? "—"}</td>
+                  <td className="border border-border px-2 py-1">
+                    {r.regulatory_authority ?? "—"}
+                  </td>
                   <td className="border border-border px-2 py-1">{r.penalty_amount ?? "—"}</td>
-                  <td className="border border-border px-2 py-1 max-w-[180px]">{r.violation_summary ?? "—"}</td>
-                  <td className="border border-border px-2 py-1 max-w-[180px] text-muted-foreground">{r.original_problematic_text ?? "—"}</td>
+                  <td className="border border-border px-2 py-1 max-w-[180px]">
+                    {r.violation_summary ?? "—"}
+                  </td>
+                  <td className="border border-border px-2 py-1 max-w-[180px] text-muted-foreground">
+                    {r.original_problematic_text ?? "—"}
+                  </td>
                   <td className="border border-border px-2 py-1 font-mono">{r.evidence_level}</td>
                   <td className="border border-border px-2 py-1">{r.source_status}</td>
-                  <td className="border border-border px-2 py-1 max-w-[160px]">{r.tags.join("、") || "—"}</td>
-                  <td className="border border-border px-2 py-1 font-mono">{r.suggested_temperature}</td>
+                  <td className="border border-border px-2 py-1 max-w-[160px]">
+                    {r.tags.join("、") || "—"}
+                  </td>
+                  <td className="border border-border px-2 py-1 font-mono">
+                    {r.suggested_temperature}
+                  </td>
                   <td className="border border-border px-2 py-1">
-                    <input type="number" min={20} max={100}
+                    <input
+                      type="number"
+                      min={20}
+                      max={100}
                       value={r._admin_temperature ?? ""}
-                      onChange={(e) => updateRow(i, { _admin_temperature: e.target.value ? Number(e.target.value) : null })}
-                      className="w-16 border border-border bg-background px-1" />
+                      onChange={(e) =>
+                        updateRow(i, {
+                          _admin_temperature: e.target.value ? Number(e.target.value) : null,
+                        })
+                      }
+                      className="w-16 border border-border bg-background px-1"
+                    />
                   </td>
                 </tr>
               ))}
@@ -224,22 +316,43 @@ function BulkImportPage() {
             <div>待补源：{summary.need_source_supplement}</div>
           </div>
           <table className="mt-4 w-full text-xs">
-            <thead className="bg-muted"><tr>
-              {["对象","最终温度","触发规则","证据","标签","备注"].map((h) => <th key={h} className="border border-border px-2 py-1 text-left">{h}</th>)}
-            </tr></thead>
+            <thead className="bg-muted">
+              <tr>
+                {["对象", "最终温度", "触发规则", "证据", "标签", "备注"].map((h) => (
+                  <th key={h} className="border border-border px-2 py-1 text-left">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
             <tbody>
               {summary.results.map((r, i) => (
                 <tr key={i}>
                   <td className="border border-border px-2 py-1">
                     {r.object_id ? (
-                      <Link to="/objects/$id" params={{ id: r.object_id }} target="_blank" className="underline-offset-2 hover:underline">{r.object_name}</Link>
-                    ) : r.object_name}
+                      <Link
+                        to="/objects/$id"
+                        params={{ id: r.object_id }}
+                        target="_blank"
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {r.object_name}
+                      </Link>
+                    ) : (
+                      r.object_name
+                    )}
                   </td>
-                  <td className="border border-border px-2 py-1 font-mono">{r.final_temperature ?? "—"}</td>
-                  <td className="border border-border px-2 py-1">{r.triggered_rules.join(" / ") || "—"}</td>
+                  <td className="border border-border px-2 py-1 font-mono">
+                    {r.final_temperature ?? "—"}
+                  </td>
+                  <td className="border border-border px-2 py-1">
+                    {r.triggered_rules.join(" / ") || "—"}
+                  </td>
                   <td className="border border-border px-2 py-1">{r.evidence_level}</td>
                   <td className="border border-border px-2 py-1">{r.tags.join("、") || "—"}</td>
-                  <td className="border border-border px-2 py-1 text-destructive">{r.note ?? ""}</td>
+                  <td className="border border-border px-2 py-1 text-destructive">
+                    {r.note ?? ""}
+                  </td>
                 </tr>
               ))}
             </tbody>

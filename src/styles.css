@@ -100,7 +100,8 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
@@ -108,7 +109,10 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
-  h1, h2, h3, .font-serif {
+  h1,
+  h2,
+  h3,
+  .font-serif {
     font-family: var(--font-serif);
     letter-spacing: -0.01em;
   }
@@ -118,8 +122,14 @@
   .hairline {
     border-top: 1px solid var(--color-border);
   }
-  .text-balance { text-wrap: balance; }
-  .container-prose { max-width: 72rem; margin-inline: auto; padding-inline: 1.5rem; }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .container-prose {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
 }
 
 @layer utilities {
@@ -133,5 +143,8 @@
     line-height: 1.4;
     border-radius: 0;
   }
-  .input:focus { outline: none; border-color: var(--color-foreground); }
+  .input:focus {
+    outline: none;
+    border-color: var(--color-foreground);
+  }
 }

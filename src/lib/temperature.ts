@@ -28,16 +28,16 @@ export const EVIDENCE_WEIGHT = EVIDENCE_STRENGTH;
 
 // 一级标签 + 权重（按 V1 引擎规范）
 export const TAG_WEIGHTS: Record<string, number> = {
-  "女性物化": 8,
-  "男性凝视": 6,
-  "能力贬低": 9,
-  "性别角色固化": 8,
-  "容貌规训": 6,
-  "生育规训": 10,
-  "性羞辱": 10,
-  "受害者归因": 10,
-  "女性工具化": 7,
-  "伪女性友好": 5,
+  女性物化: 8,
+  男性凝视: 6,
+  能力贬低: 9,
+  性别角色固化: 8,
+  容貌规训: 6,
+  生育规训: 10,
+  性羞辱: 10,
+  受害者归因: 10,
+  女性工具化: 7,
+  伪女性友好: 5,
 };
 
 export const FEMINIST_TAGS = Object.keys(TAG_WEIGHTS) as ReadonlyArray<string>;

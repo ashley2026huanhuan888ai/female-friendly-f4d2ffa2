@@ -16,7 +16,9 @@ function Discussions() {
   useEffect(() => {
     supabase
       .from("observations")
-      .select("id, cleaned_content, content, tags, evidence_level, created_at, object_id, objects(id, name, type, temperature)")
+      .select(
+        "id, cleaned_content, content, tags, evidence_level, created_at, object_id, objects(id, name, type, temperature)",
+      )
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(30)
@@ -40,16 +42,29 @@ function Discussions() {
             <div className="divide-y divide-border border-y border-border">
               {items.map((o) => (
                 <article key={o.id} className="py-6">
-                  <Link to="/objects/$id" params={{ id: o.objects.id }} className="flex items-start justify-between gap-6 group">
+                  <Link
+                    to="/objects/$id"
+                    params={{ id: o.objects.id }}
+                    className="flex items-start justify-between gap-6 group"
+                  >
                     <div className="flex-1">
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        {OBJECT_TYPE_LABELS[o.objects.type]} · {new Date(o.created_at).toLocaleDateString("zh-CN")}
+                        {OBJECT_TYPE_LABELS[o.objects.type]} ·{" "}
+                        {new Date(o.created_at).toLocaleDateString("zh-CN")}
                       </div>
-                      <h3 className="mt-2 font-serif text-2xl group-hover:text-accent">{o.objects.name}</h3>
-                      <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{o.cleaned_content || o.content}</p>
+                      <h3 className="mt-2 font-serif text-2xl group-hover:text-accent">
+                        {o.objects.name}
+                      </h3>
+                      <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">
+                        {o.cleaned_content || o.content}
+                      </p>
                       <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-wider text-accent">
-                        <span className="border border-border px-1.5 py-0.5 text-muted-foreground">证据 {o.evidence_level}</span>
-                        {(o.tags as string[])?.map((t) => <span key={t}>#{t}</span>)}
+                        <span className="border border-border px-1.5 py-0.5 text-muted-foreground">
+                          证据 {o.evidence_level}
+                        </span>
+                        {(o.tags as string[])?.map((t) => (
+                          <span key={t}>#{t}</span>
+                        ))}
                       </div>
                     </div>
                     <Thermometer value={o.objects.temperature} size="sm" />
