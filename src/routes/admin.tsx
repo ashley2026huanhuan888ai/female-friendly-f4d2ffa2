@@ -1,13 +1,31 @@
-import { createFileRoute, Link, Outlet, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useAuth } from "@/components/AuthProvider";
 import { claimFirstAdmin, getCurrentUserAccess } from "@/lib/api/platform.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
+  ssr: false,
   head: () => ({ meta: [{ title: "管理后台 · 女性友好体验测评" }] }),
+  beforeLoad: async ({ location }) => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      throw redirect({ to: "/login", search: { redirect: location.href } });
+    }
+    try {
+      const access = await getCurrentUserAccess();
+      if (!access.isAdmin) {
+        // Allow rendering the "claim first admin" / non-admin UI; component handles it.
+        return { isAdmin: false as const };
+      }
+      return { isAdmin: true as const };
+    } catch {
+      return { isAdmin: false as const };
+    }
+  },
   component: AdminLayout,
 });
 
