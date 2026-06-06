@@ -9,7 +9,11 @@ deployment-readiness, and E2E verification fixes.
 - Legal or regulatory penalty observations are treated as A-level evidence even if AI fails.
 - Legal or regulatory penalty observations are included in temperature calculation immediately.
 - Public object cards navigate to independent object detail pages.
+- Object cards now expose an explicit `查看详情` action in addition to the full-card detail link.
+- Home and topic-page object references now link directly to object detail pages.
 - Object detail pages show approved observations and support pagination.
+- Approved object requests now explicitly create or publish a visible object record, so the new object card can appear immediately.
+- Historical approved requests missing an object can be backfilled into visible object cards.
 - Signed-out users can see the login/register entry.
 - AI failure pages now tell the truth: the observation is saved when `ai_failed` is returned.
 - Users can retry AI analysis for their own saved observations through `retryObservationAnalysis`.

@@ -110,6 +110,13 @@ export function ObjectCard({
       {showActions && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border px-6 py-4">
           <Link
+            to="/objects/$id"
+            params={{ id }}
+            className="border border-foreground/60 px-3 py-1.5 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+          >
+            查看详情
+          </Link>
+          <Link
             to="/submit/$objectId"
             params={{ objectId: id }}
             className="border border-foreground bg-foreground px-3 py-1.5 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"

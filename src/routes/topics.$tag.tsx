@@ -125,7 +125,18 @@ function TopicDetail() {
               {data.observations.slice(0, 30).map((o: any) => (
                 <li key={o.id} className="py-4">
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {o.object?.name ?? "—"} · 证据 {o.evidence_level ?? "—"} ·{" "}
+                    {o.object ? (
+                      <Link
+                        to="/objects/$id"
+                        params={{ id: o.object.id }}
+                        className="underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        {o.object.name}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}{" "}
+                    · 证据 {o.evidence_level ?? "—"} ·{" "}
                     {new Date(o.created_at).toLocaleDateString("zh-CN")}
                   </div>
                   <p className="mt-1 text-sm">{o.summary ?? "（无摘要）"}</p>

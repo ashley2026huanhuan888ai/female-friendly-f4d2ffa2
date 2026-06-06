@@ -1494,12 +1494,15 @@ export const createObject = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
-    const { data: obj, error } = await supabaseAdmin
-      .from("objects")
-      .insert({ name: data.name, type: data.type, description: data.description ?? null })
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
+    const existingObject = await findObjectByName(data.name);
+    const obj = existingObject
+      ? { id: existingObject.id }
+      : await createPublishedObject({
+          name: data.name,
+          type: data.type,
+          description: data.description ?? null,
+        });
+    if (existingObject) await publishExistingObject(existingObject, data.description ?? null);
     if (data.request_id) {
       await supabaseAdmin
         .from("object_requests")
@@ -1565,6 +1568,73 @@ async function ingestReasonAsObservation(
   };
 }
 
+async function findObjectByName(name: string): Promise<{
+  id: string;
+  name: string;
+  status: string;
+  hidden: boolean;
+  description: string | null;
+} | null> {
+  const target = normalizeName(name);
+  const { data } = await supabaseAdmin
+    .from("objects")
+    .select("id, name, status, hidden, description")
+    .ilike("name", `%${name.trim()}%`)
+    .limit(50);
+  return (
+    (
+      (data ?? []) as Array<{
+        id: string;
+        name: string;
+        status: string;
+        hidden: boolean;
+        description: string | null;
+      }>
+    ).find((o) => normalizeName(o.name) === target) ?? null
+  );
+}
+
+async function publishExistingObject(
+  object: {
+    id: string;
+    status: string;
+    hidden: boolean;
+    description: string | null;
+  },
+  description: string | null,
+) {
+  const patch: Record<string, unknown> = {};
+  if (object.status !== "published") patch.status = "published";
+  if (object.hidden) patch.hidden = false;
+  if (!object.description && description) patch.description = description;
+  if (Object.keys(patch).length === 0) return;
+  const { error } = await supabaseAdmin
+    .from("objects")
+    .update(patch as never)
+    .eq("id", object.id);
+  if (error) throw new Error(error.message);
+}
+
+async function createPublishedObject(input: {
+  name: string;
+  type: string;
+  description: string | null;
+}): Promise<{ id: string }> {
+  const { data, error } = await supabaseAdmin
+    .from("objects")
+    .insert({
+      name: input.name,
+      type: input.type,
+      description: input.description,
+      status: "published",
+      hidden: false,
+    } as never)
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return data as { id: string };
+}
+
 // ===== 管理员通过对象申请（完整流程：创建对象 + 写观察 + 重算温度） =====
 export const approveObjectRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1579,16 +1649,15 @@ export const approveObjectRequest = createServerFn({ method: "POST" })
     if (rErr || !req) throw new Error("申请不存在");
     if (req.status !== "pending") throw new Error("该申请已处理");
 
-    const { data: obj, error: oErr } = await supabaseAdmin
-      .from("objects")
-      .insert({
-        name: req.requested_name,
-        type: req.requested_type,
-        description: req.reason ?? null,
-      })
-      .select("id")
-      .single();
-    if (oErr) throw new Error(oErr.message);
+    const existingObject = await findObjectByName(req.requested_name);
+    const obj = existingObject
+      ? { id: existingObject.id }
+      : await createPublishedObject({
+          name: req.requested_name,
+          type: req.requested_type,
+          description: req.reason ?? null,
+        });
+    if (existingObject) await publishExistingObject(existingObject, req.reason ?? null);
 
     const reason = (req.reason ?? "").trim();
     let observation_id: string | null = null;
@@ -1642,33 +1711,37 @@ export const backfillApprovedRequests = createServerFn({ method: "POST" })
       // 找对应对象（按名称精确匹配）
       const { data: objs } = await supabaseAdmin
         .from("objects")
-        .select("id, observation_count")
+        .select("id")
         .eq("name", r.requested_name)
         .limit(1);
-      const obj = (objs ?? [])[0] as { id: string; observation_count: number } | undefined;
+      let obj = (objs ?? [])[0] as { id: string } | undefined;
       if (!obj) {
-        skipped++;
+        obj = await createPublishedObject({
+          name: r.requested_name,
+          type: r.requested_type,
+          description: reason,
+        });
         details.push({
           name: r.requested_name,
-          object_id: null,
+          object_id: obj.id,
           temperature: null,
-          note: "未找到对象",
+          note: "已补建公开对象卡片",
         });
-        continue;
       }
+      const objectId = obj.id;
 
       // 去重：已有 admin_note 含「对象申请通过」的观察则跳过
       const { data: existing } = await supabaseAdmin
         .from("observations")
         .select("id")
-        .eq("object_id", obj.id)
+        .eq("object_id", objectId)
         .ilike("admin_note", "对象申请通过%")
         .limit(1);
       if (existing && existing.length > 0) {
         skipped++;
         details.push({
           name: r.requested_name,
-          object_id: obj.id,
+          object_id: objectId,
           temperature: null,
           note: "已存在观察",
         });
@@ -1676,14 +1749,14 @@ export const backfillApprovedRequests = createServerFn({ method: "POST" })
       }
 
       try {
-        const res = await ingestReasonAsObservation(obj.id, reason, context.userId, "历史回填");
+        const res = await ingestReasonAsObservation(objectId, reason, context.userId, "历史回填");
         backfilled++;
-        details.push({ name: r.requested_name, object_id: obj.id, temperature: res.temperature });
+        details.push({ name: r.requested_name, object_id: objectId, temperature: res.temperature });
       } catch (e) {
         skipped++;
         details.push({
           name: r.requested_name,
-          object_id: obj.id,
+          object_id: objectId,
           temperature: null,
           note: (e as Error).message,
         });

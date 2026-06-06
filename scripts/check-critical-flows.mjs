@@ -16,15 +16,49 @@ const checks = [
     test: (source) =>
       source.includes('to="/objects/$id"') &&
       source.includes("params={{ id }}") &&
+      source.includes("查看详情") &&
       !source.includes("absolute inset-0"),
   },
   {
-    name: "object detail supports paginated observation browsing",
+    name: "object detail pages show complete object information",
     file: "src/routes/objects.$id.tsx",
     test: (source) =>
+      source.includes('createFileRoute("/objects/$id")') &&
+      source.includes("AI 总结") &&
+      source.includes("主要争议标签") &&
+      source.includes("为什么是这个温度？") &&
+      source.includes("案例时间线") &&
+      source.includes("全部已审核观察") &&
       source.includes("getPublicObjectObservations") &&
       source.includes("loadMoreObservations") &&
       source.includes("当前展示 {obs.length} / {obsTotal} 条已审核观察"),
+  },
+  {
+    name: "approved object requests immediately create visible object cards",
+    file: "src/lib/api/platform.functions.ts",
+    test: (source) =>
+      source.includes("async function createPublishedObject") &&
+      source.includes('status: "published"') &&
+      source.includes("hidden: false") &&
+      source.includes("export const approveObjectRequest") &&
+      source.includes("await createPublishedObject({") &&
+      source.includes("已补建公开对象卡片"),
+  },
+  {
+    name: "object references on home and topic pages link to detail pages",
+    file: "src/routes/index.tsx",
+    test: (source) =>
+      source.includes('to="/objects/$id"') &&
+      source.includes("params={{ id: o.object.id }}") &&
+      source.includes("summary.latest_observations"),
+  },
+  {
+    name: "topic observation object references link to detail pages",
+    file: "src/routes/topics.$tag.tsx",
+    test: (source) =>
+      source.includes('to="/objects/$id"') &&
+      source.includes("params={{ id: o.object.id }}") &&
+      source.includes("data.observations.slice"),
   },
   {
     name: "submit saves before AI and reports saved AI failures",

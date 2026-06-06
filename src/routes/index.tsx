@@ -224,7 +224,18 @@ function Index() {
               {summary.latest_observations.slice(0, 6).map((o: any) => (
                 <li key={o.id} className="py-4 md:border-b md:border-border">
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {o.object?.name ?? "—"} · 证据 {o.evidence_level ?? "—"}
+                    {o.object ? (
+                      <Link
+                        to="/objects/$id"
+                        params={{ id: o.object.id }}
+                        className="underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        {o.object.name}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}{" "}
+                    · 证据 {o.evidence_level ?? "—"}
                   </div>
                   <p className="mt-1 text-sm">{o.summary ?? "（无摘要）"}</p>
                 </li>
