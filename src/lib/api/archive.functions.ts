@@ -45,11 +45,8 @@ export const searchArchive = createServerFn({ method: "POST" })
       .eq("status", "approved");
 
     if (data.q) {
-      const safe = data.q.replace(/[,()*%_\\"']/g, " ").trim();
-      if (safe) {
-        const term = `%${safe}%`;
-        q = q.or(`summary.ilike.${term},cleaned_content.ilike.${term},case_code.ilike.${term}`);
-      }
+      const term = `%${data.q.replace(/[%_]/g, "")}%`;
+      q = q.or(`summary.ilike.${term},cleaned_content.ilike.${term},case_code.ilike.${term}`);
     }
     if (data.categories?.length) q = q.in("archive_category", data.categories);
     if (data.evidence?.length) q = q.in("evidence_level", data.evidence);
