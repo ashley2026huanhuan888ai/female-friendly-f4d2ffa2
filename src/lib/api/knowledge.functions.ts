@@ -91,7 +91,10 @@ export const listCases = createServerFn({ method: "GET" })
       .limit(200);
     if (data.polarity) q = q.eq("polarity", data.polarity);
     if (data.tag) q = q.contains("tags", [data.tag]);
-    if (data.keyword) q = q.or(`title.ilike.%${data.keyword}%,summary.ilike.%${data.keyword}%`);
+    if (data.keyword) {
+      const kw = escapeForPostgrestOr(data.keyword);
+      if (kw) q = q.or(`title.ilike.%${kw}%,summary.ilike.%${kw}%`);
+    }
     const { data: rows } = await q;
     return (rows ?? []) as KCase[];
   });
