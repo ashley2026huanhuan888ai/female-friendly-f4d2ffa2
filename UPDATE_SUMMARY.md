@@ -14,6 +14,7 @@ deployment-readiness, and E2E verification fixes.
 - Object detail pages show approved observations and support pagination.
 - Approved object requests now explicitly create or publish a visible object record, so the new object card can appear immediately.
 - Historical approved requests missing an object can be backfilled into visible object cards.
+- User submit quota is raised from 3 to 50 observations per 24 hours, while keeping 1 observation per object per 24 hours.
 - Signed-out users can see the login/register entry.
 - AI failure pages now tell the truth: the observation is saved when `ai_failed` is returned.
 - Users can retry AI analysis for their own saved observations through `retryObservationAnalysis`.

@@ -76,6 +76,21 @@ const checks = [
     },
   },
   {
+    name: "submit quota allows 50 observations per 24 hours",
+    file: "src/lib/api/platform.functions.ts",
+    test: (source) =>
+      source.includes("24 小时内最多提交 50 条观察") &&
+      !source.includes("24 小时内最多提交 3 条观察"),
+  },
+  {
+    name: "database submit quota migration raises 24h total limit to 50",
+    file: "supabase/migrations/20260607003000_raise_submit_limit_to_50.sql",
+    test: (source) =>
+      source.includes("CREATE OR REPLACE FUNCTION public.check_user_submit_limit") &&
+      source.includes("total_24h < 50") &&
+      source.includes("same_obj_24h < 1"),
+  },
+  {
     name: "AI provider supports Lovable defaults and DeepSeek configuration",
     file: "src/lib/api/platform.functions.ts",
     test: (source) =>
