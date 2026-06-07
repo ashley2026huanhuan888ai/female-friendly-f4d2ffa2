@@ -480,9 +480,11 @@ export const submitObservation = createServerFn({ method: "POST" })
       _object: data.object_id,
     });
     const limit = lim as { allowed: boolean; total_24h: number; same_object_24h: number } | null;
-    if (limit && !limit.allowed) {
-      if (limit.same_object_24h >= 1) throw new Error("同一对象 24 小时内仅可提交 1 条观察");
-      throw new Error("24 小时内最多提交 3 条观察");
+    if (limit) {
+      const total24h = Number(limit.total_24h ?? 0);
+      const sameObject24h = Number(limit.same_object_24h ?? 0);
+      if (sameObject24h >= 1) throw new Error("同一对象 24 小时内仅可提交 1 条观察");
+      if (total24h >= 50) throw new Error("24 小时内最多提交 50 条观察");
     }
 
     // 2. 法律强证据预扫描（独立于 AI，保证 AI 失败也有兜底）
@@ -1843,10 +1845,12 @@ export const requestObjectFromSearch = createServerFn({ method: "POST" })
     // 查重：objects（取小批量后在内存中 normalize 比对）
     const { data: objs } = await supabaseAdmin
       .from("objects")
-      .select("id,name")
+      .select("id,name,status,hidden")
       .ilike("name", `%${name}%`)
       .limit(50);
-    const hit = (objs ?? []).find((o) => normalizeName(o.name) === norm);
+    const hit = (
+      (objs ?? []) as Array<{ id: string; name: string; status: string; hidden: boolean }>
+    ).find((o) => normalizeName(o.name) === norm && o.status === "published" && !o.hidden);
     if (hit) {
       return { status: "object_exists" as const, objectId: hit.id, name: hit.name };
     }

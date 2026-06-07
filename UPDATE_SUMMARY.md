@@ -1,4 +1,4 @@
-# Female Friendly optimized package v7
+# Female Friendly final upload package
 
 This package integrates the Female Friendly Lovable code with the submit-flow, object-browsing,
 deployment-readiness, and E2E verification fixes.
@@ -11,10 +11,13 @@ deployment-readiness, and E2E verification fixes.
 - Public object cards navigate to independent object detail pages.
 - Object cards now expose an explicit `查看详情` action in addition to the full-card detail link.
 - Home and topic-page object references now link directly to object detail pages.
+- Object cards use concrete `/objects/{id}` hrefs for detail navigation, avoiding router-param interpolation failures in deployed builds.
 - Object detail pages show approved observations and support pagination.
 - Approved object requests now explicitly create or publish a visible object record, so the new object card can appear immediately.
 - Historical approved requests missing an object can be backfilled into visible object cards.
+- Hidden or draft objects are no longer treated as public search hits, avoiding "object exists" redirects to invisible detail pages.
 - User submit quota is raised from 3 to 50 observations per 24 hours, while keeping 1 observation per object per 24 hours.
+- Submit quota is also enforced from returned counts in server code, so an old deployed RPC `allowed` flag cannot silently keep the 3-observation cap.
 - Signed-out users can see the login/register entry.
 - AI failure pages now tell the truth: the observation is saved when `ai_failed` is returned.
 - Users can retry AI analysis for their own saved observations through `retryObservationAnalysis`.
@@ -47,8 +50,9 @@ deployment-readiness, and E2E verification fixes.
 
 ## Verification
 
-- `npm run lint`
-- `npm run check:types`
-- `npm run test:critical`
-- `npm run build`
+- `npm run check:flows` passed: 17 critical flow checks
+- `npm run check:types` passed
+- `npm run lint` passed
+- `npm run test:critical` passed: 18 tests + migration checks
+- `npm run build` passed
 - `npm run test:e2e` runs browser checks when `E2E_BASE_URL` or local Supabase env vars are present.

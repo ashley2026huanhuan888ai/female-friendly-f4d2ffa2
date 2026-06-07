@@ -35,7 +35,7 @@
         risk_level = max('high', AI risk)
      return { id, status, ai_failed:false, ... }
    } catch (aiErr) {
-     UPDATE observations SET 
+     UPDATE observations SET
        admin_note = 'AI 分析失败: <message>' (+ 法律预标注说明)
      // 不修改 evidence_level/tags/risk_level（已在 step 3 写好 fallback）
      // 不抛错
@@ -68,12 +68,14 @@
 
 ```ts
 // 绝味鸭脖回归测试
-test('legal penalty content forces floor >= 90', () => {
-  const r = aggregateRuleMinimum([{
-    tags: ['女性物化','性别歧视营销','低俗擦边营销'],
-    evidence_level: 'A',
-    content: '长工商案字〔2017〕91号 责令停止发布违法广告 罚款60万元 违反《广告法》第9条第7项',
-  }]);
+test("legal penalty content forces floor >= 90", () => {
+  const r = aggregateRuleMinimum([
+    {
+      tags: ["女性物化", "性别歧视营销", "低俗擦边营销"],
+      evidence_level: "A",
+      content: "长工商案字〔2017〕91号 责令停止发布违法广告 罚款60万元 违反《广告法》第9条第7项",
+    },
+  ]);
   expect(r.rule_minimum_temperature).toBeGreaterThanOrEqual(90);
   expect(r.has_regulatory_penalty).toBe(true);
 });

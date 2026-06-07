@@ -48,12 +48,12 @@ export function ObjectCard({
   const updated = relTime(updated_at);
   const heatLabel = heatTop?.label ?? heatTop?.title;
   const coolLabel = coolTop?.label ?? coolTop?.title;
+  const detailHref = `/objects/${encodeURIComponent(id)}`;
 
   return (
     <article className="group border border-border bg-card transition-all hover:border-foreground/40 hover:shadow-sm focus-within:border-foreground/60">
-      <Link
-        to="/objects/$id"
-        params={{ id }}
+      <a
+        href={detailHref}
         aria-label={`查看对象详情：${name}`}
         className="flex items-start justify-between gap-6 p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
@@ -105,17 +105,16 @@ export function ObjectCard({
         </div>
 
         <Thermometer value={temperature} size="sm" unmeasured={observation_count === 0} />
-      </Link>
+      </a>
 
       {showActions && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border px-6 py-4">
-          <Link
-            to="/objects/$id"
-            params={{ id }}
+          <a
+            href={detailHref}
             className="border border-foreground/60 px-3 py-1.5 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
           >
             查看详情
-          </Link>
+          </a>
           <Link
             to="/submit/$objectId"
             params={{ objectId: id }}

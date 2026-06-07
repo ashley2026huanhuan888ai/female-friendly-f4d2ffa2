@@ -14,8 +14,8 @@ const checks = [
     name: "object cards navigate to object detail pages",
     file: "src/components/ObjectCard.tsx",
     test: (source) =>
-      source.includes('to="/objects/$id"') &&
-      source.includes("params={{ id }}") &&
+      source.includes("const detailHref = `/objects/${encodeURIComponent(id)}`") &&
+      source.includes("href={detailHref}") &&
       source.includes("查看详情") &&
       !source.includes("absolute inset-0"),
   },
@@ -43,6 +43,14 @@ const checks = [
       source.includes("export const approveObjectRequest") &&
       source.includes("await createPublishedObject({") &&
       source.includes("已补建公开对象卡片"),
+  },
+  {
+    name: "hidden or draft objects are not treated as public search hits",
+    file: "src/lib/api/platform.functions.ts",
+    test: (source) =>
+      source.includes('.select("id,name,status,hidden")') &&
+      source.includes('o.status === "published" && !o.hidden') &&
+      source.includes('return { status: "object_exists" as const'),
   },
   {
     name: "object references on home and topic pages link to detail pages",
@@ -80,6 +88,9 @@ const checks = [
     file: "src/lib/api/platform.functions.ts",
     test: (source) =>
       source.includes("24 小时内最多提交 50 条观察") &&
+      source.includes("const total24h = Number(limit.total_24h ?? 0)") &&
+      source.includes("if (total24h >= 50)") &&
+      !source.includes("if (limit && !limit.allowed)") &&
       !source.includes("24 小时内最多提交 3 条观察"),
   },
   {

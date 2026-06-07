@@ -30,3 +30,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Packaged artifacts and macOS metadata
+*.zip
+*.tar
+*.tar.gz
+._*
+**/._*
+
