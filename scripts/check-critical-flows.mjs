@@ -103,6 +103,14 @@ const checks = [
       source.includes("return fallback"),
   },
   {
+    name: "global auth provider does not call admin access server function during page load",
+    file: "src/components/AuthProvider.tsx",
+    test: (source) =>
+      !source.includes("getCurrentUserAccess") &&
+      !source.includes("useServerFn") &&
+      source.includes('.from("notifications" as never)'),
+  },
+  {
     name: "Supabase admin config can be checked before creating service role client",
     file: "src/integrations/supabase/client.server.ts",
     test: (source) =>

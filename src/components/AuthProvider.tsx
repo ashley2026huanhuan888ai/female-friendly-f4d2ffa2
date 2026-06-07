@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { getCurrentUserAccess } from "@/lib/api/platform.functions";
 import { AuthContext, type AuthContextValue } from "@/components/auth-context";
 import {
   clearRemember,
@@ -35,7 +33,6 @@ async function enforceExpiry(): Promise<boolean> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const getAccess = useServerFn(getCurrentUserAccess);
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<AuthContextValue["user"]>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -48,24 +45,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const accessToken = sessionData.session?.access_token ?? null;
       setUser(sessionUser);
       setReady(true);
+      setIsAdmin(false);
       if (!sessionUser || !accessToken) {
-        setIsAdmin(false);
         setUnread(0);
         return;
       }
       try {
-        const [access, { count }] = await Promise.all([
-          getAccess({}),
-          supabase
-            .from("notifications" as never)
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", sessionUser.id)
-            .is("read_at", null),
-        ]);
-        setIsAdmin(access.isAdmin);
+        const { count } = await supabase
+          .from("notifications" as never)
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", sessionUser.id)
+          .is("read_at", null);
         setUnread(count ?? 0);
       } catch {
-        setIsAdmin(false);
         setUnread(0);
       }
     } catch {
@@ -74,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       setUnread(0);
     }
-  }, [getAccess]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
