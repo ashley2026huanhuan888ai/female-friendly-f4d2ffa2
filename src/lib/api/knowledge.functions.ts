@@ -13,6 +13,11 @@ async function assertAdmin(userId: string) {
   if (!data?.length) throw new Error("仅管理员可执行");
 }
 
+// 转义 PostgREST .or() / ilike 的语法字符，防止过滤条件注入
+function escapeForPostgrestOr(input: string): string {
+  return input.replace(/[,()*%_\\"']/g, " ").trim();
+}
+
 export type Principle = {
   id: string;
   code: string;
