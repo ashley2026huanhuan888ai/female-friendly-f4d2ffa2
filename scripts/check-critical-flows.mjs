@@ -94,6 +94,23 @@ const checks = [
       !source.includes("24 小时内最多提交 3 条观察"),
   },
   {
+    name: "current user access does not blank screen when service role env is missing",
+    file: "src/lib/api/platform.functions.ts",
+    test: (source) =>
+      source.includes("currentUserAccessFallback") &&
+      source.includes("getSupabaseAdminConfigStatus") &&
+      source.includes("if (!adminConfig.ready)") &&
+      source.includes("return fallback"),
+  },
+  {
+    name: "Supabase admin config can be checked before creating service role client",
+    file: "src/integrations/supabase/client.server.ts",
+    test: (source) =>
+      source.includes("export function getSupabaseAdminConfigStatus") &&
+      source.includes("ready: missing.length === 0") &&
+      source.includes("SUPABASE_SERVICE_ROLE_KEY or SERVICE_ROLE_KEY"),
+  },
+  {
     name: "database submit quota migration raises 24h total limit to 50",
     file: "supabase/migrations/20260607003000_raise_submit_limit_to_50.sql",
     test: (source) =>

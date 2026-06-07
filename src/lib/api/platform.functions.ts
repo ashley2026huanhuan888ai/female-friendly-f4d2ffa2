@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getSupabaseAdminConfigStatus, supabaseAdmin } from "@/integrations/supabase/client.server";
 import { FEMINIST_TAGS, TAG_WEIGHTS, EVIDENCE_STRENGTH, computeImpact } from "@/lib/temperature";
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
 import { detectTags, detectEvidenceA } from "@/lib/api/bulk-import.functions";
@@ -301,20 +301,41 @@ async function assertAdmin(userId: string) {
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
+function currentUserAccessFallback(userId: string, claimRecord: Record<string, unknown>) {
+  return {
+    userId,
+    email: typeof claimRecord.email === "string" ? claimRecord.email : null,
+    roles: [] as string[],
+    isAdmin: false,
+  };
+}
+
 export const getCurrentUserAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId, claims } = context;
     const claimRecord = claims as Record<string, unknown>;
+    const fallback = currentUserAccessFallback(userId, claimRecord);
+    const adminConfig = getSupabaseAdminConfigStatus();
+    if (!adminConfig.ready) {
+      console.warn(
+        `[Supabase] getCurrentUserAccess fallback: missing ${adminConfig.missing.join(", ")}.`,
+      );
+      return fallback;
+    }
+
     const { data: roles, error: roleError } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    if (roleError) throw new Error(roleError.message);
+    if (roleError) {
+      console.warn(`[Supabase] getCurrentUserAccess fallback: ${roleError.message}`);
+      return fallback;
+    }
     const roleList = roles?.map((r) => r.role) ?? [];
     return {
       userId,
-      email: typeof claimRecord.email === "string" ? claimRecord.email : null,
+      email: fallback.email,
       roles: roleList,
       isAdmin: roleList.includes("admin"),
     };

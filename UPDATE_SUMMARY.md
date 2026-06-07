@@ -29,6 +29,7 @@ deployment-readiness, and E2E verification fixes.
 - `check:public` verifies anonymous Supabase reads when public env vars are available.
 - `check:production` verifies service role access, admin role presence, and public-vs-service visibility when production secrets are configured.
 - Supabase service role access accepts either `SUPABASE_SERVICE_ROLE_KEY` or `SERVICE_ROLE_KEY`.
+- Signed-in public pages no longer blank-screen when `SUPABASE_SERVICE_ROLE_KEY` / `SERVICE_ROLE_KEY` is missing; user access falls back to non-admin until the key is configured.
 - Supabase auth middleware accepts either `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` or the public `VITE_` variants.
 - Unused Recharts/chart code was removed to reduce the client bundle.
 - `.gitignore` excludes `.env`, `.env.*`, macOS `._*` files, build output, dependencies, and old zip packages.
@@ -50,7 +51,7 @@ deployment-readiness, and E2E verification fixes.
 
 ## Verification
 
-- `npm run check:flows` passed: 17 critical flow checks
+- `npm run check:flows` passed: 19 critical flow checks
 - `npm run check:types` passed
 - `npm run lint` passed
 - `npm run test:critical` passed: 18 tests + migration checks
