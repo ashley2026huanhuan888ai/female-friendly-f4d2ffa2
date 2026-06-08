@@ -558,7 +558,7 @@ function SubmitPage() {
             </div>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
               <span>
-                {content.length} / 2000 字 · 至少 10 字 · 24 小时内最多 50 条 · 同一对象最多 1 条
+                {content.length} / 2000 字 · 至少 10 字 · 24 小时内最多 50 条 · 同一对象最多 10 条
               </span>
               {draftSavedAt && (
                 <span>草稿已自动保存 · {new Date(draftSavedAt).toLocaleTimeString("zh-CN")}</span>

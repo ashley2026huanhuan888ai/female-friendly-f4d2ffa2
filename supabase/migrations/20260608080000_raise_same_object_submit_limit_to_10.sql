@@ -1,5 +1,4 @@
--- Raise user observation quota from 3 to 50 per 24 hours.
--- Keep the per-object rule: ten observations per object per user per 24 hours.
+-- Raise per-object observation quota from 1 to 10 per user per 24 hours.
 CREATE OR REPLACE FUNCTION public.check_user_submit_limit(_user uuid, _object uuid)
 RETURNS jsonb
 LANGUAGE plpgsql

@@ -14,8 +14,8 @@ const checks = [
     name: "object cards navigate to object detail pages",
     file: "src/components/ObjectCard.tsx",
     test: (source) =>
-      source.includes("const detailHref = `/objects/${encodeURIComponent(id)}`") &&
-      source.includes("href={detailHref}") &&
+      source.includes('to="/objects/$id"') &&
+      source.includes("params={{ id }}") &&
       source.includes("查看详情") &&
       !source.includes("absolute inset-0"),
   },
@@ -119,12 +119,12 @@ const checks = [
       source.includes("SUPABASE_SERVICE_ROLE_KEY or SERVICE_ROLE_KEY"),
   },
   {
-    name: "database submit quota migration raises 24h total limit to 50",
+    name: "database submit quota migration raises 24h total limit to 50 and object limit to 10",
     file: "supabase/migrations/20260607003000_raise_submit_limit_to_50.sql",
     test: (source) =>
       source.includes("CREATE OR REPLACE FUNCTION public.check_user_submit_limit") &&
       source.includes("total_24h < 50") &&
-      source.includes("same_obj_24h < 1"),
+      source.includes("same_obj_24h < 10"),
   },
   {
     name: "AI provider supports Lovable defaults and DeepSeek configuration",

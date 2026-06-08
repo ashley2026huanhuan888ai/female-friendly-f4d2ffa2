@@ -504,7 +504,7 @@ export const submitObservation = createServerFn({ method: "POST" })
     if (limit) {
       const total24h = Number(limit.total_24h ?? 0);
       const sameObject24h = Number(limit.same_object_24h ?? 0);
-      if (sameObject24h >= 1) throw new Error("同一对象 24 小时内仅可提交 1 0条观察");
+      if (sameObject24h >= 10) throw new Error("同一对象 24 小时内仅可提交 10 条观察");
       if (total24h >= 50) throw new Error("24 小时内最多提交 50 条观察");
     }
 
