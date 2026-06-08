@@ -2,17 +2,41 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
+type SupabaseRuntimeConfig = { url?: string; anonKey?: string };
+
+declare global {
+  interface Window {
+    __FF_SUPABASE_CONFIG__?: SupabaseRuntimeConfig;
+  }
+}
+
 function readEnv(name: string): string | undefined {
   const viteEnv = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
   const procEnv =
-    typeof process !== "undefined" && process?.env ? (process.env as Record<string, string | undefined>) : undefined;
+    typeof process !== "undefined" && process?.env
+      ? (process.env as Record<string, string | undefined>)
+      : undefined;
   return viteEnv?.[name] || procEnv?.[name];
 }
 
+function readPublicSupabase(): SupabaseRuntimeConfig {
+  const runtime =
+    typeof window !== "undefined" ? window.__FF_SUPABASE_CONFIG__ : undefined;
+  const url =
+    runtime?.url ||
+    readEnv("VITE_SUPABASE_URL") ||
+    readEnv("SUPABASE_URL");
+  const anonKey =
+    runtime?.anonKey ||
+    readEnv("VITE_SUPABASE_PUBLISHABLE_KEY") ||
+    readEnv("SUPABASE_PUBLISHABLE_KEY") ||
+    readEnv("VITE_SUPABASE_ANON_KEY") ||
+    readEnv("SUPABASE_ANON_KEY");
+  return { url, anonKey };
+}
+
 function createSupabaseClient() {
-  const SUPABASE_URL = readEnv("VITE_SUPABASE_URL") || readEnv("SUPABASE_URL");
-  const SUPABASE_PUBLISHABLE_KEY =
-    readEnv("VITE_SUPABASE_PUBLISHABLE_KEY") || readEnv("SUPABASE_PUBLISHABLE_KEY");
+  const { url: SUPABASE_URL, anonKey: SUPABASE_PUBLISHABLE_KEY } = readPublicSupabase();
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [

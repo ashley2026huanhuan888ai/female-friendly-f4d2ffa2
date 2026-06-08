@@ -13,7 +13,7 @@ type ObjectsSearch = {
   pending?: string;
 };
 
-export const Route = createFileRoute("/objects")({
+export const Route = createFileRoute("/objects/")({
   validateSearch: (s: Record<string, unknown>): ObjectsSearch => ({
     q: typeof s.q === "string" ? s.q : undefined,
     pending: typeof s.pending === "string" ? s.pending : undefined,
