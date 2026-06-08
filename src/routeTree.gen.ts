@@ -113,9 +113,9 @@ const SubmitObjectIdRoute = SubmitObjectIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ObjectsIdRoute = ObjectsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ObjectsRoute,
+  id: '/objects/$id',
+  path: '/objects/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ArchiveEvidenceRoute = ArchiveEvidenceRouteImport.update({
   id: '/archive/evidence',
@@ -362,6 +362,7 @@ export interface RootRouteChildren {
   TopicsRoute: typeof TopicsRouteWithChildren
   ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
   ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
+  ObjectsIdRoute: typeof ObjectsIdRoute
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
   ArchiveIndexRoute: typeof ArchiveIndexRoute
   ObjectsIndexRoute: typeof ObjectsIndexRoute
@@ -476,10 +477,10 @@ declare module '@tanstack/react-router' {
     }
     '/objects/$id': {
       id: '/objects/$id'
-      path: '/$id'
+      path: '/objects/$id'
       fullPath: '/objects/$id'
       preLoaderRoute: typeof ObjectsIdRouteImport
-      parentRoute: typeof ObjectsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/archive/evidence': {
       id: '/archive/evidence'
@@ -613,6 +614,7 @@ const rootRouteChildren: RootRouteChildren = {
   TopicsRoute: TopicsRouteWithChildren,
   ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
   ArchiveEvidenceRoute: ArchiveEvidenceRoute,
+  ObjectsIdRoute: ObjectsIdRoute,
   SubmitObjectIdRoute: SubmitObjectIdRoute,
   ArchiveIndexRoute: ArchiveIndexRoute,
   ObjectsIndexRoute: ObjectsIndexRoute,
@@ -620,13 +622,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
