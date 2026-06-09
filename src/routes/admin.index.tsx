@@ -1,29 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { adminGetOverviewCounts } from "@/lib/api/platform.functions";
 
 export const Route = createFileRoute("/admin/")({
   component: Overview,
 });
 
 function Overview() {
+  const getCounts = useServerFn(adminGetOverviewCounts);
   const [stats, setStats] = useState({ objects: 0, pendingObs: 0, pendingReq: 0 });
   useEffect(() => {
-    (async () => {
-      const [o, p, r] = await Promise.all([
-        supabase.from("objects").select("*", { count: "exact", head: true }),
-        supabase
-          .from("observations")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending"),
-        supabase
-          .from("object_requests")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "pending"),
-      ]);
-      setStats({ objects: o.count ?? 0, pendingObs: p.count ?? 0, pendingReq: r.count ?? 0 });
-    })();
-  }, []);
+    getCounts({})
+      .then((s) => setStats(s))
+      .catch(() => {});
+  }, [getCounts]);
 
   return (
     <div className="container-prose py-12">
@@ -39,9 +30,12 @@ function Overview() {
 
 function Stat({ label, value, to }: { label: string; value: number; to: string }) {
   return (
-    <Link to={to} className="block border border-border bg-card p-6 hover:border-foreground/40">
-      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-3 font-serif text-5xl tabular-nums">{value}</div>
+    <Link
+      to={to}
+      className="block border border-border bg-card p-6 transition hover:border-foreground"
+    >
+      <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
+      <div className="mt-3 font-serif text-3xl">{value}</div>
     </Link>
   );
 }
