@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import {
   reviewObservation,
   recomputeTemperature,
   regenerateObservation,
   updateObservation,
   deleteObservation,
+  adminListObservations,
 } from "@/lib/api/platform.functions";
 import { FEMINIST_TAGS, TAG_WEIGHTS, EVIDENCE_STRENGTH } from "@/lib/temperature";
 import { REJECTION_REASONS, RISK_LABEL } from "@/lib/reputation";
