@@ -16,6 +16,7 @@ const PUBLIC_OBJECT_COLUMNS =
   "id, name, type, description, temperature, observation_count, ai_summary, top_tags, heat_sources, cooling_sources, updated_at";
 const SAME_OBJECT_24H_LIMIT = 10;
 const TOTAL_OBSERVATIONS_24H_LIMIT = 50;
+const SUBMIT_LIMIT_VERSION = "same-object-v10-count";
 
 function normalizeAIEndpoint(rawUrl: string): string {
   const trimmed = rawUrl.trim().replace(/\/+$/, "");
@@ -507,10 +508,14 @@ export const submitObservation = createServerFn({ method: "POST" })
       const total24h = Number(limit.total_24h ?? 0);
       const sameObject24h = Number(limit.same_object_24h ?? 0);
       if (sameObject24h >= SAME_OBJECT_24H_LIMIT) {
-        throw new Error(`同一对象 24 小时内仅可提交 ${SAME_OBJECT_24H_LIMIT} 条观察`);
+        throw new Error(
+          `同一对象 24 小时内仅可提交 ${SAME_OBJECT_24H_LIMIT} 条观察（当前已提交 ${sameObject24h}/${SAME_OBJECT_24H_LIMIT} 条，版本 ${SUBMIT_LIMIT_VERSION}）`,
+        );
       }
       if (total24h >= TOTAL_OBSERVATIONS_24H_LIMIT) {
-        throw new Error(`24 小时内最多提交 ${TOTAL_OBSERVATIONS_24H_LIMIT} 条观察`);
+        throw new Error(
+          `24 小时内最多提交 ${TOTAL_OBSERVATIONS_24H_LIMIT} 条观察（当前已提交 ${total24h}/${TOTAL_OBSERVATIONS_24H_LIMIT} 条，版本 ${SUBMIT_LIMIT_VERSION}）`,
+        );
       }
     }
 
