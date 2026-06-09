@@ -303,6 +303,29 @@ async function assertAdmin(userId: string) {
   if (!roles?.length) throw new Error("仅管理员可执行");
 }
 
+const ADMIN_USERS_PAGE_SIZE = 1000;
+const ADMIN_USERS_MAX_LIMIT = 5000;
+
+type AuthAdminUser = {
+  id: string;
+  email?: string;
+  created_at: string;
+  email_confirmed_at?: string;
+  confirmed_at?: string;
+  last_sign_in_at?: string;
+  banned_until?: string;
+  deleted_at?: string;
+};
+
+type AdminProfileRow = {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  reputation: number;
+  auto_approve: boolean;
+  created_at: string;
+};
+
 function currentUserAccessFallback(userId: string, claimRecord: Record<string, unknown>) {
   return {
     userId,
@@ -1407,6 +1430,174 @@ export const reviewObservation = createServerFn({ method: "POST" })
       void recomputeObjectInternal(before.object_id).catch(() => {});
     }
     return { object_id: before.object_id };
+  });
+
+async function listAuthUsers(limit: number) {
+  const users: AuthAdminUser[] = [];
+  let page = 1;
+  let total = 0;
+
+  while (users.length < limit) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage: ADMIN_USERS_PAGE_SIZE,
+    });
+    if (error) throw new Error(error.message);
+
+    const pageUsers = (data.users ?? []) as AuthAdminUser[];
+    total = typeof data.total === "number" && data.total > 0 ? data.total : total;
+    users.push(...pageUsers);
+
+    if (pageUsers.length < ADMIN_USERS_PAGE_SIZE) break;
+    if (total > 0 && users.length >= total) break;
+
+    const nextPage = typeof data.nextPage === "number" ? data.nextPage : null;
+    page = nextPage && nextPage > page ? nextPage : page + 1;
+  }
+
+  return {
+    users: users.slice(0, limit),
+    total: total || users.length,
+    truncated: total > 0 ? users.length < total : users.length >= limit,
+  };
+}
+
+async function syncProfilesForAuthUsers(users: AuthAdminUser[]) {
+  if (users.length === 0) {
+    return {
+      profilesById: new Map<string, AdminProfileRow>(),
+      missingProfileIds: new Set<string>(),
+      insertedCount: 0,
+      updatedEmailCount: 0,
+    };
+  }
+
+  const ids = users.map((u) => u.id);
+  const { data: profiles, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id,email,display_name,reputation,auto_approve,created_at")
+    .in("id", ids);
+  if (error) throw new Error(error.message);
+
+  const profilesById = new Map<string, AdminProfileRow>(
+    ((profiles ?? []) as AdminProfileRow[]).map((p) => [p.id, p]),
+  );
+  const missingUsers = users.filter((u) => !profilesById.has(u.id));
+  const missingProfileIds = new Set(missingUsers.map((u) => u.id));
+
+  if (missingUsers.length > 0) {
+    const rows = missingUsers.map((u) => ({
+      id: u.id,
+      email: u.email ?? null,
+      created_at: u.created_at,
+    }));
+    const { data: inserted, error: insertError } = await supabaseAdmin
+      .from("profiles")
+      .insert(rows)
+      .select("id,email,display_name,reputation,auto_approve,created_at");
+    if (insertError) throw new Error(insertError.message);
+
+    for (const p of (inserted ?? []) as AdminProfileRow[]) {
+      profilesById.set(p.id, p);
+    }
+
+    for (const u of missingUsers) {
+      if (!profilesById.has(u.id)) {
+        profilesById.set(u.id, {
+          id: u.id,
+          email: u.email ?? null,
+          display_name: null,
+          reputation: 50,
+          auto_approve: false,
+          created_at: u.created_at,
+        });
+      }
+    }
+  }
+
+  const emailUpdates = users
+    .map((u) => ({ user: u, profile: profilesById.get(u.id) }))
+    .filter(({ user, profile }) => profile && profile.email !== (user.email ?? null));
+
+  const updateResults = await Promise.all(
+    emailUpdates.map(({ user }) =>
+      supabaseAdmin
+        .from("profiles")
+        .update({ email: user.email ?? null })
+        .eq("id", user.id),
+    ),
+  );
+  const failedUpdate = updateResults.find((r) => r.error);
+  if (failedUpdate?.error) throw new Error(failedUpdate.error.message);
+
+  for (const { user, profile } of emailUpdates) {
+    if (profile) profile.email = user.email ?? null;
+  }
+
+  return {
+    profilesById,
+    missingProfileIds,
+    insertedCount: missingUsers.length,
+    updatedEmailCount: emailUpdates.length,
+  };
+}
+
+// ===== 管理员用户列表：以 Supabase Auth 为注册用户真源 =====
+export const adminListUsers = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        q: z.string().trim().max(200).optional().default(""),
+        limit: z.number().int().min(1).max(ADMIN_USERS_MAX_LIMIT).optional().default(1000),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+
+    const { users: authUsers, total, truncated } = await listAuthUsers(data.limit);
+    const { profilesById, missingProfileIds, insertedCount, updatedEmailCount } =
+      await syncProfilesForAuthUsers(authUsers);
+
+    const merged = authUsers
+      .map((user) => {
+        const profile = profilesById.get(user.id);
+        return {
+          id: user.id,
+          email: user.email ?? profile?.email ?? null,
+          display_name: profile?.display_name ?? null,
+          reputation: profile?.reputation ?? 50,
+          auto_approve: profile?.auto_approve ?? false,
+          auth_created_at: user.created_at,
+          email_confirmed_at: user.email_confirmed_at ?? user.confirmed_at ?? null,
+          last_sign_in_at: user.last_sign_in_at ?? null,
+          banned_until: user.banned_until ?? null,
+          deleted_at: user.deleted_at ?? null,
+          has_profile: !missingProfileIds.has(user.id),
+        };
+      })
+      .sort((a, b) => {
+        if (b.reputation !== a.reputation) return b.reputation - a.reputation;
+        return new Date(b.auth_created_at).getTime() - new Date(a.auth_created_at).getTime();
+      });
+
+    const needle = data.q.toLowerCase();
+    const filtered = needle
+      ? merged.filter((u) =>
+          [u.email, u.display_name, u.id].some((v) => (v ?? "").toLowerCase().includes(needle)),
+        )
+      : merged;
+
+    return {
+      users: filtered,
+      total,
+      filtered_total: filtered.length,
+      limit: data.limit,
+      truncated,
+      synced_missing_profiles: insertedCount,
+      synced_email_updates: updatedEmailCount,
+    };
   });
 
 // ===== 调整用户信誉（admin）=====
