@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import {
   reviewObservation,
   recomputeTemperature,
   regenerateObservation,
   updateObservation,
   deleteObservation,
+  adminListObservations,
 } from "@/lib/api/platform.functions";
 import { FEMINIST_TAGS, TAG_WEIGHTS, EVIDENCE_STRENGTH } from "@/lib/temperature";
 import { REJECTION_REASONS, RISK_LABEL } from "@/lib/reputation";
@@ -51,6 +51,7 @@ function ObsAdmin() {
   const regen = useServerFn(regenerateObservation);
   const update = useServerFn(updateObservation);
   const del = useServerFn(deleteObservation);
+  const listObs = useServerFn(adminListObservations);
 
   const [items, setItems] = useState<Obs[]>([]);
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected">("pending");
@@ -63,18 +64,14 @@ function ObsAdmin() {
   const [batchReason, setBatchReason] = useState<string>("too_short");
   const [batchBusy, setBatchBusy] = useState(false);
 
-  const reload = () => {
-    let q = supabase
-      .from("observations")
-      .select("*, objects(id,name)")
-      .eq("status", filter)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    if (risk !== "all") q = q.eq("risk_level", risk);
-    return q.then(({ data }) => {
-      setItems((data ?? []) as unknown as Obs[]);
+  const reload = async () => {
+    try {
+      const rows = await listObs({ data: { status: filter, risk, limit: 100 } });
+      setItems((rows ?? []) as unknown as Obs[]);
       setSelected(new Set());
-    });
+    } catch (e: any) {
+      toast.error(e?.message ?? "加载失败");
+    }
   };
   useEffect(() => {
     reload(); /* eslint-disable-next-line */

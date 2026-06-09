@@ -1919,5 +1919,59 @@ export const claimFirstAdmin = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ===== 管理员：观察列表（替代直查 base table，避免敏感列经 PostgREST 暴露） =====
+export const adminListObservations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        status: z.enum(["pending", "approved", "rejected"]),
+        risk: z.enum(["all", "low", "medium", "high"]).default("all"),
+        limit: z.number().int().min(1).max(200).default(100),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin");
+    if (!roles?.length) throw new Error("forbidden");
+    let q = supabaseAdmin
+      .from("observations")
+      .select("*, objects(id,name)")
+      .eq("status", data.status)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (data.risk !== "all") q = q.eq("risk_level", data.risk);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const adminGetOverviewCounts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .eq("role", "admin");
+    if (!roles?.length) throw new Error("forbidden");
+    const [o, p, r] = await Promise.all([
+      supabaseAdmin.from("objects").select("*", { count: "exact", head: true }),
+      supabaseAdmin
+        .from("observations")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabaseAdmin
+        .from("object_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+    ]);
+    return { objects: o.count ?? 0, pendingObs: p.count ?? 0, pendingReq: r.count ?? 0 };
+  });
+
 // 暴露权重元数据给前端
 export { TAG_WEIGHTS, EVIDENCE_STRENGTH };
