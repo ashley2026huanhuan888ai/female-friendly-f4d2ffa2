@@ -636,7 +636,77 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      observations_public: {
+        Row: {
+          archive_category: string | null
+          case_code: string | null
+          cases_cited: Json | null
+          cleaned_content: string | null
+          content: string | null
+          created_at: string | null
+          evidence_level: Database["public"]["Enums"]["evidence_level"] | null
+          facts: Json | null
+          id: string | null
+          impact_score: number | null
+          object_id: string | null
+          reference_url: string | null
+          scene: string | null
+          screenshot_url: string | null
+          status: Database["public"]["Enums"]["observation_status"] | null
+          summary: string | null
+          tags: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          archive_category?: string | null
+          case_code?: string | null
+          cases_cited?: Json | null
+          cleaned_content?: string | null
+          content?: string | null
+          created_at?: string | null
+          evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          facts?: Json | null
+          id?: string | null
+          impact_score?: number | null
+          object_id?: string | null
+          reference_url?: string | null
+          scene?: string | null
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["observation_status"] | null
+          summary?: string | null
+          tags?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          archive_category?: string | null
+          case_code?: string | null
+          cases_cited?: Json | null
+          cleaned_content?: string | null
+          content?: string | null
+          created_at?: string | null
+          evidence_level?: Database["public"]["Enums"]["evidence_level"] | null
+          facts?: Json | null
+          id?: string | null
+          impact_score?: number | null
+          object_id?: string | null
+          reference_url?: string | null
+          scene?: string | null
+          screenshot_url?: string | null
+          status?: Database["public"]["Enums"]["observation_status"] | null
+          summary?: string | null
+          tags?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observations_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       apply_reputation_delta: {
