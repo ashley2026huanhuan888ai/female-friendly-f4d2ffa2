@@ -87,9 +87,11 @@ const checks = [
     name: "submit quota allows 50 observations per 24 hours",
     file: "src/lib/api/platform.functions.ts",
     test: (source) =>
-      source.includes("24 小时内最多提交 50 条观察") &&
+      source.includes("const TOTAL_OBSERVATIONS_24H_LIMIT = 50") &&
+      source.includes("const SAME_OBJECT_24H_LIMIT = 10") &&
       source.includes("const total24h = Number(limit.total_24h ?? 0)") &&
-      source.includes("if (total24h >= 50)") &&
+      source.includes("if (total24h >= TOTAL_OBSERVATIONS_24H_LIMIT)") &&
+      source.includes("if (sameObject24h >= SAME_OBJECT_24H_LIMIT)") &&
       !source.includes("if (limit && !limit.allowed)") &&
       !source.includes("24 小时内最多提交 3 条观察"),
   },

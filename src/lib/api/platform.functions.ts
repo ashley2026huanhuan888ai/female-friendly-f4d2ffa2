@@ -14,6 +14,8 @@ const DEFAULT_DEEPSEEK_GATEWAY = "https://api.deepseek.com/chat/completions";
 const DEFAULT_DEEPSEEK_MODEL = "deepseek-chat";
 const PUBLIC_OBJECT_COLUMNS =
   "id, name, type, description, temperature, observation_count, ai_summary, top_tags, heat_sources, cooling_sources, updated_at";
+const SAME_OBJECT_24H_LIMIT = 10;
+const TOTAL_OBSERVATIONS_24H_LIMIT = 50;
 
 function normalizeAIEndpoint(rawUrl: string): string {
   const trimmed = rawUrl.trim().replace(/\/+$/, "");
@@ -504,8 +506,12 @@ export const submitObservation = createServerFn({ method: "POST" })
     if (limit) {
       const total24h = Number(limit.total_24h ?? 0);
       const sameObject24h = Number(limit.same_object_24h ?? 0);
-      if (sameObject24h >= 10) throw new Error("同一对象 24 小时内仅可提交 10 条观察");
-      if (total24h >= 50) throw new Error("24 小时内最多提交 50 条观察");
+      if (sameObject24h >= SAME_OBJECT_24H_LIMIT) {
+        throw new Error(`同一对象 24 小时内仅可提交 ${SAME_OBJECT_24H_LIMIT} 条观察`);
+      }
+      if (total24h >= TOTAL_OBSERVATIONS_24H_LIMIT) {
+        throw new Error(`24 小时内最多提交 ${TOTAL_OBSERVATIONS_24H_LIMIT} 条观察`);
+      }
     }
 
     // 2. 法律强证据预扫描（独立于 AI，保证 AI 失败也有兜底）
