@@ -15,14 +15,13 @@ function Discussions() {
 
   useEffect(() => {
     supabase
-      .from("observations")
+      .from("observations_public" as never)
       .select(
         "id, cleaned_content, content, tags, evidence_level, created_at, object_id, objects(id, name, type, temperature)",
       )
-      .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(30)
-      .then(({ data }) => setItems(data ?? []));
+      .then(({ data }) => setItems((data as any[] | null) ?? []));
   }, []);
 
   return (
