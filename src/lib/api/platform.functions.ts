@@ -1452,7 +1452,7 @@ export const getAdminAnalytics = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     await assertAdmin(context.userId);
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
-    const [obs30, approved30, high30, objCount, topObj, topUsers] = await Promise.all([
+    const [obs30, approved30, high30, objCount, topObj, topUsers, usersTotal] = await Promise.all([
       supabaseAdmin
         .from("observations")
         .select("id, status, created_at, risk_level", { count: "exact" })
@@ -1478,6 +1478,7 @@ export const getAdminAnalytics = createServerFn({ method: "GET" })
         .select("id, email, display_name, reputation")
         .order("reputation", { ascending: false })
         .limit(5),
+      supabaseAdmin.from("profiles").select("id", { count: "exact", head: true }),
     ]);
     const total30 = obs30.count ?? 0;
     const approveRate = total30 > 0 ? Math.round(((approved30.count ?? 0) / total30) * 100) : 0;
@@ -1486,9 +1487,32 @@ export const getAdminAnalytics = createServerFn({ method: "GET" })
       approve_rate: approveRate,
       high_risk_30d: high30.count ?? 0,
       objects_total: objCount.count ?? 0,
+      users_total: usersTotal.count ?? 0,
       top_objects: topObj.data ?? [],
       top_users: topUsers.data ?? [],
     };
+  });
+
+export const listAllUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { q?: string; limit?: number; offset?: number }) => data ?? {})
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const limit = Math.min(Math.max(data.limit ?? 200, 1), 500);
+    const offset = Math.max(data.offset ?? 0, 0);
+    let q = supabaseAdmin
+      .from("profiles")
+      .select("id, email, display_name, reputation, auto_approve, created_at", {
+        count: "exact",
+      })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (data.q && data.q.trim()) {
+      const term = `%${data.q.trim()}%`;
+      q = q.or(`email.ilike.${term},display_name.ilike.${term}`);
+    }
+    const { data: rows, count } = await q;
+    return { items: rows ?? [], total: count ?? 0, limit, offset };
   });
 
 // ===== 审计日志列表 =====
