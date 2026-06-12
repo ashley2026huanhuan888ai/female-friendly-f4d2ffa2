@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TopicsRouteImport } from './routes/topics'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
@@ -40,6 +41,11 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 const TopicsRoute = TopicsRouteImport.update({
   id: '/topics',
   path: '/topics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RequestObjectRoute = RequestObjectRouteImport.update({
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/me'
     | '/request-object'
+    | '/reset-password'
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/me'
     | '/request-object'
+    | '/reset-password'
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
@@ -329,6 +340,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/me'
     | '/request-object'
+    | '/reset-password'
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
@@ -359,6 +371,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
   RequestObjectRoute: typeof RequestObjectRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TopicsRoute: typeof TopicsRouteWithChildren
   ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
   ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       path: '/topics'
       fullPath: '/topics'
       preLoaderRoute: typeof TopicsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/request-object': {
@@ -611,6 +631,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
   RequestObjectRoute: RequestObjectRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   TopicsRoute: TopicsRouteWithChildren,
   ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
   ArchiveEvidenceRoute: ArchiveEvidenceRoute,
@@ -622,13 +643,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
