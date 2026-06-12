@@ -336,12 +336,23 @@ function LoginPage() {
           </button>
         </form>
 
-        <button
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mt-6 text-sm text-muted-foreground underline-offset-4 hover:underline"
-        >
-          {mode === "signin" ? "还没有账户？注册" : "已有账户？登录"}
-        </button>
+        <div className="mt-6 flex items-center justify-between gap-3 text-sm">
+          <button
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            className="text-muted-foreground underline-offset-4 hover:underline"
+          >
+            {mode === "signin" ? "还没有账户？注册" : "已有账户？登录"}
+          </button>
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={sendPasswordReset}
+              className="text-muted-foreground underline-offset-4 hover:underline"
+            >
+              忘记密码？
+            </button>
+          )}
+        </div>
       </div>
     </SiteLayout>
   );
