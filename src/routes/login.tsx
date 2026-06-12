@@ -160,6 +160,18 @@ function LoginPage() {
     else toast.success("验证邮件已重新发送，请查收");
   };
 
+  const sendPasswordReset = async () => {
+    if (!email.trim()) {
+      toast.error("请先填写邮箱");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) toast.error("发送失败：" + error.message);
+    else toast.success("重置邮件已发送，请查收（含垃圾邮件箱）");
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorDetail(null);
@@ -170,18 +182,29 @@ function LoginPage() {
     setPending(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: { emailRedirectTo: `${window.location.origin}${safeRedirect}` },
         });
         if (error) throw error;
+        // Supabase returns user with empty identities[] when the email is already registered
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setErrorDetail({
+            title: "该邮箱可能已注册",
+            hint: "如未收到验证邮件，请直接尝试登录，或在登录页点击「重新发送验证邮件」。",
+            code: "user_already_exists",
+          });
+          return;
+        }
         try {
           setRemember(remember);
         } catch {
           /* ignore storage failures */
         }
         toast.success("注册成功，请按邮件提示完成验证后登录");
+        setMode("signin");
+        setPassword("");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
