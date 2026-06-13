@@ -90,7 +90,7 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
         .eq("status", "published")
         .eq("hidden", false)
         .order("created_at", { ascending: false })
-        .limit(8),
+        .limit(5),
       supabaseAdmin
         .from("objects")
         .select("temperature")

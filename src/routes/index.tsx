@@ -129,7 +129,7 @@ function Index() {
       <section className="border-b border-border py-16">
         <div className="container-prose">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-serif text-3xl">新加入测评对象</h2>
+            <h2 className="font-serif text-3xl">最新更新的测评对象</h2>
             <Link
               to="/objects"
               className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
