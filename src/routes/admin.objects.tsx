@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import {
+  adminListObjects,
   createObject,
   recomputeTemperature,
   freezeObject,
@@ -31,6 +31,7 @@ type Obj = {
 };
 
 function ObjectsAdmin() {
+  const listObjects = useServerFn(adminListObjects);
   const create = useServerFn(createObject);
   const recompute = useServerFn(recomputeTemperature);
   const freeze = useServerFn(freezeObject);
@@ -46,23 +47,27 @@ function ObjectsAdmin() {
   const [manualTemp, setManualTemp] = useState<Record<string, string>>({});
   const [mergeTo, setMergeTo] = useState<Record<string, string>>({});
 
-  const reload = () =>
-    supabase
-      .from("objects")
-      .select("*")
-      .order("updated_at", { ascending: false })
-      .limit(200)
-      .then(({ data }) => setItems((data ?? []) as Obj[]));
+  const reload = async () => {
+    const result = (await listObjects({})) as {
+      items: Obj[];
+      merged_groups: number;
+      merged_objects: number;
+    };
+    setItems(result.items ?? []);
+    if (result.merged_objects > 0) {
+      toast.success(`已自动合并 ${result.merged_groups} 组同名对象`);
+    }
+  };
   useEffect(() => {
-    reload();
-  }, []);
+    void reload();
+  }, [listObjects]);
 
   const wrap = async (id: string, fn: () => Promise<unknown>, ok = "完成") => {
     try {
       setBusy(id);
       await fn();
       toast.success(ok);
-      reload();
+      void reload();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -89,7 +94,7 @@ function ObjectsAdmin() {
               });
               toast.success("已创建");
               setForm({ name: "", type: "brand", description: "" });
-              reload();
+              void reload();
             } catch (err) {
               toast.error((err as Error).message);
             }

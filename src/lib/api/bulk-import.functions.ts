@@ -5,6 +5,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
 import {
+  autoMergeSameNameObjects,
+  findCanonicalObjectByName,
+} from "@/lib/api/object-dedupe";
+import {
   calculateRuleMinimumTemperature,
   detectLegalPenalty,
   LEGAL_REGULATORY_PATTERNS,
@@ -375,7 +379,10 @@ export const commitBulkImport = createServerFn({ method: "POST" })
       try {
         let objectId = it.matched_object_id;
         let created = false;
-        if (it.create_new || !objectId) {
+        const sameNameObject = await findCanonicalObjectByName(it.object_name);
+        if (sameNameObject) objectId = sameNameObject.id;
+
+        if (!objectId || (it.create_new && !sameNameObject)) {
           const { data: ins, error } = await supabaseAdmin
             .from("objects")
             .insert({
@@ -393,6 +400,14 @@ export const commitBulkImport = createServerFn({ method: "POST" })
         } else {
           summary.updated_objects++;
         }
+
+        const mergeResult = await autoMergeSameNameObjects({
+          name: it.object_name,
+          actorId: context.userId,
+          preferredObjectId: objectId,
+          reason: "批量导入时自动合并同名对象",
+        });
+        if (mergeResult.targetId) objectId = mergeResult.targetId;
 
         const contentParts = [
           it.year ? `年份：${it.year}` : null,

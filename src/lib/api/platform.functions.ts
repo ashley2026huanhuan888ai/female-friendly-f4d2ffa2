@@ -7,6 +7,13 @@ import { FEMINIST_TAGS, TAG_WEIGHTS, EVIDENCE_STRENGTH, computeImpact } from "@/
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
 import { detectTags, detectEvidenceA } from "@/lib/api/bulk-import.functions";
 import { calculateRuleMinimumTemperature, detectLegalPenalty } from "@/lib/temperature-rules";
+import {
+  autoMergeSameNameObjects,
+  findCanonicalObjectByName,
+  mergeObjectIntoTarget,
+  normalizeObjectName,
+  type ObjectDedupeRow,
+} from "@/lib/api/object-dedupe";
 
 const DEFAULT_LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const DEFAULT_LOVABLE_MODEL = "google/gemini-2.5-flash";
@@ -1252,6 +1259,57 @@ export const getPublicObjectObservations = createServerFn({ method: "GET" })
     return fetchPublicObjectObservations(data.id, data.offset, data.limit);
   });
 
+// ===== 管理员对象列表：加载时自动合并同名对象 =====
+export const adminListObjects = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context.userId);
+    const { data: scanRows, error: scanError } = await supabaseAdmin
+      .from("objects")
+      .select(
+        "id,name,type,status,hidden,merged_into,observation_count,description,created_at,updated_at",
+      )
+      .limit(1000);
+    if (scanError) throw new Error(scanError.message);
+
+    const groups = new Map<string, ObjectDedupeRow[]>();
+    for (const row of (scanRows ?? []) as ObjectDedupeRow[]) {
+      const key = normalizeObjectName(row.name);
+      if (!key) continue;
+      groups.set(key, [...(groups.get(key) ?? []), row]);
+    }
+
+    let mergedGroups = 0;
+    let mergedObjects = 0;
+    const recomputeIds = new Set<string>();
+    for (const group of groups.values()) {
+      if (group.filter((o) => !o.merged_into).length < 2) continue;
+      const result = await autoMergeSameNameObjects({
+        name: group[0].name,
+        actorId: context.userId,
+        reason: "对象管理加载时自动合并同名对象",
+      });
+      if (result.targetId && result.mergedSourceIds.length > 0) {
+        mergedGroups++;
+        mergedObjects += result.mergedSourceIds.length;
+        recomputeIds.add(result.targetId);
+        for (const id of result.mergedSourceIds) recomputeIds.add(id);
+      }
+    }
+
+    for (const id of recomputeIds) {
+      await recomputeObjectInternal(id).catch(() => {});
+    }
+
+    const { data: items, error } = await supabaseAdmin
+      .from("objects")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return { items: items ?? [], merged_groups: mergedGroups, merged_objects: mergedObjects };
+  });
+
 // ===== 删除对象（admin）=====
 export const deleteObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1294,23 +1352,12 @@ export const mergeObjects = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     if (data.source_id === data.target_id) throw new Error("源对象与目标相同");
-    await supabaseAdmin
-      .from("observations")
-      .update({ object_id: data.target_id })
-      .eq("object_id", data.source_id);
-    await supabaseAdmin
-      .from("objects")
-      .update({ merged_into: data.target_id, hidden: true })
-      .eq("id", data.source_id);
-    await writeAuditLog(
-      context.userId,
-      "merge",
-      "object",
-      data.source_id,
-      { source_id: data.source_id },
-      { target_id: data.target_id },
-      data.reason ?? null,
-    );
+    await mergeObjectIntoTarget({
+      sourceId: data.source_id,
+      targetId: data.target_id,
+      actorId: context.userId,
+      reason: data.reason ?? null,
+    });
     await recomputeObjectInternal(data.target_id).catch(() => {});
     await recomputeObjectInternal(data.source_id).catch(() => {});
     return { ok: true };
@@ -1715,7 +1762,7 @@ export const createObject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
     const existingObject = await findObjectByName(data.name);
-    const obj = existingObject
+    let obj = existingObject
       ? { id: existingObject.id }
       : await createPublishedObject({
           name: data.name,
@@ -1723,6 +1770,16 @@ export const createObject = createServerFn({ method: "POST" })
           description: data.description ?? null,
         });
     if (existingObject) await publishExistingObject(existingObject, data.description ?? null);
+    const mergeResult = await autoMergeSameNameObjects({
+      name: data.name,
+      actorId: context.userId,
+      preferredObjectId: obj.id,
+      reason: "创建对象时自动合并同名对象",
+    });
+    if (mergeResult.targetId) {
+      obj = { id: mergeResult.targetId };
+      await recomputeObjectInternal(mergeResult.targetId).catch(() => {});
+    }
     if (data.request_id) {
       await supabaseAdmin
         .from("object_requests")
@@ -1795,23 +1852,7 @@ async function findObjectByName(name: string): Promise<{
   hidden: boolean;
   description: string | null;
 } | null> {
-  const target = normalizeName(name);
-  const { data } = await supabaseAdmin
-    .from("objects")
-    .select("id, name, status, hidden, description")
-    .ilike("name", `%${name.trim()}%`)
-    .limit(50);
-  return (
-    (
-      (data ?? []) as Array<{
-        id: string;
-        name: string;
-        status: string;
-        hidden: boolean;
-        description: string | null;
-      }>
-    ).find((o) => normalizeName(o.name) === target) ?? null
-  );
+  return findCanonicalObjectByName(name);
 }
 
 async function publishExistingObject(
@@ -1870,7 +1911,7 @@ export const approveObjectRequest = createServerFn({ method: "POST" })
     if (req.status !== "pending") throw new Error("该申请已处理");
 
     const existingObject = await findObjectByName(req.requested_name);
-    const obj = existingObject
+    let obj = existingObject
       ? { id: existingObject.id }
       : await createPublishedObject({
           name: req.requested_name,
@@ -1878,6 +1919,13 @@ export const approveObjectRequest = createServerFn({ method: "POST" })
           description: req.reason ?? null,
         });
     if (existingObject) await publishExistingObject(existingObject, req.reason ?? null);
+    const mergeResult = await autoMergeSameNameObjects({
+      name: req.requested_name,
+      actorId: context.userId,
+      preferredObjectId: obj.id,
+      reason: "通过对象申请时自动合并同名对象",
+    });
+    if (mergeResult.targetId) obj = { id: mergeResult.targetId };
 
     const reason = (req.reason ?? "").trim();
     let observation_id: string | null = null;
@@ -1928,13 +1976,8 @@ export const backfillApprovedRequests = createServerFn({ method: "POST" })
         skipped++;
         continue;
       }
-      // 找对应对象（按名称精确匹配）
-      const { data: objs } = await supabaseAdmin
-        .from("objects")
-        .select("id")
-        .eq("name", r.requested_name)
-        .limit(1);
-      let obj = (objs ?? [])[0] as { id: string } | undefined;
+      // 找对应对象（按标准化名称精确匹配）
+      let obj: { id: string } | null = await findObjectByName(r.requested_name);
       if (!obj) {
         obj = await createPublishedObject({
           name: r.requested_name,
@@ -1948,7 +1991,13 @@ export const backfillApprovedRequests = createServerFn({ method: "POST" })
           note: "已补建公开对象卡片",
         });
       }
-      const objectId = obj.id;
+      const mergeResult = await autoMergeSameNameObjects({
+        name: r.requested_name,
+        actorId: context.userId,
+        preferredObjectId: obj.id,
+        reason: "历史回填时自动合并同名对象",
+      });
+      const objectId = mergeResult.targetId ?? obj.id;
 
       // 去重：已有 admin_note 含「对象申请通过」的观察则跳过
       const { data: existing } = await supabaseAdmin
@@ -2033,15 +2082,6 @@ export const requestObject = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// ===== 搜索页"申请建立对象"：含查重 =====
-function normalizeName(s: string): string {
-  return s
-    .replace(/[\u3000\s]+/g, "")
-    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
-    .toLowerCase()
-    .trim();
-}
-
 export const requestObjectFromSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -2058,7 +2098,7 @@ export const requestObjectFromSearch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const name = data.name.trim();
-    const norm = normalizeName(name);
+    const norm = normalizeObjectName(name);
 
     // 查重：objects（取小批量后在内存中 normalize 比对）
     const { data: objs } = await supabaseAdmin
@@ -2068,7 +2108,7 @@ export const requestObjectFromSearch = createServerFn({ method: "POST" })
       .limit(50);
     const hit = (
       (objs ?? []) as Array<{ id: string; name: string; status: string; hidden: boolean }>
-    ).find((o) => normalizeName(o.name) === norm && o.status === "published" && !o.hidden);
+    ).find((o) => normalizeObjectName(o.name) === norm && o.status === "published" && !o.hidden);
     if (hit) {
       return { status: "object_exists" as const, objectId: hit.id, name: hit.name };
     }
@@ -2080,7 +2120,7 @@ export const requestObjectFromSearch = createServerFn({ method: "POST" })
       .eq("status", "pending")
       .ilike("requested_name", `%${name}%`)
       .limit(50);
-    const dup = (reqs ?? []).find((r) => normalizeName(r.requested_name) === norm);
+    const dup = (reqs ?? []).find((r) => normalizeObjectName(r.requested_name) === norm);
     if (dup) {
       return { status: "request_exists" as const, requestId: dup.id, name: dup.requested_name };
     }
