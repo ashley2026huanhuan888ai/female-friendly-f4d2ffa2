@@ -216,6 +216,133 @@ export type Database = {
         }
         Relationships: []
       }
+      object_comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          reaction?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "object_comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "object_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      object_comment_reports: {
+        Row: {
+          comment_id: string
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "object_comment_reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "object_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      object_comments: {
+        Row: {
+          body: string
+          created_at: string
+          helpful_count: number
+          id: string
+          moderation_note: string | null
+          object_id: string
+          parent_id: string | null
+          report_count: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          moderation_note?: string | null
+          object_id: string
+          parent_id?: string | null
+          report_count?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          helpful_count?: number
+          id?: string
+          moderation_note?: string | null
+          object_id?: string
+          parent_id?: string | null
+          report_count?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "object_comments_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "object_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "object_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       object_requests: {
         Row: {
           admin_note: string | null
