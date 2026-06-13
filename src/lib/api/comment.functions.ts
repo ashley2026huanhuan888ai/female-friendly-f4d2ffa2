@@ -3,8 +3,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const COMMENT_COLUMNS =
+const COMMENT_ADMIN_COLUMNS =
   "id, object_id, user_id, parent_id, body, status, moderation_note, helpful_count, report_count, created_at, updated_at";
+const COMMENT_PUBLIC_COLUMNS = "id, user_id, body, helpful_count, created_at";
 const COMMENT_RATE_LIMIT_PER_HOUR = 8;
 const REPORT_RATE_LIMIT_PER_HOUR = 20;
 
@@ -43,11 +44,19 @@ type ObjectCommentRow = {
 type ObjectCommentReportRow = {
   id: string;
   comment_id: string;
-  user_id: string;
   reason: string;
   details: string | null;
   status: string;
   created_at: string;
+};
+
+type PublicObjectCommentRow = {
+  id: string;
+  user_id: string;
+  body: string;
+  helpful_count: number;
+  created_at: string;
+  objects?: ObjectCommentRow["objects"];
 };
 
 function normalizeBody(body: string) {
@@ -99,7 +108,7 @@ async function ensurePublicObject(objectId: string) {
   if (!object) throw new Error("对象不存在或暂不可留言");
 }
 
-async function attachAuthorLabels<T extends ObjectCommentRow>(rows: T[]) {
+async function attachAuthorLabels<T extends { user_id: string }>(rows: T[]) {
   const userIds = [...new Set(rows.map((row) => row.user_id).filter(Boolean))];
   const profileMap = new Map<string, { display_name: string | null }>();
   if (userIds.length) {
@@ -116,6 +125,58 @@ async function attachAuthorLabels<T extends ObjectCommentRow>(rows: T[]) {
     ...row,
     author_label: authorLabel(profileMap.get(row.user_id)?.display_name),
   }));
+}
+
+function toPublicComment(row: PublicObjectCommentRow & { author_label: string }) {
+  return {
+    id: row.id,
+    body: row.body,
+    author_label: row.author_label,
+    helpful_count: Number(row.helpful_count ?? 0),
+    created_at: row.created_at,
+    ...(row.objects !== undefined
+      ? {
+          objects: row.objects
+            ? {
+                id: row.objects.id,
+                name: row.objects.name,
+                type: row.objects.type,
+                temperature: row.objects.temperature,
+              }
+            : null,
+        }
+      : {}),
+  };
+}
+
+function toAdminComment(
+  row: ObjectCommentRow & { author_label: string },
+  reports: ObjectCommentReportRow[],
+) {
+  return {
+    id: row.id,
+    object_id: row.object_id,
+    body: row.body,
+    status: row.status,
+    author_label: row.author_label,
+    helpful_count: Number(row.helpful_count ?? 0),
+    report_count: Number(row.report_count ?? 0),
+    created_at: row.created_at,
+    objects: row.objects
+      ? {
+          id: row.objects.id,
+          name: row.objects.name,
+          type: row.objects.type,
+        }
+      : null,
+    reports: reports.map((report) => ({
+      id: report.id,
+      reason: report.reason,
+      details: report.details,
+      status: report.status,
+      created_at: report.created_at,
+    })),
+  };
 }
 
 async function assertUserWithinHourlyLimit(tableName: string, userId: string, limit: number) {
@@ -147,15 +208,16 @@ export const listObjectComments = createServerFn({ method: "GET" })
       count,
     } = await supabaseAdmin
       .from("object_comments" as never)
-      .select(COMMENT_COLUMNS, { count: "exact" })
+      .select(COMMENT_PUBLIC_COLUMNS, { count: "exact" })
       .eq("object_id", data.object_id)
       .eq("status", "approved")
       .order("helpful_count", { ascending: false })
       .order("created_at", { ascending: false })
       .range(data.offset, data.offset + data.limit - 1);
     if (error) throw new Error(error.message);
+    const comments = await attachAuthorLabels((rows ?? []) as PublicObjectCommentRow[]);
     return {
-      comments: await attachAuthorLabels((rows ?? []) as ObjectCommentRow[]),
+      comments: comments.map(toPublicComment),
       total: count ?? 0,
     };
   });
@@ -167,14 +229,15 @@ export const listRecentObjectComments = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: rows, error } = await supabaseAdmin
       .from("object_comments" as never)
-      .select(`${COMMENT_COLUMNS}, objects!inner(id, name, type, temperature, status, hidden)`)
+      .select(`${COMMENT_PUBLIC_COLUMNS}, objects!inner(id, name, type, temperature, status, hidden)`)
       .eq("status", "approved")
       .eq("objects.status", "published")
       .eq("objects.hidden", false)
       .order("created_at", { ascending: false })
       .limit(data.limit);
     if (error) throw new Error(error.message);
-    return await attachAuthorLabels((rows ?? []) as ObjectCommentRow[]);
+    const comments = await attachAuthorLabels((rows ?? []) as PublicObjectCommentRow[]);
+    return comments.map(toPublicComment);
   });
 
 export const listMyCommentReactions = createServerFn({ method: "POST" })
@@ -352,7 +415,7 @@ export const adminListObjectComments = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     let query = supabaseAdmin
       .from("object_comments" as never)
-      .select(`${COMMENT_COLUMNS}, objects(id, name, type)`)
+      .select(`${COMMENT_ADMIN_COLUMNS}, objects(id, name, type)`)
       .order("report_count", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(data.limit);
@@ -369,7 +432,7 @@ export const adminListObjectComments = createServerFn({ method: "POST" })
     const { data: reports, error: reportError } = commentIds.length
       ? await supabaseAdmin
           .from("object_comment_reports" as never)
-          .select("id, comment_id, user_id, reason, details, status, created_at")
+          .select("id, comment_id, reason, details, status, created_at")
           .in("comment_id", commentIds)
           .order("created_at", { ascending: false })
       : { data: [] as ObjectCommentReportRow[], error: null };
@@ -384,10 +447,9 @@ export const adminListObjectComments = createServerFn({ method: "POST" })
     }
 
     const withAuthors = await attachAuthorLabels(comments);
-    return withAuthors.map((comment) => ({
-      ...comment,
-      reports: reportsByComment.get(comment.id) ?? [],
-    }));
+    return withAuthors.map((comment) =>
+      toAdminComment(comment, reportsByComment.get(comment.id) ?? []),
+    );
   });
 
 export const adminModerateObjectComment = createServerFn({ method: "POST" })
@@ -405,7 +467,7 @@ export const adminModerateObjectComment = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     const { data: before, error: beforeError } = await supabaseAdmin
       .from("object_comments" as never)
-      .select(COMMENT_COLUMNS)
+      .select(COMMENT_ADMIN_COLUMNS)
       .eq("id", data.id)
       .maybeSingle();
     if (beforeError) throw new Error(beforeError.message);
@@ -436,7 +498,7 @@ export const adminDeleteObjectComment = createServerFn({ method: "POST" })
     await assertAdmin(context.userId);
     const { data: before, error: beforeError } = await supabaseAdmin
       .from("object_comments" as never)
-      .select(COMMENT_COLUMNS)
+      .select(COMMENT_ADMIN_COLUMNS)
       .eq("id", data.id)
       .maybeSingle();
     if (beforeError) throw new Error(beforeError.message);

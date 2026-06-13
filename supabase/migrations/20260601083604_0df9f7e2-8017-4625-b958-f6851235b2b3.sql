@@ -26,10 +26,9 @@ CREATE TABLE public.user_roles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, role)
 );
-GRANT SELECT ON public.user_roles TO authenticated;
-GRANT ALL ON public.user_roles TO service_role;
+REVOKE ALL PRIVILEGES ON TABLE public.user_roles FROM anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.user_roles TO service_role;
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "users see own roles" ON public.user_roles FOR SELECT TO authenticated USING (auth.uid() = user_id);
 
 -- ===== has_role function =====
 CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role public.app_role)

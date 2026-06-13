@@ -25,26 +25,14 @@ CREATE INDEX IF NOT EXISTS idx_object_comments_reports
   ON public.object_comments(report_count DESC, created_at DESC)
   WHERE report_count > 0;
 
-GRANT SELECT ON public.object_comments TO anon, authenticated;
-GRANT ALL ON public.object_comments TO service_role;
+REVOKE ALL PRIVILEGES ON TABLE public.object_comments FROM anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.object_comments TO service_role;
 
 ALTER TABLE public.object_comments ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "public reads approved object comments" ON public.object_comments;
 DROP POLICY IF EXISTS "users read own object comments" ON public.object_comments;
 DROP POLICY IF EXISTS "admin reads object comments" ON public.object_comments;
-
-CREATE POLICY "public reads approved object comments" ON public.object_comments
-  FOR SELECT TO anon, authenticated
-  USING (status = 'approved');
-
-CREATE POLICY "users read own object comments" ON public.object_comments
-  FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "admin reads object comments" ON public.object_comments
-  FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
 
 CREATE TABLE IF NOT EXISTS public.object_comment_reactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -58,21 +46,13 @@ CREATE TABLE IF NOT EXISTS public.object_comment_reactions (
 CREATE INDEX IF NOT EXISTS idx_object_comment_reactions_user
   ON public.object_comment_reactions(user_id, created_at DESC);
 
-GRANT SELECT ON public.object_comment_reactions TO authenticated;
-GRANT ALL ON public.object_comment_reactions TO service_role;
+REVOKE ALL PRIVILEGES ON TABLE public.object_comment_reactions FROM anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.object_comment_reactions TO service_role;
 
 ALTER TABLE public.object_comment_reactions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "users read own comment reactions" ON public.object_comment_reactions;
 DROP POLICY IF EXISTS "admin reads comment reactions" ON public.object_comment_reactions;
-
-CREATE POLICY "users read own comment reactions" ON public.object_comment_reactions
-  FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "admin reads comment reactions" ON public.object_comment_reactions
-  FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
 
 CREATE TABLE IF NOT EXISTS public.object_comment_reports (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -92,21 +72,13 @@ CREATE INDEX IF NOT EXISTS idx_object_comment_reports_comment_status
 CREATE INDEX IF NOT EXISTS idx_object_comment_reports_status_created
   ON public.object_comment_reports(status, created_at DESC);
 
-GRANT SELECT ON public.object_comment_reports TO authenticated;
-GRANT ALL ON public.object_comment_reports TO service_role;
+REVOKE ALL PRIVILEGES ON TABLE public.object_comment_reports FROM anon, authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.object_comment_reports TO service_role;
 
 ALTER TABLE public.object_comment_reports ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "users read own comment reports" ON public.object_comment_reports;
 DROP POLICY IF EXISTS "admin reads comment reports" ON public.object_comment_reports;
-
-CREATE POLICY "users read own comment reports" ON public.object_comment_reports
-  FOR SELECT TO authenticated
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "admin reads comment reports" ON public.object_comment_reports
-  FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'));
 
 CREATE OR REPLACE FUNCTION public.refresh_object_comment_helpful_count()
 RETURNS trigger
@@ -127,6 +99,7 @@ BEGIN
   RETURN COALESCE(NEW, OLD);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.refresh_object_comment_helpful_count() FROM PUBLIC, anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.refresh_object_comment_report_count()
 RETURNS trigger
@@ -147,6 +120,7 @@ BEGIN
   RETURN COALESCE(NEW, OLD);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.refresh_object_comment_report_count() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS object_comment_reactions_refresh_count_insert
   ON public.object_comment_reactions;

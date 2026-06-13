@@ -17,7 +17,6 @@ type Comment = {
   body: string;
   author_label: string;
   helpful_count: number;
-  report_count: number;
   created_at: string;
 };
 
