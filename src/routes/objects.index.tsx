@@ -4,9 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
 import { ObjectCard } from "@/components/ObjectCard";
-import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { useAuth } from "@/components/auth-context";
 import { getPublicObjects, requestObjectFromSearch } from "@/lib/api/platform.functions";
+import { useI18n, usePageMeta } from "@/lib/i18n";
 
 type ObjectsSearch = {
   q?: string;
@@ -28,6 +28,8 @@ export const Route = createFileRoute("/objects/")({
 });
 
 function AllObjects() {
+  const { t, objectType } = useI18n();
+  usePageMeta("seo.objects.title", "seo.objects.description");
   const { q: initialQ, pending: pendingQ } = Route.useSearch();
   const [qInput, setQInput] = useState(initialQ || pendingQ || "");
   const [q, setQ] = useState(initialQ || pendingQ || "");
@@ -52,7 +54,7 @@ function AllObjects() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        toast.error(err instanceof Error ? err.message : "对象列表加载失败");
+        toast.error(err instanceof Error ? err.message : t("objects.loadFailed"));
         setItems([]);
       })
       .finally(() => {
@@ -61,7 +63,7 @@ function AllObjects() {
     return () => {
       cancelled = true;
     };
-  }, [q, type, sort, getObjects]);
+  }, [q, type, sort, getObjects, t]);
 
   // 登录后若带 pending 参数，自动继续申请
   useEffect(() => {
@@ -75,7 +77,7 @@ function AllObjects() {
     const trimmed = name.trim();
     if (!trimmed) return;
     if (!user) {
-      toast.info("请先登录后再申请建立对象");
+      toast.info(t("objects.loginToRequest"));
       navigate({
         to: "/login",
         search: { redirect: `/objects?pending=${encodeURIComponent(trimmed)}` } as any,
@@ -86,18 +88,18 @@ function AllObjects() {
     try {
       const res = await requestFn({ data: { name: trimmed } });
       if (res.status === "object_exists") {
-        toast.success(`对象「${res.name}」已存在，正在打开详情页`);
+        toast.success(t("objects.exists", { name: res.name }));
         navigate({ to: "/objects/$id", params: { id: res.objectId }, search: {} });
       } else if (res.status === "request_exists") {
-        toast.info(`「${res.name}」已有人申请建立，正在等待审核`);
+        toast.info(t("objects.requestExists", { name: res.name }));
       } else if (res.status === "created") {
-        toast.success(`已提交「${res.name}」的建立申请`, {
-          description: "当前状态：等待管理员审核。审核通过后，你就可以为它提交观察并参与温度测评。",
+        toast.success(t("objects.created", { name: res.name }), {
+          description: t("objects.createdDesc"),
         });
         router.invalidate();
       }
     } catch (e: any) {
-      toast.error(e?.message || "申请失败，请稍后重试");
+      toast.error(e?.message || t("objects.requestFailed"));
     } finally {
       setRequesting(false);
     }
@@ -110,11 +112,11 @@ function AllObjects() {
     <SiteLayout>
       <section className="border-b border-border">
         <div className="container-prose py-16">
-          <h1 className="font-serif text-4xl">全部对象</h1>
+          <h1 className="font-serif text-4xl">{t("objects.title")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            找不到？
+            {t("objects.description")}
             <Link to="/request-object" className="underline">
-              增加新测评对象
+              {t("objects.requestLink")}
             </Link>
           </p>
 
@@ -128,7 +130,7 @@ function AllObjects() {
             <input
               value={qInput}
               onChange={(e) => setQInput(e.target.value)}
-              placeholder="按名称搜索"
+              placeholder={t("objects.searchPlaceholder")}
               className="border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-foreground"
             />
             <select
@@ -136,26 +138,28 @@ function AllObjects() {
               onChange={(e) => setType(e.target.value)}
               className="border border-border bg-card px-4 py-2.5 text-sm"
             >
-              <option value="">全部类型</option>
-              {Object.entries(OBJECT_TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
+              <option value="">{t("objects.allTypes")}</option>
+              {["brand", "product", "service", "organization", "film", "game", "show", "event"].map(
+                (k) => (
+                  <option key={k} value={k}>
+                    {objectType(k)}
+                  </option>
+                ),
+              )}
             </select>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as any)}
               className="border border-border bg-card px-4 py-2.5 text-sm"
             >
-              <option value="temp">温度从高到低</option>
-              <option value="recent">最近更新</option>
+              <option value="temp">{t("objects.sortTemp")}</option>
+              <option value="recent">{t("objects.sortRecent")}</option>
             </select>
             <button
               type="submit"
               className="border border-foreground bg-foreground px-5 py-2.5 text-sm text-background hover:bg-accent"
             >
-              搜索
+              {t("common.search")}
             </button>
           </form>
         </div>
@@ -164,23 +168,29 @@ function AllObjects() {
       <section className="py-12">
         <div className="container-prose">
           {loading ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">加载中…</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">{t("common.loading")}</p>
           ) : showEmptyWithRequest ? (
             <div className="border border-border bg-card p-8 text-center">
-              <p className="font-serif text-2xl">没有找到「{searchedKeyword}」</p>
+              <p className="font-serif text-2xl">
+                {t("objects.emptyTitle", { keyword: searchedKeyword })}
+              </p>
               <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-                你可以申请建立这个对象，审核通过后大家就能提交观察并参与温度测评。
+                {t("objects.emptyBody")}
               </p>
               <button
                 onClick={() => handleRequest(searchedKeyword)}
                 disabled={requesting}
                 className="mt-6 border border-foreground bg-foreground px-6 py-2.5 text-sm text-background hover:bg-accent disabled:opacity-50"
               >
-                {requesting ? "提交中…" : `申请建立「${searchedKeyword}」`}
+                {requesting
+                  ? t("objects.requesting")
+                  : t("objects.requestKeyword", { keyword: searchedKeyword })}
               </button>
             </div>
           ) : items.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">暂无对象</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              {t("common.noObjects")}
+            </p>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {items.map((o: any) => (

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
 import { listRecentObjectComments } from "@/lib/api/comment.functions";
-import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/discussions")({
   head: () => ({ meta: [{ title: "热门讨论 · 女性友好体验测评" }] }),
@@ -12,6 +12,8 @@ export const Route = createFileRoute("/discussions")({
 });
 
 function Discussions() {
+  const { language, t, objectType } = useI18n();
+  usePageMeta("seo.discussions.title", "seo.discussions.description");
   const [items, setItems] = useState<any[]>([]);
   const fetchComments = useServerFn(listRecentObjectComments);
 
@@ -25,15 +27,17 @@ function Discussions() {
     <SiteLayout>
       <section className="border-b border-border">
         <div className="container-prose py-16">
-          <h1 className="font-serif text-4xl">热门讨论</h1>
-          <p className="mt-3 text-sm text-muted-foreground">最近公开的对象留言。</p>
+          <h1 className="font-serif text-4xl">{t("discussions.title")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("discussions.body")}</p>
         </div>
       </section>
 
       <section className="py-12">
         <div className="container-prose">
           {items.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">暂无讨论</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              {t("discussions.empty")}
+            </p>
           ) : (
             <div className="divide-y divide-border border-y border-border">
               {items.map((o) => (
@@ -45,8 +49,8 @@ function Discussions() {
                   >
                     <div className="flex-1">
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        {OBJECT_TYPE_LABELS[o.objects.type]} ·{" "}
-                        {new Date(o.created_at).toLocaleDateString("zh-CN")}
+                        {objectType(o.objects.type)} ·{" "}
+                        {formatDateForLanguage(o.created_at, language)}
                       </div>
                       <h3 className="mt-2 font-serif text-2xl group-hover:text-accent">
                         {o.objects.name}
@@ -54,7 +58,9 @@ function Discussions() {
                       <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{o.body}</p>
                       <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
                         <span>{o.author_label}</span>
-                        {o.helpful_count > 0 && <span>有帮助 {o.helpful_count}</span>}
+                        {o.helpful_count > 0 && (
+                          <span>{t("common.helpfulCount", { count: o.helpful_count })}</span>
+                        )}
                       </div>
                     </div>
                     <Thermometer value={o.objects.temperature} size="sm" />

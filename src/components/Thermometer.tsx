@@ -1,4 +1,5 @@
 import { bandOf } from "@/lib/temperature";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   value: number;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function Thermometer({ value, size = "md", showLabel = true, unmeasured = false }: Props) {
+  const { t, band: bandLabel } = useI18n();
   const v = Math.max(20, Math.min(100, value));
   const pct = ((v - 20) / 80) * 100;
   const band = bandOf(v);
@@ -25,12 +27,14 @@ export function Thermometer({ value, size = "md", showLabel = true, unmeasured =
           className="flex items-center justify-center rounded-full border border-dashed border-border bg-subtle text-[10px] uppercase tracking-wider text-muted-foreground"
           style={{ width: dims.w, height: dims.h, writingMode: "vertical-rl" }}
         >
-          待测评
+          {t("common.unmeasured")}
         </div>
         {showLabel && (
           <div className="flex flex-col">
             <div className={`font-serif ${dims.num} text-muted-foreground`}>—</div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">暂无温度</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              {t("common.noTemperature")}
+            </div>
           </div>
         )}
       </div>
@@ -61,7 +65,9 @@ export function Thermometer({ value, size = "md", showLabel = true, unmeasured =
             {v.toFixed(0)}
             <span className="text-base text-muted-foreground">°C</span>
           </div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">{band.label}</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            {bandLabel(band.band, band.label)}
+          </div>
         </div>
       )}
     </div>

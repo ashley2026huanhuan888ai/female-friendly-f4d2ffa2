@@ -13,14 +13,16 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BackToHome } from "@/components/BackToHome";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/components/AuthProvider";
+import { LanguageProvider, useI18n } from "@/lib/i18n";
 
 function NotFoundComponent() {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">404</div>
-        <h1 className="mt-4 font-serif text-4xl">页面不存在</h1>
-        <p className="mt-3 text-sm text-muted-foreground">你要找的页面可能已被移除或链接有误。</p>
+        <h1 className="mt-4 font-serif text-4xl">{t("common.pageNotFound")}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">{t("common.pageNotFoundBody")}</p>
         <div className="mt-6 flex justify-center">
           <BackToHome />
         </div>
@@ -30,6 +32,7 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  const { t } = useI18n();
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -38,7 +41,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="font-serif text-2xl">页面加载失败</h1>
+        <h1 className="font-serif text-2xl">{t("submit.failedTitle")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <button
           onClick={() => {
@@ -47,7 +50,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           }}
           className="mt-6 border border-foreground px-4 py-2 text-sm hover:bg-foreground hover:text-background"
         >
-          重试
+          {t("common.retry")}
         </button>
       </div>
     </div>
@@ -113,7 +116,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
         <Scripts />
       </body>
     </html>

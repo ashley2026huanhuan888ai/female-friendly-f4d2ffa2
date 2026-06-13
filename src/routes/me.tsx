@@ -6,7 +6,7 @@ import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { Thermometer } from "@/components/Thermometer";
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
-import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/me")({
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/me")({
 });
 
 function MePage() {
+  const { language, t, objectType } = useI18n();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { ready, user } = useAuth();
@@ -39,24 +40,20 @@ function MePage() {
 
   const onMarkAll = async () => {
     await markRead({ data: {} });
-    toast.success("已全部标记为已读");
+    toast.success(t("me.markedRead"));
     fetchDash().then((d: any) => setData(d));
   };
 
   if (ready && !user) {
-    return (
-      <LoginPrompt
-        title="登录后查看个人观察台"
-        body="你可以查看关注对象、提交记录和提醒。"
-        redirect="/me"
-      />
-    );
+    return <LoginPrompt title={t("me.loginTitle")} body={t("me.loginBody")} redirect="/me" />;
   }
 
   if (loading || !data)
     return (
       <SiteLayout>
-        <div className="container-prose py-32 text-center text-muted-foreground">加载中…</div>
+        <div className="container-prose py-32 text-center text-muted-foreground">
+          {t("common.loading")}
+        </div>
       </SiteLayout>
     );
 
@@ -67,13 +64,18 @@ function MePage() {
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             My Observatory
           </div>
-          <h1 className="mt-3 font-serif text-4xl">个人观察台</h1>
+          <h1 className="mt-3 font-serif text-4xl">{t("me.title")}</h1>
           <div className="mt-6 inline-flex border border-border">
             {(
               [
-                ["watch", `我的关注 (${data.watching.length})`],
-                ["obs", `我的观察 (${data.my_observations.length})`],
-                ["notif", `提醒${data.unread_count > 0 ? ` · ${data.unread_count}` : ""}`],
+                ["watch", t("me.watch", { count: data.watching.length })],
+                ["obs", t("me.observations", { count: data.my_observations.length })],
+                [
+                  "notif",
+                  t("me.notifications", {
+                    count: data.unread_count > 0 ? ` · ${data.unread_count}` : "",
+                  }),
+                ],
               ] as const
             ).map(([k, label]) => (
               <button
@@ -96,7 +98,7 @@ function MePage() {
         <div className="container-prose">
           {tab === "watch" &&
             (data.watching.length === 0 ? (
-              <Empty hint="尚未关注任何对象。点击对象详情页的「+ 关注」开始建立你的观察列表。" />
+              <Empty hint={t("me.emptyWatch")} />
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {data.watching.map((o: any) => (
@@ -108,7 +110,7 @@ function MePage() {
                   >
                     <div>
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        {OBJECT_TYPE_LABELS[o.type] ?? o.type}
+                        {objectType(o.type)}
                       </div>
                       <div className="mt-1 font-serif text-lg">{o.name}</div>
                     </div>
@@ -120,7 +122,7 @@ function MePage() {
 
           {tab === "obs" &&
             (data.my_observations.length === 0 ? (
-              <Empty hint="你还没有提交过观察。" />
+              <Empty hint={t("me.emptyObs")} />
             ) : (
               <ul className="divide-y divide-border border-y border-border">
                 {data.my_observations.map((o: any) => {
@@ -130,10 +132,10 @@ function MePage() {
                         <StatusChip status={o.status} />
                         <span>{o.object?.name ?? "—"}</span>
                         <span className="ml-auto">
-                          {new Date(o.created_at).toLocaleDateString("zh-CN")}
+                          {formatDateForLanguage(o.created_at, language)}
                         </span>
                       </div>
-                      <p className="mt-1 text-sm">{o.summary ?? "（暂无摘要）"}</p>
+                      <p className="mt-1 text-sm">{o.summary ?? t("common.noSummary")}</p>
                     </>
                   );
                   return (
@@ -142,7 +144,7 @@ function MePage() {
                         <Link
                           to="/objects/$id"
                           params={{ id: o.object.id }}
-                          aria-label={`查看对象详情：${o.object.name}`}
+                          aria-label={`${t("objects.viewDetail")}: ${o.object.name}`}
                           className="block cursor-pointer py-4 transition-colors hover:bg-card/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60"
                         >
                           {inner}
@@ -160,11 +162,11 @@ function MePage() {
             <>
               {data.unread_count > 0 && (
                 <button onClick={onMarkAll} className="mb-4 text-xs underline">
-                  全部标记为已读
+                  {t("me.markAllRead")}
                 </button>
               )}
               {data.notifications.length === 0 ? (
-                <Empty hint="暂无提醒。关注对象后，温度变化超过 3°C 时会出现在这里。" />
+                <Empty hint={t("me.emptyNotif")} />
               ) : (
                 <ul className="divide-y divide-border border-y border-border">
                   {data.notifications.map((n: any) => (
@@ -172,13 +174,18 @@ function MePage() {
                       <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
                         <span className={n.kind === "temperature_up" ? "text-foreground" : ""}>
                           {n.kind === "temperature_up"
-                            ? "↑ 升温"
+                            ? t("me.temperatureUp")
                             : n.kind === "temperature_down"
-                              ? "↓ 降温"
+                              ? t("me.temperatureDown")
                               : n.kind}
                         </span>
                         <span className="ml-auto">
-                          {new Date(n.created_at).toLocaleString("zh-CN")}
+                          {formatDateForLanguage(n.created_at, language, {
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                       <div className="mt-1 font-serif text-base">{n.title}</div>
@@ -189,7 +196,7 @@ function MePage() {
                           params={{ id: n.object.id }}
                           className="mt-2 inline-block text-xs underline"
                         >
-                          查看 {n.object.name} →
+                          {t("me.viewObject", { name: n.object.name })}
                         </Link>
                       )}
                     </li>
@@ -213,11 +220,12 @@ function Empty({ hint }: { hint: string }) {
 }
 
 function StatusChip({ status }: { status: string }) {
+  const { t } = useI18n();
   const map: Record<string, string> = {
-    pending: "待审",
-    approved: "已通过",
-    rejected: "已驳回",
-    auto_approved: "自动通过",
+    pending: t("me.status.pending"),
+    approved: t("me.status.approved"),
+    rejected: t("me.status.rejected"),
+    auto_approved: t("me.status.auto_approved"),
   };
   return (
     <span className="border border-border px-1.5 py-0.5 text-[10px]">{map[status] ?? status}</span>

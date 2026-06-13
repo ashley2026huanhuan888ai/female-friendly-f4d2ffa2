@@ -2,10 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
-import { Thermometer } from "@/components/Thermometer";
 import { ObjectCard } from "@/components/ObjectCard";
 import { getTopicDetail } from "@/lib/api/observation-center.functions";
-import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/topics/$tag")({
   component: TopicDetail,
@@ -17,6 +16,7 @@ export const Route = createFileRoute("/topics/$tag")({
 });
 
 function TopicDetail() {
+  const { language, t, tag: tagLabel, polarity } = useI18n();
   const { tag } = Route.useParams();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,9 @@ function TopicDetail() {
   if (loading)
     return (
       <SiteLayout>
-        <div className="container-prose py-32 text-center text-muted-foreground">加载中…</div>
+        <div className="container-prose py-32 text-center text-muted-foreground">
+          {t("common.loading")}
+        </div>
       </SiteLayout>
     );
   if (!data) return null;
@@ -44,11 +46,13 @@ function TopicDetail() {
       <section className="border-b border-border">
         <div className="container-prose py-16">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Topic</div>
-          <h1 className="mt-4 font-serif text-5xl text-balance">#{data.tag}</h1>
+          <h1 className="mt-4 font-serif text-5xl text-balance">#{tagLabel(data.tag)}</h1>
           <p className="mt-4 text-sm text-muted-foreground">
-            共 <strong className="text-foreground">{data.total}</strong> 条已审核观察 · 涉及{" "}
-            <strong className="text-foreground">{data.related_objects.length}</strong> 个对象 ·
-            <strong className="text-foreground"> {data.cases.length}</strong> 个知识案例。
+            {t("topics.summary", {
+              total: data.total,
+              objects: data.related_objects.length,
+              cases: data.cases.length,
+            })}
           </p>
         </div>
       </section>
@@ -57,18 +61,18 @@ function TopicDetail() {
         <section className="border-b border-border py-10">
           <div className="container-prose">
             <h2 className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              观察月度趋势
+              {t("topics.monthlyTrend")}
             </h2>
             <div className="mt-6 flex items-end gap-1">
-              {data.trend.map((t: any) => (
-                <div key={t.month} className="flex-1 text-center">
+              {data.trend.map((point: any) => (
+                <div key={point.month} className="flex-1 text-center">
                   <div
                     className="mx-auto w-full bg-accent/70"
-                    style={{ height: `${(t.count / maxMonth) * 80}px`, minHeight: 2 }}
-                    title={`${t.month}：${t.count} 条`}
+                    style={{ height: `${(point.count / maxMonth) * 80}px`, minHeight: 2 }}
+                    title={`${point.month}: ${point.count}`}
                   />
                   <div className="mt-1 font-mono text-[10px] text-muted-foreground">
-                    {t.month.slice(5)}
+                    {point.month.slice(5)}
                   </div>
                 </div>
               ))}
@@ -80,7 +84,7 @@ function TopicDetail() {
       {data.related_objects.length > 0 && (
         <section className="border-b border-border py-12">
           <div className="container-prose">
-            <h2 className="font-serif text-2xl">相关对象</h2>
+            <h2 className="font-serif text-2xl">{t("topics.relatedObjects")}</h2>
             <div className="mt-6 grid gap-3 md:grid-cols-2">
               {data.related_objects.map((o: any) => (
                 <ObjectCard key={o.id} {...o} />
@@ -93,7 +97,7 @@ function TopicDetail() {
       {data.cases.length > 0 && (
         <section className="border-b border-border py-12">
           <div className="container-prose">
-            <h2 className="font-serif text-2xl">引用案例</h2>
+            <h2 className="font-serif text-2xl">{t("topics.citedCases")}</h2>
             <ul className="mt-6 divide-y divide-border border-y border-border">
               {data.cases.map((c: any) => (
                 <li key={c.code} className="py-4">
@@ -103,7 +107,7 @@ function TopicDetail() {
                     className="block hover:bg-card/60"
                   >
                     <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {c.code} · {c.polarity}
+                      {c.code} · {polarity(c.polarity)}
                     </div>
                     <div className="mt-1 font-serif text-lg">{c.title}</div>
                     <p className="mt-1 text-sm text-muted-foreground">{c.summary}</p>
@@ -117,9 +121,9 @@ function TopicDetail() {
 
       <section className="py-12">
         <div className="container-prose">
-          <h2 className="font-serif text-2xl">最近观察</h2>
+          <h2 className="font-serif text-2xl">{t("topics.recentObservations")}</h2>
           {data.observations.length === 0 ? (
-            <p className="mt-6 text-sm text-muted-foreground">暂无观察。</p>
+            <p className="mt-6 text-sm text-muted-foreground">{t("common.noObservations")}</p>
           ) : (
             <ul className="mt-6 divide-y divide-border border-t border-border">
               {data.observations.slice(0, 30).map((o: any) => (
@@ -136,10 +140,10 @@ function TopicDetail() {
                     ) : (
                       "—"
                     )}{" "}
-                    · 证据 {o.evidence_level ?? "—"} ·{" "}
-                    {new Date(o.created_at).toLocaleDateString("zh-CN")}
+                    · {t("common.evidence")} {o.evidence_level ?? "—"} ·{" "}
+                    {formatDateForLanguage(o.created_at, language)}
                   </div>
-                  <p className="mt-1 text-sm">{o.summary ?? "（无摘要）"}</p>
+                  <p className="mt-1 text-sm">{o.summary ?? t("common.noSummary")}</p>
                 </li>
               ))}
             </ul>

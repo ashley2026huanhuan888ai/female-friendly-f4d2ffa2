@@ -4,13 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
 import { getCaseDetail } from "@/lib/api/archive.functions";
-import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/archive/$caseCode")({
   component: CaseDetail,
 });
 
 function CaseDetail() {
+  const { language, t, objectType, tag, archiveCategory } = useI18n();
   const { caseCode } = Route.useParams();
   const fetchCase = useServerFn(getCaseDetail);
   const [data, setData] = useState<Awaited<ReturnType<typeof getCaseDetail>> | null>(null);
@@ -30,7 +31,7 @@ function CaseDetail() {
         <div className="container-prose py-32 text-center">
           <h1 className="font-serif text-3xl">{err}</h1>
           <Link to="/archive" className="mt-4 inline-block text-sm underline">
-            返回案例库
+            {t("common.backToArchive")}
           </Link>
         </div>
       </SiteLayout>
@@ -38,7 +39,9 @@ function CaseDetail() {
   if (!data)
     return (
       <SiteLayout>
-        <div className="container-prose py-32 text-center text-muted-foreground">加载中…</div>
+        <div className="container-prose py-32 text-center text-muted-foreground">
+          {t("common.loading")}
+        </div>
       </SiteLayout>
     );
 
@@ -53,17 +56,21 @@ function CaseDetail() {
             <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               <span className="font-mono text-foreground">{c.case_code}</span>
               <span>·</span>
-              <span>{c.archive_category}</span>
+              <span>{archiveCategory(c.archive_category)}</span>
               <span>·</span>
-              <span>证据 {c.evidence_level}</span>
+              <span>
+                {t("common.evidence")} {c.evidence_level}
+              </span>
               <span>·</span>
-              <span>贡献分 {c.impact_score}</span>
+              <span>
+                {t("archive.contribution")} {c.impact_score}
+              </span>
             </div>
             <h1 className="mt-4 font-serif text-4xl text-balance md:text-5xl">
-              {c.summary || "案例"}
+              {c.summary || t("common.case")}
             </h1>
             <div className="mt-4 text-sm text-muted-foreground">
-              对象：
+              {t("common.object")}:
               <Link
                 to="/objects/$id"
                 params={{ id: o.id }}
@@ -71,13 +78,13 @@ function CaseDetail() {
               >
                 {o.name}
               </Link>
-              <span className="ml-2">（{OBJECT_TYPE_LABELS[o.type] ?? o.type}）</span>
+              <span className="ml-2">({objectType(o.type)})</span>
             </div>
           </div>
           <div className="flex flex-col items-center md:items-end">
             <Thermometer value={o.temperature} size="md" />
             <div className="mt-2 text-xs text-muted-foreground">
-              {new Date(c.created_at).toLocaleDateString("zh-CN")}
+              {formatDateForLanguage(c.created_at, language)}
             </div>
           </div>
         </div>
@@ -90,18 +97,18 @@ function CaseDetail() {
               <div className="mb-8 flex flex-wrap gap-2 text-xs">
                 {c.tags.map((t) => (
                   <span key={t} className="border border-border px-2 py-0.5 text-accent">
-                    #{t}
+                    #{tag(t)}
                   </span>
                 ))}
               </div>
             )}
 
-            <Section title="案例摘要">
-              <p className="text-base leading-relaxed">{c.summary || "（无摘要）"}</p>
+            <Section title={t("archive.summary")}>
+              <p className="text-base leading-relaxed">{c.summary || t("common.noSummary")}</p>
             </Section>
 
             {c.facts.length > 0 && (
-              <Section title="AI 提取事实">
+              <Section title={t("archive.aiFacts")}>
                 <ul className="space-y-1 border-l-2 border-accent/40 pl-4 text-sm">
                   {c.facts.map((f, i) => (
                     <li key={i}>· {f}</li>
@@ -110,20 +117,25 @@ function CaseDetail() {
               </Section>
             )}
 
-            <Section title="清洗后内容">
+            <Section title={t("archive.cleaned")}>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {c.cleaned_content || c.content}
               </p>
             </Section>
 
-            <Section title="原始观察">
+            <Section title={t("archive.original")}>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
                 {c.content}
               </p>
-              {c.scene && <p className="mt-2 text-xs text-muted-foreground">场景：{c.scene}</p>}
+              {c.scene && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {t("archive.scene")}
+                  {c.scene}
+                </p>
+              )}
               {c.reference_url && (
                 <p className="mt-2 text-xs">
-                  参考：
+                  {t("archive.reference")}
                   <a
                     href={c.reference_url}
                     target="_blank"
@@ -136,7 +148,7 @@ function CaseDetail() {
               )}
               {c.screenshot_url && (
                 <p className="mt-2 text-xs">
-                  截图：
+                  {t("archive.screenshot")}
                   <a
                     href={c.screenshot_url}
                     target="_blank"
@@ -151,9 +163,9 @@ function CaseDetail() {
           </div>
 
           <aside className="space-y-8 text-sm">
-            <RelatedBlock title="同对象其他案例" items={data.related.same_object} />
-            <RelatedBlock title="同标签案例" items={data.related.same_tag} />
-            <RelatedBlock title="同分类案例" items={data.related.same_category} />
+            <RelatedBlock title={t("archive.sameObject")} items={data.related.same_object} />
+            <RelatedBlock title={t("archive.sameTag")} items={data.related.same_tag} />
+            <RelatedBlock title={t("archive.sameCategory")} items={data.related.same_category} />
           </aside>
         </div>
       </section>
@@ -173,6 +185,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function RelatedBlock({ title, items }: { title: string; items: any[] }) {
+  const { t } = useI18n();
   if (!items?.length) return null;
   return (
     <div>
@@ -188,7 +201,9 @@ function RelatedBlock({ title, items }: { title: string; items: any[] }) {
               className="block hover:text-accent"
             >
               <div className="font-mono text-[11px] text-muted-foreground">{r.case_code}</div>
-              <div className="mt-0.5 line-clamp-2 text-sm">{r.summary || "（无摘要）"}</div>
+              <div className="mt-0.5 line-clamp-2 text-sm">
+                {r.summary || t("common.noSummary")}
+              </div>
               {r.objects?.name && (
                 <div className="mt-0.5 text-[11px] text-muted-foreground">{r.objects.name}</div>
               )}

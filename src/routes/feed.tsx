@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
 import { getObservationFeed } from "@/lib/api/observation-center.functions";
+import { useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/feed")({
   head: () => ({
@@ -23,6 +24,8 @@ export const Route = createFileRoute("/feed")({
 type Kind = "all" | "heating" | "cooling";
 
 function FeedPage() {
+  const { t } = useI18n();
+  usePageMeta("seo.feed.title", "seo.feed.description");
   const [kind, setKind] = useState<Kind>("all");
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,10 +45,8 @@ function FeedPage() {
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             Observation Feed
           </div>
-          <h1 className="mt-4 font-serif text-4xl text-balance md:text-5xl">观察流</h1>
-          <p className="mt-4 max-w-2xl text-sm text-muted-foreground">
-            平台每一次温度变化都被记录在此。变化即观察——升温有依据，降温有依据。
-          </p>
+          <h1 className="mt-4 font-serif text-4xl text-balance md:text-5xl">{t("feed.title")}</h1>
+          <p className="mt-4 max-w-2xl text-sm text-muted-foreground">{t("feed.body")}</p>
 
           <div className="mt-8 inline-flex border border-border">
             {(["all", "heating", "cooling"] as Kind[]).map((k) => (
@@ -58,7 +59,11 @@ function FeedPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {k === "all" ? "全部" : k === "heating" ? "升温" : "降温"}
+                {k === "all"
+                  ? t("feed.all")
+                  : k === "heating"
+                    ? t("feed.heating")
+                    : t("feed.cooling")}
               </button>
             ))}
           </div>
@@ -68,9 +73,9 @@ function FeedPage() {
       <section className="py-12">
         <div className="container-prose">
           {loading ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">加载中…</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">{t("common.loading")}</p>
           ) : events.length === 0 ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">暂无温度变化记录。</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">{t("feed.empty")}</p>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {events.map((e) => (

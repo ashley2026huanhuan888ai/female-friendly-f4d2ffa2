@@ -2,6 +2,7 @@ import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
 import { BANDS, FEMINIST_TAGS } from "@/lib/temperature";
+import { useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -14,27 +15,22 @@ export const Route = createFileRoute("/about")({
 });
 
 function About() {
+  const { t, band: bandLabel, tag } = useI18n();
+  usePageMeta("seo.about.title", "seo.about.description");
   return (
     <SiteLayout>
       <div className="container-prose max-w-3xl py-20">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
           Methodology
         </div>
-        <h1 className="mt-4 font-serif text-5xl text-balance">关于「女性友好体验测评」</h1>
+        <h1 className="mt-4 font-serif text-5xl text-balance">{t("about.title")}</h1>
 
-        <Section title="项目目标">
-          <p>
-            本平台收集用户对品牌、产品、服务、影视作品、企业组织、公共事件等对象的女性友好体验观察，
-            利用 AI
-            进行结构化分析，最终以「女性友好体验温度」呈现。温度越高，代表反馈中出现的性别偏见、
-            女性物化、性别规训等议题越集中。
-          </p>
-          <p className="mt-3 text-muted-foreground">
-            本平台不进行法律意义上的事实认定，不进行道德审判。
-          </p>
+        <Section title={t("about.goal")}>
+          <p>{t("about.goalBody")}</p>
+          <p className="mt-3 text-muted-foreground">{t("about.goalDisclaimer")}</p>
         </Section>
 
-        <Section title="温度区间">
+        <Section title={t("about.bands")}>
           <div className="space-y-2">
             {BANDS.map((b) => (
               <div key={b.band} className="flex items-baseline gap-4 text-sm">
@@ -45,71 +41,54 @@ function About() {
                 <span className="font-mono tabular-nums text-muted-foreground">
                   {b.range[0]}–{b.range[1]}°C
                 </span>
-                <span>{b.label}</span>
+                <span>{bandLabel(b.band, b.label)}</span>
               </div>
             ))}
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            舒适温度区间为 20–28°C，超过 28°C 代表出现不同程度的性别争议。
-          </p>
+          <p className="mt-4 text-sm text-muted-foreground">{t("about.bandsHint")}</p>
         </Section>
 
-        <Section title="证据等级">
+        <Section title={t("about.evidence")}>
           <ul className="space-y-2 text-sm">
-            <li>
-              <strong>A 级</strong> · 截图 / 视频 / 广告原文 / 台词等原始证据
-            </li>
-            <li>
-              <strong>B 级</strong> · 详细描述（时间、地点、情境清晰）
-            </li>
-            <li>
-              <strong>C 级</strong> · 简单感受或模糊描述
-            </li>
-            <li>
-              <strong>D 级</strong> · 辱骂、人身攻击、无效内容 — 不参与温度计算
-            </li>
+            <li>{t("about.evidenceA")}</li>
+            <li>{t("about.evidenceB")}</li>
+            <li>{t("about.evidenceC")}</li>
+            <li>{t("about.evidenceD")}</li>
           </ul>
         </Section>
 
-        <Section title="分析标签">
+        <Section title={t("about.tags")}>
           <div className="flex flex-wrap gap-2">
-            {FEMINIST_TAGS.map((t) => (
-              <span key={t} className="border border-border px-3 py-1 text-xs">
-                #{t}
+            {FEMINIST_TAGS.map((tagName) => (
+              <span key={tagName} className="border border-border px-3 py-1 text-xs">
+                #{tag(tagName)}
               </span>
             ))}
           </div>
         </Section>
 
-        <Section title="硬规则">
+        <Section title={t("about.rules")}>
           <ul className="space-y-3 text-sm">
             <li>
-              · <strong>用户不能直接创建评估对象</strong>。只能选择已有对象或通过「
+              · {t("about.ruleObjects")}{" "}
               <Link to="/request-object" className="underline">
-                增加新测评对象
+                {t("objects.requestLink")}
               </Link>
-              」申请。
             </li>
-            <li>
-              · <strong>不采用投票机制</strong>。无点赞、点踩、星级、用户投票。AI
-              仅依据内容质量分析。
-            </li>
-            <li>
-              · <strong>评论数量不直接影响温度</strong>
-              。留言和「有帮助」只用于讨论排序与社区反馈；温度由证据强度、标签多样性、议题集中度决定。
-            </li>
+            <li>· {t("about.ruleVoting")}</li>
+            <li>· {t("about.ruleQuantity")}</li>
           </ul>
         </Section>
 
-        <Section title="AI 工作流">
+        <Section title={t("about.workflow")}>
           <ol className="space-y-1 text-sm text-muted-foreground">
-            <li>1. 用户提交观察</li>
-            <li>2. 内容清洗，提取事实描述</li>
-            <li>3. AI 识别标签</li>
-            <li>4. 判断证据等级</li>
-            <li>5. 管理员审核</li>
-            <li>6. 加权聚合，生成对象总结与温度</li>
-            <li>7. 发布</li>
+            <li>{t("about.step1")}</li>
+            <li>{t("about.step2")}</li>
+            <li>{t("about.step3")}</li>
+            <li>{t("about.step4")}</li>
+            <li>{t("about.step5")}</li>
+            <li>{t("about.step6")}</li>
+            <li>{t("about.step7")}</li>
           </ol>
         </Section>
       </div>

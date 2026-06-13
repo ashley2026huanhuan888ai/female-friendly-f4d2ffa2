@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getTemperatureTimeline } from "@/lib/api/temperature.functions";
+import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 interface Evt {
   id: string;
@@ -12,11 +13,11 @@ interface Evt {
   created_at: string;
 }
 
-const REASON_LABEL: Record<string, string> = {
-  observation_approved: "观察通过 · 重算",
-  manual_admin: "管理员手动重算",
-  cooling_cycle: "自然冷却",
-  positive_case: "正向案例",
+const REASON_LABEL_KEY: Record<string, Parameters<ReturnType<typeof useI18n>["t"]>[0]> = {
+  observation_approved: "timeline.reason.observation_approved",
+  manual_admin: "timeline.reason.manual_admin",
+  cooling_cycle: "timeline.reason.cooling_cycle",
+  positive_case: "timeline.reason.positive_case",
 };
 
 export function TemperatureTimeline({
@@ -26,6 +27,7 @@ export function TemperatureTimeline({
   objectId: string;
   limit?: number;
 }) {
+  const { language, t } = useI18n();
   const fetchTimeline = useServerFn(getTemperatureTimeline);
   const [events, setEvents] = useState<Evt[] | null>(null);
 
@@ -35,9 +37,10 @@ export function TemperatureTimeline({
       .catch(() => setEvents([]));
   }, [objectId, limit, fetchTimeline]);
 
-  if (events === null) return <p className="text-sm text-muted-foreground">加载温度时间线…</p>;
+  if (events === null)
+    return <p className="text-sm text-muted-foreground">{t("timeline.loadingTemperature")}</p>;
   if (events.length === 0)
-    return <p className="text-sm text-muted-foreground">尚无温度变化记录。</p>;
+    return <p className="text-sm text-muted-foreground">{t("feed.empty")}</p>;
 
   return (
     <ol className="space-y-3">
@@ -50,7 +53,7 @@ export function TemperatureTimeline({
             className="grid grid-cols-[110px_60px_1fr_70px] items-center gap-3 border-b border-border pb-3 text-sm"
           >
             <span className="font-mono text-[11px] text-muted-foreground">
-              {new Date(e.created_at).toLocaleString("zh-CN", {
+              {formatDateForLanguage(e.created_at, language, {
                 month: "2-digit",
                 day: "2-digit",
                 hour: "2-digit",
@@ -71,7 +74,7 @@ export function TemperatureTimeline({
               {Number(e.delta).toFixed(1)}°
             </span>
             <span className="text-xs">
-              {REASON_LABEL[e.reason] ?? e.reason}
+              {REASON_LABEL_KEY[e.reason] ? t(REASON_LABEL_KEY[e.reason]) : e.reason}
               {e.note && <span className="ml-2 text-muted-foreground">· {e.note}</span>}
             </span>
             <span className="text-right font-mono text-xs tabular-nums text-muted-foreground">

@@ -10,30 +10,26 @@ import { retryObservationAnalysis, submitObservation } from "@/lib/api/platform.
 import { Thermometer } from "@/components/Thermometer";
 import { bandOf } from "@/lib/temperature";
 import { toast } from "sonner";
+import { formatTimeForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/submit/$objectId")({
   head: () => ({ meta: [{ title: "提交观察 · 女性友好体验测评" }] }),
   component: SubmitPage,
 });
 
-const STEPS = [
-  "内容清洗",
-  "提取事实",
-  "匹配知识库",
-  "识别议题标签",
-  "评估证据等级",
-  "生成温度贡献",
-  "更新对象温度",
-];
-
-const EVIDENCE_LABEL: Record<string, string> = {
-  A: "A · 强证据",
-  B: "B · 一般证据",
-  C: "C · 弱证据",
-  D: "D · 仅供参考",
-};
+const STEP_KEYS = [
+  "submit.step.clean",
+  "submit.step.facts",
+  "submit.step.knowledge",
+  "submit.step.tags",
+  "submit.step.evidence",
+  "submit.step.temperature",
+  "submit.step.update",
+] as const;
 
 function SubmitPage() {
+  const { language, t, evidence, band: bandLabel, tag } = useI18n();
+  usePageMeta("seo.submit.title");
   const { objectId } = Route.useParams();
   const navigate = useNavigate();
   const submit = useServerFn(submitObservation);
@@ -125,8 +121,8 @@ function SubmitPage() {
   if (ready && !user) {
     return (
       <LoginPrompt
-        title="登录后提交观察"
-        body="登录用于防止刷屏和保护观察质量。你登录后会自动回到当前提交页面。"
+        title={t("submit.loginTitle")}
+        body={t("submit.loginBody")}
         redirect={`/submit/${objectId}`}
       />
     );
@@ -136,7 +132,7 @@ function SubmitPage() {
     return (
       <SiteLayout>
         <div className="container-prose py-32 text-center text-muted-foreground">
-          同步登录状态中…
+          {t("common.syncingAuth")}
         </div>
       </SiteLayout>
     );
@@ -147,7 +143,7 @@ function SubmitPage() {
     setErrorMsg("");
 
     const stepTimer = setInterval(() => {
-      setStepIdx((i) => (i < STEPS.length - 1 ? i + 1 : i));
+      setStepIdx((i) => (i < STEP_KEYS.length - 1 ? i + 1 : i));
     }, 260);
     const minWait = new Promise((r) => setTimeout(r, 1800));
 
@@ -165,7 +161,7 @@ function SubmitPage() {
         minWait,
       ]);
       clearInterval(stepTimer);
-      setStepIdx(STEPS.length - 1);
+      setStepIdx(STEP_KEYS.length - 1);
       setResult(res);
 
       const { data: latest } = await supabase
@@ -178,7 +174,7 @@ function SubmitPage() {
       clearDraft();
       // AI 失败但观察已保存 → 进入 ai_failed 阶段，而非 error
       if ((res as any)?.ai_failed) {
-        setErrorMsg((res as any)?.error ?? "AI 分析失败");
+        setErrorMsg((res as any)?.error ?? t("submit.aiFailed"));
         setPhase("ai_failed");
       } else {
         setPhase("done");
@@ -186,14 +182,14 @@ function SubmitPage() {
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
-      setErrorMsg(err?.message ?? "未知错误");
+      setErrorMsg(err?.message ?? t("submit.unknownError"));
     }
   };
 
   const runSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (content.trim().length < 10) {
-      toast.error("观察内容至少 10 字");
+      toast.error(t("submit.minLength"));
       return;
     }
     await runAnalysis();
@@ -209,14 +205,14 @@ function SubmitPage() {
     setStepIdx(0);
     setErrorMsg("");
     const stepTimer = setInterval(() => {
-      setStepIdx((i) => (i < STEPS.length - 1 ? i + 1 : i));
+      setStepIdx((i) => (i < STEP_KEYS.length - 1 ? i + 1 : i));
     }, 260);
     const minWait = new Promise((r) => setTimeout(r, 1800));
 
     try {
       const [res] = await Promise.all([retrySavedAnalysis({ data: { id: savedId } }), minWait]);
       clearInterval(stepTimer);
-      setStepIdx(STEPS.length - 1);
+      setStepIdx(STEP_KEYS.length - 1);
       setResult(res);
 
       const { data: latest } = await supabase
@@ -227,7 +223,7 @@ function SubmitPage() {
       setNewTemp((latest as any)?.temperature ?? obj?.temperature ?? null);
 
       if ((res as any)?.ai_failed) {
-        setErrorMsg((res as any).error ?? "AI 分析失败");
+        setErrorMsg((res as any).error ?? t("submit.aiFailed"));
         setPhase("ai_failed");
         return;
       }
@@ -235,7 +231,7 @@ function SubmitPage() {
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
-      setErrorMsg(err?.message ?? "未知错误");
+      setErrorMsg(err?.message ?? t("submit.unknownError"));
     }
   };
 
@@ -245,20 +241,18 @@ function SubmitPage() {
       <SiteLayout>
         <div className="container-prose max-w-2xl py-20">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            AI 分析中
+            {t("submit.analyzingEyebrow")}
           </div>
-          <h1 className="mt-3 font-serif text-3xl">正在分析你的观察…</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            通常 5–15 秒，请勿关闭页面。系统会自动完成清洗、识别与温度更新。
-          </p>
+          <h1 className="mt-3 font-serif text-3xl">{t("submit.analyzingTitle")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("submit.analyzingBody")}</p>
           <div className="mt-8 h-1 w-full overflow-hidden bg-border">
             <div
               className="h-full bg-foreground transition-all duration-300"
-              style={{ width: `${((stepIdx + 1) / STEPS.length) * 100}%` }}
+              style={{ width: `${((stepIdx + 1) / STEP_KEYS.length) * 100}%` }}
             />
           </div>
           <ul className="mt-8 space-y-3 text-sm">
-            {STEPS.map((s, i) => {
+            {STEP_KEYS.map((s, i) => {
               const state = i < stepIdx ? "done" : i === stepIdx ? "active" : "pending";
               return (
                 <li key={s} className="flex items-center gap-3">
@@ -273,7 +267,7 @@ function SubmitPage() {
                   >
                     {state === "done" ? "✓" : state === "active" ? "●" : "○"}
                   </span>
-                  <span className={state === "pending" ? "text-muted-foreground" : ""}>{s}</span>
+                  <span className={state === "pending" ? "text-muted-foreground" : ""}>{t(s)}</span>
                 </li>
               );
             })}
@@ -291,27 +285,31 @@ function SubmitPage() {
       <SiteLayout>
         <div className="container-prose max-w-2xl py-16">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            {result.status === "approved" ? "已自动通过" : "已提交 · 等待审核"}
+            {result.status === "approved"
+              ? t("submit.status.autoApproved")
+              : t("submit.status.pending")}
           </div>
-          <h1 className="mt-3 font-serif text-3xl">分析完成</h1>
+          <h1 className="mt-3 font-serif text-3xl">{t("submit.doneTitle")}</h1>
 
           <div className="mt-8 border border-border bg-card p-6 space-y-5">
             <div>
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                AI 摘要
+                {t("submit.aiSummary")}
               </div>
-              <p className="mt-2 text-sm leading-relaxed">{result.summary || "（无摘要）"}</p>
+              <p className="mt-2 text-sm leading-relaxed">
+                {result.summary || t("common.noSummary")}
+              </p>
             </div>
 
             {!!result.tags?.length && (
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  识别标签
+                  {t("submit.detectedTags")}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {result.tags.map((t: string) => (
                     <span key={t} className="border border-border px-2 py-1 text-xs">
-                      {t}
+                      {tag(t)}
                     </span>
                   ))}
                 </div>
@@ -321,15 +319,13 @@ function SubmitPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  证据等级
+                  {t("submit.evidenceLevel")}
                 </div>
-                <div className="mt-2 font-serif text-lg">
-                  {EVIDENCE_LABEL[result.evidence_level] ?? result.evidence_level ?? "—"}
-                </div>
+                <div className="mt-2 font-serif text-lg">{evidence(result.evidence_level)}</div>
               </div>
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  温度贡献
+                  {t("submit.temperatureContribution")}
                 </div>
                 <div
                   className={`mt-2 font-serif text-lg tabular-nums ${
@@ -347,12 +343,14 @@ function SubmitPage() {
                 <Thermometer value={newTemp} size="sm" showLabel={false} />
                 <div>
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    当前对象温度
+                    {t("submit.currentTemperature")}
                   </div>
                   <div className="mt-1 font-serif text-2xl tabular-nums">
                     {newTemp}°C
                     {band && (
-                      <span className="ml-2 text-sm text-muted-foreground">{band.label}</span>
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        {bandLabel(band.band, band.label)}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -361,7 +359,7 @@ function SubmitPage() {
 
             {result.status !== "approved" && (
               <p className="text-xs text-muted-foreground border-t border-border pt-4">
-                此条提交需管理员复核后才会计入对象温度。可在「我的」页查看进度。
+                {t("submit.needsReview")}
               </p>
             )}
           </div>
@@ -371,13 +369,13 @@ function SubmitPage() {
               onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
               className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
             >
-              返回对象页
+              {t("submit.backObject")}
             </button>
             <Link
               to="/feed"
               className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
             >
-              查看全部观察
+              {t("submit.viewFeed")}
             </Link>
             <button
               onClick={() => {
@@ -389,7 +387,7 @@ function SubmitPage() {
               }}
               className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
             >
-              继续提交观察
+              {t("submit.continue")}
             </button>
           </div>
         </div>
@@ -404,23 +402,16 @@ function SubmitPage() {
       <SiteLayout>
         <div className="container-prose max-w-2xl py-20">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            已保存 · AI 待重试
+            {t("submit.savedAiRetry")}
           </div>
           <h1 className="mt-3 font-serif text-2xl">
-            {hasLegal ? "法律强证据已保存并计入温度" : "观察已保存为待审"}
+            {hasLegal ? t("submit.legalSavedTitle") : t("submit.savedPendingTitle")}
           </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            AI
-            分析暂时失败，管理员会重新分析。该观察已存入数据库，可在「我的观察」与对象详情页查看。
-          </p>
-          {hasLegal && (
-            <p className="mt-2 text-sm text-foreground">
-              已识别为法律 / 监管强证据，对象温度已即时更新。
-            </p>
-          )}
+          <p className="mt-3 text-sm text-muted-foreground">{t("submit.aiFailedBody")}</p>
+          {hasLegal && <p className="mt-2 text-sm text-foreground">{t("submit.legalUpdated")}</p>}
           {errorMsg && (
             <details className="mt-4 text-xs text-muted-foreground">
-              <summary className="cursor-pointer">技术细节</summary>
+              <summary className="cursor-pointer">{t("common.details")}</summary>
               <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
             </details>
           )}
@@ -429,19 +420,19 @@ function SubmitPage() {
               onClick={retryAnalysis}
               className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
             >
-              重试 AI 分析
+              {t("submit.retryAI")}
             </button>
             <button
               onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
               className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
             >
-              查看对象详情
+              {t("submit.viewObject")}
             </button>
             <Link
               to="/me"
               className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
             >
-              去「我的观察」
+              {t("submit.goMyObservations")}
             </Link>
             <button
               onClick={() => {
@@ -454,7 +445,7 @@ function SubmitPage() {
               }}
               className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
             >
-              继续提交观察
+              {t("submit.continue")}
             </button>
           </div>
         </div>
@@ -467,14 +458,14 @@ function SubmitPage() {
     return (
       <SiteLayout>
         <div className="container-prose max-w-2xl py-20">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">提示</div>
-          <h1 className="mt-3 font-serif text-2xl">提交失败</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            网络或服务异常，观察未能保存。请重试。
-          </p>
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            {t("submit.notice")}
+          </div>
+          <h1 className="mt-3 font-serif text-2xl">{t("submit.failedTitle")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("submit.failedBody")}</p>
           {errorMsg && (
             <details className="mt-4 text-xs text-muted-foreground">
-              <summary className="cursor-pointer">技术细节</summary>
+              <summary className="cursor-pointer">{t("common.details")}</summary>
               <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
             </details>
           )}
@@ -483,24 +474,22 @@ function SubmitPage() {
               onClick={() => runAnalysis()}
               className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
             >
-              一键重试提交
+              {t("submit.retrySubmit")}
             </button>
             <button
               onClick={() => setPhase("idle")}
               className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
             >
-              返回编辑 / 重新进入分析
+              {t("submit.backEdit")}
             </button>
             <button
               onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
               className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
             >
-              返回对象页
+              {t("submit.backObject")}
             </button>
           </div>
-          <p className="mt-4 text-[11px] text-muted-foreground">
-            草稿已自动保存到本机浏览器，刷新或重新打开后会自动恢复。
-          </p>
+          <p className="mt-4 text-[11px] text-muted-foreground">{t("submit.draftSavedNotice")}</p>
         </div>
       </SiteLayout>
     );
@@ -510,15 +499,15 @@ function SubmitPage() {
   return (
     <SiteLayout>
       <div className="container-prose max-w-2xl py-16">
-        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">提交观察</div>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          {t("submit.formEyebrow")}
+        </div>
         <h1 className="mt-3 font-serif text-4xl">{obj?.name ?? "—"}</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          只需写下你观察到的现象，其余由 AI 完成。
-        </p>
+        <p className="mt-3 text-sm text-muted-foreground">{t("submit.formBody")}</p>
 
         {draftRestored && (
           <div className="mt-6 flex items-center justify-between gap-3 border border-dashed border-border bg-card/60 p-3 text-xs">
-            <span className="text-muted-foreground">已恢复上次未提交的草稿。</span>
+            <span className="text-muted-foreground">{t("submit.draftRestored")}</span>
             <button
               type="button"
               onClick={() => {
@@ -529,14 +518,14 @@ function SubmitPage() {
               }}
               className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
-              清空草稿
+              {t("submit.clearDraft")}
             </button>
           </div>
         )}
 
         <form onSubmit={runSubmit} className="mt-10 space-y-6">
           <div>
-            <label className="block text-sm font-medium">你观察到了什么？*</label>
+            <label className="block text-sm font-medium">{t("submit.question")}</label>
             <textarea
               required
               minLength={10}
@@ -544,24 +533,28 @@ function SubmitPage() {
               rows={8}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={`例如：\n· 某广告中女性始终负责家务劳动，男性负责做决定。\n· 某影视作品中女性角色几乎没有独立剧情。\n· 某品牌营销内容长期聚焦女性外貌评价。`}
+              placeholder={t("submit.placeholder")}
               className="mt-2 w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
             />
             <div className="mt-3 border-l-2 border-border pl-3 text-xs text-muted-foreground leading-relaxed">
-              提交后系统会自动：
+              {t("submit.autoWill")}
               <div className="mt-1 space-y-0.5">
-                <div>✓ 提取事实</div>
-                <div>✓ 识别议题标签</div>
-                <div>✓ 判断证据等级</div>
-                <div>✓ 更新女性体验温度</div>
+                <div>{t("submit.autoFacts")}</div>
+                <div>{t("submit.autoTags")}</div>
+                <div>{t("submit.autoEvidence")}</div>
+                <div>{t("submit.autoTemperature")}</div>
               </div>
             </div>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
               <span>
-                {content.length} / 2000 字 · 至少 10 字 · 24 小时内最多 50 条 · 同一对象最多 10 条
+                {t("common.wordCount", { count: content.length })} · {t("submit.limits")}
               </span>
               {draftSavedAt && (
-                <span>草稿已自动保存 · {new Date(draftSavedAt).toLocaleTimeString("zh-CN")}</span>
+                <span>
+                  {t("submit.draftSavedAt", {
+                    time: formatTimeForLanguage(draftSavedAt, language),
+                  })}
+                </span>
               )}
             </div>
           </div>
@@ -572,12 +565,14 @@ function SubmitPage() {
               onClick={() => setShowOptional((v) => !v)}
               className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
             >
-              {showOptional ? "▾" : "▸"} 可选附件（截图 / 参考链接）
+              {showOptional ? t("submit.optionalOpen") : t("submit.optionalClosed")}
             </button>
             {showOptional && (
               <div className="mt-4 space-y-4 border-l-2 border-border pl-4">
                 <div>
-                  <label className="block text-xs text-muted-foreground">截图链接</label>
+                  <label className="block text-xs text-muted-foreground">
+                    {t("submit.screenshotUrl")}
+                  </label>
                   <input
                     type="url"
                     maxLength={500}
@@ -588,7 +583,9 @@ function SubmitPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground">参考链接</label>
+                  <label className="block text-xs text-muted-foreground">
+                    {t("submit.referenceUrl")}
+                  </label>
                   <input
                     type="url"
                     maxLength={500}
@@ -603,7 +600,7 @@ function SubmitPage() {
           </div>
 
           <button className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent hover:border-accent">
-            提交观察
+            {t("objects.submitObservation")}
           </button>
         </form>
       </div>

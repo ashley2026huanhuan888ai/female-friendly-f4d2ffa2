@@ -5,24 +5,26 @@ import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
 
 import { useAuth } from "@/components/auth-context";
+import { useI18n } from "@/lib/i18n";
 
 const PRIMARY_NAV = [
-  { to: "/objects", label: "对象" },
-  { to: "/feed", label: "观察流" },
-  { to: "/request-object", label: "增加\n新测评\n对象" },
+  { to: "/objects", labelKey: "nav.objects" },
+  { to: "/feed", labelKey: "nav.feed" },
+  { to: "/request-object", labelKey: "nav.requestObject" },
 ] as const;
 
 const SECONDARY_NAV = [
-  { to: "/topics", label: "热议议题" },
-  { to: "/archive", label: "案例库" },
-  { to: "/archive/evidence", label: "证据库" },
-  { to: "/knowledge", label: "知识引擎" },
-  { to: "/about", label: "关于" },
+  { to: "/topics", labelKey: "nav.topics" },
+  { to: "/archive", labelKey: "nav.archive" },
+  { to: "/archive/evidence", labelKey: "nav.evidence" },
+  { to: "/knowledge", labelKey: "nav.knowledge" },
+  { to: "/about", labelKey: "nav.about" },
 ] as const;
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const { email, isAdmin, unread, signOut: authSignOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { language, setLanguage, t } = useI18n();
 
   const router = useRouter();
 
@@ -41,9 +43,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur">
         <div className="container-prose flex h-16 items-center justify-between gap-3">
           <Link to="/" className="flex items-baseline gap-3">
-            <span className="font-serif text-xl tracking-tight">女性友好体验测评</span>
+            <span className="font-serif text-xl tracking-tight">{t("app.name")}</span>
             <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground md:inline">
-              FEMALE EXPERIENCE ASSESSMENT
+              {t("app.brand.en")}
             </span>
           </Link>
 
@@ -55,19 +57,20 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 to={l.to}
                 className="whitespace-pre-line text-muted-foreground hover:text-foreground"
               >
-                {l.label}
+                {t(l.labelKey)}
               </Link>
             ))}
             <span className="h-4 w-px bg-border" aria-hidden />
             {SECONDARY_NAV.map((l) => (
               <Link key={l.to} to={l.to} className="text-muted-foreground hover:text-foreground">
-                {l.label}
+                {t(l.labelKey)}
               </Link>
             ))}
           </nav>
 
           {/* 右侧账号区（桌面） */}
           <div className="hidden items-center gap-3 text-sm md:flex">
+            <LanguageToggle language={language} setLanguage={setLanguage} />
             {email && (
               <Link
                 to="/admin"
@@ -77,13 +80,13 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                     : "text-muted-foreground hover:text-foreground"
                 }
               >
-                {isAdmin ? "管理后台" : "管理入口"}
+                {isAdmin ? t("nav.admin") : t("nav.adminEntry")}
               </Link>
             )}
             {email ? (
               <>
                 <Link to="/me" className="relative text-muted-foreground hover:text-foreground">
-                  我的
+                  {t("nav.me")}
                   {unread > 0 && (
                     <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
                       {unread > 99 ? "99+" : unread}
@@ -91,7 +94,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   )}
                 </Link>
                 <button onClick={signOut} className="text-muted-foreground hover:text-foreground">
-                  退出
+                  {t("nav.signOut")}
                 </button>
               </>
             ) : (
@@ -99,7 +102,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 to="/login"
                 className="border border-foreground/80 px-3 py-1.5 text-foreground hover:bg-foreground hover:text-background"
               >
-                登录 / 注册
+                {t("nav.loginRegister")}
               </Link>
             )}
           </div>
@@ -111,12 +114,12 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 to="/login"
                 className="border border-foreground/80 px-2.5 py-1 text-xs text-foreground"
               >
-                登录 / 注册
+                {t("nav.loginRegister")}
               </Link>
             )}
             {email && (
               <Link to="/me" className="relative text-xs text-muted-foreground">
-                我的
+                {t("nav.me")}
                 {unread > 0 && (
                   <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
                     {unread > 99 ? "99+" : unread}
@@ -125,7 +128,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             )}
             <button
-              aria-label="菜单"
+              aria-label={t("nav.menu")}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
               className="flex h-9 w-9 items-center justify-center border border-border text-foreground"
@@ -155,11 +158,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   to={l.to}
                   className="whitespace-pre-line border-b border-border/50 py-3 text-foreground"
                 >
-                  {l.label}
+                  {t(l.labelKey)}
                 </Link>
               ))}
               <div className="border-b border-border/50 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                更多
+                {t("nav.more")}
               </div>
               {SECONDARY_NAV.map((l) => (
                 <Link
@@ -167,45 +170,49 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                   to={l.to}
                   className="border-b border-border/50 py-3 pl-3 text-sm text-muted-foreground"
                 >
-                  {l.label}
+                  {t(l.labelKey)}
                 </Link>
               ))}
+              <div className="border-b border-border/50 py-3">
+                <LanguageToggle language={language} setLanguage={setLanguage} />
+              </div>
               {isAdmin && (
                 <>
                   <Link to="/admin" className="border-b border-border/50 py-3 text-accent">
-                    管理后台
+                    {t("nav.admin")}
                   </Link>
                   <Link
                     to="/admin/observations"
                     className="border-b border-border/50 py-3 pl-4 text-sm text-muted-foreground"
                   >
-                    · 观察审核
+                    {t("nav.adminObservations")}
                   </Link>
                   <Link
                     to="/admin/requests"
                     className="border-b border-border/50 py-3 pl-4 text-sm text-muted-foreground"
                   >
-                    · 对象申请审核
+                    {t("nav.adminRequests")}
                   </Link>
                 </>
               )}
               {email && !isAdmin && (
                 <Link to="/admin" className="border-b border-border/50 py-3 text-muted-foreground">
-                  管理入口
+                  {t("nav.adminEntry")}
                 </Link>
               )}
               {email ? (
                 <>
                   <Link to="/me" className="border-b border-border/50 py-3 text-foreground">
-                    我的{unread > 0 ? `（${unread > 99 ? "99+" : unread}）` : ""}
+                    {t("nav.me")}
+                    {unread > 0 ? ` (${unread > 99 ? "99+" : unread})` : ""}
                   </Link>
                   <button onClick={signOut} className="py-3 text-left text-muted-foreground">
-                    退出（{email}）
+                    {t("nav.signOut")} ({email})
                   </button>
                 </>
               ) : (
                 <Link to="/login" className="py-3 text-foreground">
-                  登录 / 注册
+                  {t("nav.loginRegister")}
                 </Link>
               )}
             </nav>
@@ -226,20 +233,50 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <nav className="flex flex-wrap gap-x-5 gap-y-2">
             {[...PRIMARY_NAV, ...SECONDARY_NAV].map((l) => (
               <Link key={l.to} to={l.to} className="whitespace-pre-line hover:text-foreground">
-                {l.label}
+                {t(l.labelKey)}
               </Link>
             ))}
           </nav>
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <span className="font-serif text-sm text-foreground">女性友好体验测评</span>
-              <span className="ml-3">观察 · 分析 · 不审判</span>
+              <span className="font-serif text-sm text-foreground">{t("app.name")}</span>
+              <span className="ml-3">{t("app.tagline")}</span>
             </div>
-            <div>本平台不进行法律意义上的事实认定，不进行道德审判。</div>
+            <div>{t("app.disclaimer")}</div>
           </div>
         </div>
       </footer>
       <Toaster position="top-center" theme="light" />
+    </div>
+  );
+}
+
+function LanguageToggle({
+  language,
+  setLanguage,
+}: {
+  language: "zh" | "en";
+  setLanguage: (language: "zh" | "en") => void;
+}) {
+  return (
+    <div
+      className="inline-flex border border-border text-[11px] uppercase tracking-wider"
+      aria-label="Language"
+    >
+      <button
+        type="button"
+        onClick={() => setLanguage("zh")}
+        className={`px-2 py-1 ${language === "zh" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+      >
+        中文
+      </button>
+      <button
+        type="button"
+        onClick={() => setLanguage("en")}
+        className={`border-l border-border px-2 py-1 ${language === "en" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+      >
+        EN
+      </button>
     </div>
   );
 }

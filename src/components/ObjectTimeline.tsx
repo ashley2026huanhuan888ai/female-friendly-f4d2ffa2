@@ -2,10 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getObjectTimeline } from "@/lib/api/archive.functions";
+import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 type Point = Awaited<ReturnType<typeof getObjectTimeline>>[number];
 
 export function ObjectTimeline({ objectId }: { objectId: string }) {
+  const { language, t, tag } = useI18n();
   const fetcher = useServerFn(getObjectTimeline);
   const [points, setPoints] = useState<Point[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,8 +18,9 @@ export function ObjectTimeline({ objectId }: { objectId: string }) {
       .finally(() => setLoading(false));
   }, [fetcher, objectId]);
 
-  if (loading) return <p className="text-sm text-muted-foreground">加载时间线…</p>;
-  if (points.length === 0) return <p className="text-sm text-muted-foreground">尚无时间线数据。</p>;
+  if (loading) return <p className="text-sm text-muted-foreground">{t("timeline.loading")}</p>;
+  if (points.length === 0)
+    return <p className="text-sm text-muted-foreground">{t("timeline.empty")}</p>;
 
   // 累积平均贡献分作为温度趋势近似
   const trend: { x: number; y: number; t: string }[] = [];
@@ -61,9 +64,9 @@ export function ObjectTimeline({ objectId }: { objectId: string }) {
         </svg>
       </div>
       <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
-        <span>{new Date(points[0].created_at).toLocaleDateString("zh-CN")}</span>
-        <span>累积平均贡献 → 估算温度趋势</span>
-        <span>{new Date(points[n - 1].created_at).toLocaleDateString("zh-CN")}</span>
+        <span>{formatDateForLanguage(points[0].created_at, language)}</span>
+        <span>{t("timeline.estimatedTrend")}</span>
+        <span>{formatDateForLanguage(points[n - 1].created_at, language)}</span>
       </div>
 
       <ol className="mt-8 space-y-4 border-l border-border pl-5">
@@ -73,14 +76,18 @@ export function ObjectTimeline({ objectId }: { objectId: string }) {
             <li key={p.id} className="relative">
               <span className="absolute -left-[27px] top-1.5 h-2 w-2 rounded-full bg-accent" />
               <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                <span className="font-mono text-foreground">{caseCode || "未归档"}</span>
-                <span>·</span>
-                <span className="border border-border px-1.5">证据 {p.evidence_level}</span>
-                <span>·</span>
-                <span>贡献分 {p.impact_score}</span>
-                <span className="ml-auto">
-                  {new Date(p.created_at).toLocaleDateString("zh-CN")}
+                <span className="font-mono text-foreground">
+                  {caseCode || t("timeline.unarchived")}
                 </span>
+                <span>·</span>
+                <span className="border border-border px-1.5">
+                  {t("common.evidence")} {p.evidence_level}
+                </span>
+                <span>·</span>
+                <span>
+                  {t("archive.contribution")} {p.impact_score}
+                </span>
+                <span className="ml-auto">{formatDateForLanguage(p.created_at, language)}</span>
               </div>
               {caseCode ? (
                 <Link
@@ -88,17 +95,17 @@ export function ObjectTimeline({ objectId }: { objectId: string }) {
                   params={{ caseCode }}
                   className="mt-1 block text-sm hover:text-accent"
                 >
-                  {p.summary || "（无摘要）"}
+                  {p.summary || t("common.noSummary")}
                 </Link>
               ) : (
                 <div className="mt-1 text-sm text-muted-foreground">
-                  {p.summary || "（无摘要）"}
+                  {p.summary || t("common.noSummary")}
                 </div>
               )}
               {p.tags.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-accent">
                   {p.tags.slice(0, 5).map((t) => (
-                    <span key={t}>#{t}</span>
+                    <span key={t}>#{tag(t)}</span>
                   ))}
                 </div>
               )}

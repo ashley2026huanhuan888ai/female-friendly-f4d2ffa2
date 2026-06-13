@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { toast } from "sonner";
+import { useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "重置密码 · 女性友好体验测评" }] }),
@@ -11,6 +12,8 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function ResetPasswordPage() {
+  const { t } = useI18n();
+  usePageMeta("seo.reset.title");
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [hasRecovery, setHasRecovery] = useState(false);
@@ -38,22 +41,22 @@ function ResetPasswordPage() {
     e.preventDefault();
     setError(null);
     if (password.length < 8) {
-      setError("密码至少 8 位");
+      setError(t("reset.passwordMin"));
       return;
     }
     if (password !== confirm) {
-      setError("两次输入的密码不一致");
+      setError(t("reset.passwordMismatch"));
       return;
     }
     setPending(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast.success("密码已更新，请使用新密码登录");
+      toast.success(t("reset.updated"));
       await supabase.auth.signOut();
       navigate({ to: "/login", replace: true });
     } catch (err: any) {
-      setError(err?.message || "更新密码失败");
+      setError(err?.message || t("reset.updateFailed"));
     } finally {
       setPending(false);
     }
@@ -63,21 +66,21 @@ function ResetPasswordPage() {
     <SiteLayout>
       <div className="container-prose max-w-md py-20">
         <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-          Reset password
+          {t("reset.eyebrow")}
         </div>
-        <h1 className="mt-3 font-serif text-4xl">重置密码</h1>
+        <h1 className="mt-3 font-serif text-4xl">{t("reset.title")}</h1>
 
         {!ready ? (
-          <p className="mt-6 text-sm text-muted-foreground">加载中…</p>
+          <p className="mt-6 text-sm text-muted-foreground">{t("common.loading")}</p>
         ) : !hasRecovery ? (
           <div className="mt-6 space-y-3 text-sm text-muted-foreground">
-            <p>未检测到有效的密码重置链接。</p>
-            <p>请从邮件中重新打开重置链接，或返回登录页申请新的重置邮件。</p>
+            <p>{t("reset.invalidTitle")}</p>
+            <p>{t("reset.invalidBody")}</p>
             <button
               onClick={() => navigate({ to: "/login" })}
               className="border border-foreground px-4 py-2 text-sm text-foreground hover:bg-accent"
             >
-              返回登录
+              {t("reset.backLogin")}
             </button>
           </div>
         ) : (
@@ -90,7 +93,7 @@ function ResetPasswordPage() {
             <input
               type="password"
               required
-              placeholder="新密码（至少 8 位）"
+              placeholder={t("reset.newPassword")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
@@ -98,7 +101,7 @@ function ResetPasswordPage() {
             <input
               type="password"
               required
-              placeholder="再次输入新密码"
+              placeholder={t("reset.confirmPassword")}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
@@ -107,7 +110,7 @@ function ResetPasswordPage() {
               disabled={pending}
               className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50"
             >
-              {pending ? "处理中…" : "更新密码"}
+              {pending ? t("login.processing") : t("reset.update")}
             </button>
           </form>
         )}

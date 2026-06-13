@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { searchArchive, ARCHIVE_CATEGORIES } from "@/lib/api/archive.functions";
-import { FEMINIST_TAGS, OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
+import { FEMINIST_TAGS, bandOf } from "@/lib/temperature";
+import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/archive/")({
   head: () => ({
@@ -18,6 +19,8 @@ export const Route = createFileRoute("/archive/")({
 type Item = Awaited<ReturnType<typeof searchArchive>>["items"][number];
 
 function ArchivePage() {
+  const { t, objectType, tag, archiveCategory } = useI18n();
+  usePageMeta("seo.archive.title", "seo.archive.description");
   const search = useServerFn(searchArchive);
   const [q, setQ] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
@@ -66,22 +69,22 @@ function ArchivePage() {
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             Archive
           </div>
-          <h1 className="mt-3 font-serif text-4xl md:text-5xl">案例档案库</h1>
+          <h1 className="mt-3 font-serif text-4xl md:text-5xl">{t("archive.title")}</h1>
           <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-            所有通过审核的观察均沉淀为可检索的长期案例资产。共 {total.toLocaleString()} 条案例。
+            {t("archive.body", { total: total.toLocaleString() })}
           </p>
           <div className="mt-6 flex gap-3">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="搜索案例编号、关键词、对象名…"
+              placeholder={t("archive.searchPlaceholder")}
               className="flex-1 border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-foreground"
             />
             <Link
               to="/archive/evidence"
               className="border border-border px-4 py-2.5 text-sm hover:border-foreground"
             >
-              证据库（A 级）→
+              {t("archive.evidenceLink")}
             </Link>
           </div>
         </div>
@@ -89,32 +92,38 @@ function ArchivePage() {
 
       <section className="border-b border-border bg-card/40">
         <div className="container-prose space-y-4 py-6 text-xs">
-          <Row label="档案分类">
+          <Row label={t("archive.category")}>
             {ARCHIVE_CATEGORIES.map((c) => (
               <Chip
                 key={c}
                 active={categories.includes(c)}
                 onClick={() => toggle(categories, c, setCategories)}
               >
-                {c}
+                {archiveCategory(c)}
               </Chip>
             ))}
           </Row>
-          <Row label="对象类型">
-            {Object.entries(OBJECT_TYPE_LABELS).map(([k, v]) => (
-              <Chip key={k} active={types.includes(k)} onClick={() => toggle(types, k, setTypes)}>
-                {v}
+          <Row label={t("archive.objectType")}>
+            {["brand", "product", "service", "organization", "film", "game", "show", "event"].map(
+              (k) => (
+                <Chip key={k} active={types.includes(k)} onClick={() => toggle(types, k, setTypes)}>
+                  {objectType(k)}
+                </Chip>
+              ),
+            )}
+          </Row>
+          <Row label={t("archive.topicTag")}>
+            {FEMINIST_TAGS.map((tagName) => (
+              <Chip
+                key={tagName}
+                active={tags.includes(tagName)}
+                onClick={() => toggle(tags, tagName, setTags)}
+              >
+                #{tag(tagName)}
               </Chip>
             ))}
           </Row>
-          <Row label="议题标签">
-            {FEMINIST_TAGS.map((t) => (
-              <Chip key={t} active={tags.includes(t)} onClick={() => toggle(tags, t, setTags)}>
-                #{t}
-              </Chip>
-            ))}
-          </Row>
-          <Row label="证据等级">
+          <Row label={t("archive.evidenceLevel")}>
             {(["A", "B", "C", "D"] as const).map((e) => (
               <Chip
                 key={e}
@@ -125,7 +134,7 @@ function ArchivePage() {
               </Chip>
             ))}
           </Row>
-          <Row label={`温度区间 ${tempRange[0]}–${tempRange[1]}°C`}>
+          <Row label={t("archive.temperatureRange", { min: tempRange[0], max: tempRange[1] })}>
             <input
               type="range"
               min={20}
@@ -149,9 +158,13 @@ function ArchivePage() {
       <section className="py-10">
         <div className="container-prose">
           {loading && items.length === 0 ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">检索中…</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">
+              {t("archive.searching")}
+            </p>
           ) : items.length === 0 ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">无匹配案例。</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">
+              {t("archive.noMatch")}
+            </p>
           ) : (
             <ul className="divide-y divide-border border-y border-border">
               {items.map((it) => (
@@ -167,17 +180,17 @@ function ArchivePage() {
                 onClick={() => setPage(page - 1)}
                 className="border border-border px-3 py-1.5 disabled:opacity-30"
               >
-                上一页
+                {t("common.previous")}
               </button>
               <span className="text-muted-foreground">
-                第 {page} 页 / 约 {Math.ceil(total / 20)} 页
+                {t("common.pageCount", { page, total: Math.ceil(total / 20) })}
               </span>
               <button
                 disabled={items.length < 20}
                 onClick={() => setPage(page + 1)}
                 className="border border-border px-3 py-1.5 disabled:opacity-30"
               >
-                下一页
+                {t("common.next")}
               </button>
             </div>
           )}
@@ -217,6 +230,7 @@ function Chip({
 }
 
 function CaseRow({ item }: { item: Item }) {
+  const { language, t, objectType, tag, archiveCategory } = useI18n();
   const band = bandOf(item.object.temperature);
   return (
     <li className="py-5">
@@ -224,14 +238,14 @@ function CaseRow({ item }: { item: Item }) {
         <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
           <span className="font-mono text-foreground">{item.case_code}</span>
           <span>·</span>
-          <span>{item.archive_category}</span>
+          <span>{archiveCategory(item.archive_category)}</span>
           <span>·</span>
-          <span className="border border-border px-1.5">证据 {item.evidence_level}</span>
+          <span className="border border-border px-1.5">
+            {t("common.evidence")} {item.evidence_level}
+          </span>
           <span>·</span>
           <span className="text-foreground">{item.object.name}</span>
-          <span className="text-muted-foreground">
-            （{OBJECT_TYPE_LABELS[item.object.type] ?? item.object.type}）
-          </span>
+          <span className="text-muted-foreground">({objectType(item.object.type)})</span>
           <span
             className="ml-auto"
             style={{
@@ -242,15 +256,15 @@ function CaseRow({ item }: { item: Item }) {
           </span>
         </div>
         <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
-          {item.summary || "（无摘要）"}
+          {item.summary || t("common.noSummary")}
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           {item.tags.slice(0, 6).map((t) => (
             <span key={t} className="text-accent">
-              #{t}
+              #{tag(t)}
             </span>
           ))}
-          <span className="ml-auto">{new Date(item.created_at).toLocaleDateString("zh-CN")}</span>
+          <span className="ml-auto">{formatDateForLanguage(item.created_at, language)}</span>
         </div>
       </Link>
     </li>

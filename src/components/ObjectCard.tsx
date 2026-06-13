@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Thermometer } from "./Thermometer";
 import { FollowButton } from "./FollowButton";
-import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { formatRelativeDate, useI18n } from "@/lib/i18n";
 
 interface Props {
   id: string;
@@ -17,18 +17,6 @@ interface Props {
   showActions?: boolean;
 }
 
-function relTime(iso?: string | null) {
-  if (!iso) return null;
-  const t = new Date(iso).getTime();
-  const diff = Date.now() - t;
-  const d = Math.floor(diff / 86400000);
-  if (d <= 0) return "今天";
-  if (d === 1) return "昨天";
-  if (d < 30) return `${d} 天前`;
-  if (d < 365) return `${Math.floor(d / 30)} 个月前`;
-  return `${Math.floor(d / 365)} 年前`;
-}
-
 export function ObjectCard({
   id,
   name,
@@ -42,10 +30,11 @@ export function ObjectCard({
   updated_at,
   showActions = false,
 }: Props) {
+  const { language, t, objectType, tag } = useI18n();
   const tags = (top_tags ?? []).slice(0, 3);
   const heatTop = heat_sources?.[0];
   const coolTop = cooling_sources?.[0];
-  const updated = relTime(updated_at);
+  const updated = formatRelativeDate(updated_at, language);
   const heatLabel = heatTop?.label ?? heatTop?.title;
   const coolLabel = coolTop?.label ?? coolTop?.title;
 
@@ -54,13 +43,13 @@ export function ObjectCard({
       <Link
         to="/objects/$id"
         params={{ id }}
-        aria-label={`查看对象详情：${name}`}
+        aria-label={`${t("objects.viewDetail")}: ${name}`}
         className="flex items-start justify-between gap-6 p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <div className="pointer-events-none min-w-0 flex-1">
           <div>
             <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-              {OBJECT_TYPE_LABELS[type] ?? type}
+              {objectType(type)}
             </div>
             <h3 className="mt-2 font-serif text-2xl leading-tight text-balance group-hover:text-accent">
               {name}
@@ -76,7 +65,7 @@ export function ObjectCard({
                     key={t.tag}
                     className="border border-border px-2 py-0.5 text-[11px] text-muted-foreground"
                   >
-                    #{t.tag}
+                    #{tag(t.tag)}
                   </span>
                 ))}
               </div>
@@ -86,20 +75,28 @@ export function ObjectCard({
               <div className="mt-3 space-y-0.5 text-[11px] text-muted-foreground">
                 {heatLabel && (
                   <div>
-                    <span className="text-[var(--temp-hot,#c1440e)]">▲</span> 主要热源：{heatLabel}
+                    <span className="text-[var(--temp-hot,#c1440e)]">▲</span>{" "}
+                    {t("objects.mainHeat")}
+                    {heatLabel}
                   </div>
                 )}
                 {coolLabel && (
                   <div>
-                    <span className="text-[var(--temp-cool,#2563eb)]">▼</span> 主要降温：{coolLabel}
+                    <span className="text-[var(--temp-cool,#2563eb)]">▼</span>{" "}
+                    {t("objects.mainCooling")}
+                    {coolLabel}
                   </div>
                 )}
               </div>
             )}
 
             <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{observation_count} 条观察</span>
-              {updated && <span>· 更新于 {updated}</span>}
+              <span>{t("common.observationCount", { count: observation_count })}</span>
+              {updated && (
+                <span>
+                  · {t("common.updatedAt")} {updated}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -114,14 +111,14 @@ export function ObjectCard({
             params={{ id }}
             className="border border-foreground/60 px-3 py-1.5 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
           >
-            查看详情
+            {t("objects.viewDetail")}
           </Link>
           <Link
             to="/submit/$objectId"
             params={{ objectId: id }}
             className="border border-foreground bg-foreground px-3 py-1.5 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
           >
-            提交观察
+            {t("objects.submitObservation")}
           </Link>
           <FollowButton objectId={id} />
         </div>

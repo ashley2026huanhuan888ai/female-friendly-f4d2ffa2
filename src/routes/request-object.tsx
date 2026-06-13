@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { requestObject } from "@/lib/api/platform.functions";
-import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { toast } from "sonner";
+import { useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/request-object")({
   head: () => ({ meta: [{ title: "增加新测评对象 · 女性友好体验测评" }] }),
@@ -15,6 +15,8 @@ export const Route = createFileRoute("/request-object")({
 });
 
 function RequestPage() {
+  const { t, objectType } = useI18n();
+  usePageMeta("seo.request.title");
   const navigate = useNavigate();
   const submit = useServerFn(requestObject);
   const { ready, user } = useAuth();
@@ -24,8 +26,8 @@ function RequestPage() {
   if (ready && !user) {
     return (
       <LoginPrompt
-        title="登录后增加新测评对象"
-        body="登录后可以提交你希望被测评的品牌、产品、影视作品或服务。"
+        title={t("request.loginTitle")}
+        body={t("request.loginBody")}
         redirect="/request-object"
       />
     );
@@ -35,7 +37,7 @@ function RequestPage() {
     return (
       <SiteLayout>
         <div className="container-prose py-32 text-center text-muted-foreground">
-          同步登录状态中…
+          {t("common.syncingAuth")}
         </div>
       </SiteLayout>
     );
@@ -51,7 +53,7 @@ function RequestPage() {
           reason: form.reason || undefined,
         },
       });
-      toast.success("申请已提交。对象需管理员审核创建后才会出现在首页，可在「我的」页查看进度。");
+      toast.success(t("request.success"));
       navigate({ to: "/me" });
     } catch (err: any) {
       toast.error(err.message);
@@ -63,17 +65,15 @@ function RequestPage() {
   return (
     <SiteLayout>
       <div className="container-prose max-w-2xl py-16">
-        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">提交申请</div>
-        <h1 className="mt-3 font-serif text-4xl">增加新测评对象</h1>
-        <p className="mt-4 text-sm text-muted-foreground">
-          用户不能直接创建对象。请填写你希望加入观察的对象，
-          <strong className="text-foreground">由管理员审核后才会出现在平台首页和列表中</strong>
-          。审核通常需要 1–3 个工作日。
-        </p>
+        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          {t("request.eyebrow")}
+        </div>
+        <h1 className="mt-3 font-serif text-4xl">{t("request.title")}</h1>
+        <p className="mt-4 text-sm text-muted-foreground">{t("request.body")}</p>
 
         <form onSubmit={onSubmit} className="mt-10 space-y-6">
           <div>
-            <label className="block text-sm font-medium">对象名称 *</label>
+            <label className="block text-sm font-medium">{t("request.name")}</label>
             <input
               required
               maxLength={120}
@@ -83,21 +83,23 @@ function RequestPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium">对象类型 *</label>
+            <label className="block text-sm font-medium">{t("request.type")}</label>
             <select
               value={form.requested_type}
               onChange={(e) => setForm({ ...form, requested_type: e.target.value })}
               className="mt-2 w-full border border-border bg-card p-3 text-sm"
             >
-              {Object.entries(OBJECT_TYPE_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
+              {["brand", "product", "service", "organization", "film", "game", "show", "event"].map(
+                (k) => (
+                  <option key={k} value={k}>
+                    {objectType(k)}
+                  </option>
+                ),
+              )}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium">理由（可选）</label>
+            <label className="block text-sm font-medium">{t("request.reason")}</label>
             <textarea
               maxLength={500}
               rows={4}
@@ -110,7 +112,7 @@ function RequestPage() {
             disabled={pending}
             className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50"
           >
-            {pending ? "提交中…" : "提交申请"}
+            {pending ? t("request.submitting") : t("request.submit")}
           </button>
         </form>
       </div>

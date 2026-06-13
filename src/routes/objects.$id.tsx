@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -12,20 +12,11 @@ import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
 import { getPublicObjectDetail, getPublicObjectObservations } from "@/lib/api/platform.functions";
 import { FollowButton } from "@/components/FollowButton";
 import { ObjectComments } from "@/components/ObjectComments";
-import { OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
+import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/objects/$id")({
   component: ObjectDetail,
-  notFoundComponent: () => (
-    <SiteLayout>
-      <div className="container-prose py-32 text-center">
-        <h1 className="font-serif text-3xl">未找到该对象</h1>
-        <Link to="/objects" className="mt-4 inline-block text-sm underline">
-          返回全部对象
-        </Link>
-      </div>
-    </SiteLayout>
-  ),
+  notFoundComponent: ObjectNotFound,
   errorComponent: ({ error }) => (
     <SiteLayout>
       <div className="container-prose py-20">{error.message}</div>
@@ -33,7 +24,22 @@ export const Route = createFileRoute("/objects/$id")({
   ),
 });
 
+function ObjectNotFound() {
+  const { t } = useI18n();
+  return (
+    <SiteLayout>
+      <div className="container-prose py-32 text-center">
+        <h1 className="font-serif text-3xl">{t("objectDetail.notFound")}</h1>
+        <Link to="/objects" className="mt-4 inline-block text-sm underline">
+          {t("common.backToObjects")}
+        </Link>
+      </div>
+    </SiteLayout>
+  );
+}
+
 function ObjectDetail() {
+  const { language, t, objectType, tag } = useI18n();
   const { id } = Route.useParams();
   const [obj, setObj] = useState<any>(null);
   const [obs, setObs] = useState<any[]>([]);
@@ -88,7 +94,7 @@ function ObjectDetail() {
       });
       setObsTotal(next.total ?? obsTotal);
     } catch (error: any) {
-      toast.error(error?.message || "加载更多观察失败");
+      toast.error(error?.message || t("objectDetail.loadMore"));
     } finally {
       setLoadingMore(false);
     }
@@ -97,29 +103,28 @@ function ObjectDetail() {
   if (loading)
     return (
       <SiteLayout>
-        <div className="container-prose py-32 text-center text-muted-foreground">加载中…</div>
+        <div className="container-prose py-32 text-center text-muted-foreground">
+          {t("common.loading")}
+        </div>
       </SiteLayout>
     );
   if (!obj) {
     return (
       <SiteLayout>
         <div className="container-prose py-32 text-center">
-          <h1 className="font-serif text-3xl">未找到该对象</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            该对象可能尚未发布、已隐藏，或链接中的对象 ID 不正确。
-          </p>
+          <h1 className="font-serif text-3xl">{t("objectDetail.notFound")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("objectDetail.notFoundBody")}</p>
           <Link
             to="/objects"
             className="mt-6 inline-block border border-foreground bg-foreground px-5 py-2.5 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
           >
-            返回全部对象
+            {t("common.backToObjects")}
           </Link>
         </div>
       </SiteLayout>
     );
   }
 
-  const band = bandOf(obj.temperature);
   const topTags: { tag: string; count: number }[] = obj.top_tags ?? [];
 
   return (
@@ -128,7 +133,7 @@ function ObjectDetail() {
         <div className="container-prose grid gap-12 py-16 md:grid-cols-[1fr_auto] md:py-24">
           <div>
             <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              {OBJECT_TYPE_LABELS[obj.type] ?? obj.type}
+              {objectType(obj.type)}
             </div>
             <h1 className="mt-4 font-serif text-5xl text-balance md:text-6xl">{obj.name}</h1>
             {obj.description && (
@@ -137,22 +142,22 @@ function ObjectDetail() {
 
             <div className="mt-10">
               <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-                AI 总结
+                {t("objectDetail.aiSummary")}
               </div>
               <p className="mt-3 max-w-2xl text-base leading-relaxed">
-                {obj.ai_summary ?? "暂无足够观察生成总结。"}
+                {obj.ai_summary ?? t("objectDetail.noAISummary")}
               </p>
             </div>
 
             {topTags.length > 0 && (
               <div className="mt-10">
                 <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-                  主要争议标签
+                  {t("objectDetail.topTags")}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {topTags.map((t) => (
                     <span key={t.tag} className="border border-border px-3 py-1 text-xs">
-                      {t.tag} <span className="text-muted-foreground">· {t.count}</span>
+                      {tag(t.tag)} <span className="text-muted-foreground">· {t.count}</span>
                     </span>
                   ))}
                 </div>
@@ -165,7 +170,7 @@ function ObjectDetail() {
                 params={{ objectId: id }}
                 className="inline-block border border-foreground bg-foreground px-5 py-3 text-sm text-background hover:bg-accent hover:border-accent"
               >
-                提交观察 →
+                {t("objectDetail.submit")}
               </Link>
               <FollowButton objectId={id} />
             </div>
@@ -178,13 +183,13 @@ function ObjectDetail() {
               unmeasured={obj.observation_count === 0}
             />
             <div className="mt-4 text-right text-xs text-muted-foreground">
-              共 {obj.observation_count} 条已审核观察
+              {t("objectDetail.reviewedCount", { count: obj.observation_count })}
             </div>
             <button
               onClick={() => setShowExpl((v) => !v)}
               className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
-              {showExpl ? "收起" : "为什么是这个温度？"}
+              {showExpl ? t("objectDetail.collapse") : t("objectDetail.why")}
             </button>
           </div>
         </div>
@@ -197,7 +202,7 @@ function ObjectDetail() {
             <HeatSources heat={obj.heat_sources ?? []} cooling={obj.cooling_sources ?? []} />
             <div>
               <h3 className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                温度变化时间线
+                {t("objectDetail.timeline")}
               </h3>
               <div className="mt-4">
                 <TemperatureTimeline objectId={id} limit={30} />
@@ -209,7 +214,7 @@ function ObjectDetail() {
 
       <section className="py-16">
         <div className="container-prose">
-          <h2 className="font-serif text-2xl">案例时间线</h2>
+          <h2 className="font-serif text-2xl">{t("objectDetail.caseTimeline")}</h2>
           <div className="mt-6">
             <ObjectTimeline objectId={id} />
           </div>
@@ -220,9 +225,9 @@ function ObjectDetail() {
         <div className="container-prose">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="font-serif text-2xl">全部已审核观察</h2>
+              <h2 className="font-serif text-2xl">{t("objectDetail.allReviewed")}</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                当前展示 {obs.length} / {obsTotal} 条已审核观察。
+                {t("objectDetail.showing", { shown: obs.length, total: obsTotal })}
               </p>
             </div>
             <Link
@@ -230,28 +235,26 @@ function ObjectDetail() {
               params={{ objectId: id }}
               className="border border-foreground/60 px-3 py-1.5 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
             >
-              添加观察
+              {t("objectDetail.addObservation")}
             </Link>
           </div>
           {obs.length === 0 ? (
-            <p className="mt-8 text-sm text-muted-foreground">尚无已审核的观察记录。</p>
+            <p className="mt-8 text-sm text-muted-foreground">{t("objectDetail.noReviewed")}</p>
           ) : (
             <div className="mt-8 divide-y divide-border border-t border-border">
               {obs.map((o) => (
                 <article key={o.id} className="py-6">
                   <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
                     <span className="border border-border px-1.5 py-0.5">
-                      证据 {o.evidence_level}
+                      {t("common.evidence")} {o.evidence_level}
                     </span>
                     {(o.tags as string[])?.map((t) => (
                       <span key={t} className="text-accent">
-                        #{t}
+                        #{tag(t)}
                       </span>
                     ))}
                     {o.scene && <span>· {o.scene}</span>}
-                    <span className="ml-auto">
-                      {new Date(o.created_at).toLocaleDateString("zh-CN")}
-                    </span>
+                    <span className="ml-auto">{formatDateForLanguage(o.created_at, language)}</span>
                   </div>
                   {o.summary && (
                     <p className="mt-3 text-sm font-medium leading-relaxed">{o.summary}</p>
@@ -268,7 +271,7 @@ function ObjectDetail() {
                           rel="noreferrer"
                           className="underline-offset-4 hover:underline"
                         >
-                          来源链接
+                          {t("objectDetail.sourceLink")}
                         </a>
                       )}
                       {o.screenshot_url && (
@@ -278,7 +281,7 @@ function ObjectDetail() {
                           rel="noreferrer"
                           className="underline-offset-4 hover:underline"
                         >
-                          截图证据
+                          {t("objectDetail.screenshotEvidence")}
                         </a>
                       )}
                     </div>
@@ -294,7 +297,7 @@ function ObjectDetail() {
                 disabled={loadingMore}
                 className="border border-foreground/60 px-5 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground disabled:opacity-50"
               >
-                {loadingMore ? "加载中…" : "加载更多观察"}
+                {loadingMore ? t("common.loading") : t("objectDetail.loadMore")}
               </button>
             </div>
           )}

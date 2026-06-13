@@ -10,6 +10,7 @@ import {
   type KTag,
   type KCase,
 } from "@/lib/api/knowledge.functions";
+import { useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/knowledge")({
   head: () => ({
@@ -25,6 +26,8 @@ export const Route = createFileRoute("/knowledge")({
 });
 
 function KnowledgePage() {
+  const { language, t, polarity } = useI18n();
+  usePageMeta("seo.knowledge.title", "seo.knowledge.description");
   const pFn = useServerFn(listPrinciples);
   const tFn = useServerFn(listTags);
   const cFn = useServerFn(listCases);
@@ -48,19 +51,16 @@ function KnowledgePage() {
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
             Knowledge Engine
           </p>
-          <h1 className="mt-3 font-serif text-4xl">女性友好测评 · 知识引擎</h1>
+          <h1 className="mt-3 font-serif text-4xl">{t("knowledge.title")}</h1>
           <p className="mt-4 max-w-2xl text-sm text-muted-foreground leading-relaxed">
-            平台的核心资产。三层结构：<strong className="text-foreground">原则</strong>（价值底层）
-            →<strong className="text-foreground"> 标签</strong>（议题识别） →
-            <strong className="text-foreground"> 案例</strong>（可引用证据）。 所有 AI
-            分析都必须可解释、可追溯、可复核。
+            {t("knowledge.body")}
           </p>
         </header>
 
         {/* Principles */}
         <section className="mt-14">
-          <h2 className="font-serif text-2xl">原则 · Principles</h2>
-          <p className="mt-1 text-sm text-muted-foreground">系统预设的女性友好评估原则。</p>
+          <h2 className="font-serif text-2xl">{t("knowledge.principles")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("knowledge.principlesHint")}</p>
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             {principles.map((p) => (
               <div key={p.id} className="border border-border p-5">
@@ -78,13 +78,16 @@ function KnowledgePage() {
 
         {/* Tags */}
         <section className="mt-14">
-          <h2 className="font-serif text-2xl">一级标签 · Tags</h2>
-          <p className="mt-1 text-sm text-muted-foreground">AI 仅可从下列标签中识别议题。</p>
+          <h2 className="font-serif text-2xl">{t("knowledge.tags")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("knowledge.tagsHint")}</p>
           <div className="mt-6 flex flex-wrap gap-2">
             {tags.map((t) => (
               <span key={t.id} className="border border-border px-3 py-1.5 text-sm">
-                {t.name_zh}
-                {t.name_en && (
+                {language === "en" && t.name_en ? t.name_en : t.name_zh}
+                {language === "en" && t.name_en && (
+                  <span className="ml-2 text-xs text-muted-foreground">{t.name_zh}</span>
+                )}
+                {language === "zh" && t.name_en && (
                   <span className="ml-2 text-xs text-muted-foreground">{t.name_en}</span>
                 )}
                 <span className="ml-2 text-[10px] text-muted-foreground">w{t.weight}</span>
@@ -96,7 +99,7 @@ function KnowledgePage() {
         {/* Cases */}
         <section className="mt-14">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <h2 className="font-serif text-2xl">案例库 · Case Library</h2>
+            <h2 className="font-serif text-2xl">{t("knowledge.cases")}</h2>
             <div className="flex gap-1 text-sm">
               {(["all", "positive", "negative", "controversial"] as const).map((k) => (
                 <button
@@ -104,7 +107,14 @@ function KnowledgePage() {
                   onClick={() => setFilter(k)}
                   className={`px-3 py-1 border ${filter === k ? "border-foreground bg-foreground text-background" : "border-border"}`}
                 >
-                  {{ all: "全部", positive: "正向", negative: "负向", controversial: "争议" }[k]}
+                  {
+                    {
+                      all: t("knowledge.filterAll"),
+                      positive: t("knowledge.filterPositive"),
+                      negative: t("knowledge.filterNegative"),
+                      controversial: t("knowledge.filterControversial"),
+                    }[k]
+                  }
                 </button>
               ))}
             </div>
@@ -117,7 +127,7 @@ function KnowledgePage() {
                   <span
                     className={`px-2 py-0.5 border ${c.polarity === "positive" ? "border-emerald-500 text-emerald-700" : c.polarity === "negative" ? "border-destructive text-destructive" : "border-amber-500 text-amber-700"}`}
                   >
-                    {{ positive: "正向", negative: "负向", controversial: "争议" }[c.polarity]}
+                    {polarity(c.polarity)}
                   </span>
                   {c.featured && <span className="text-amber-600">★</span>}
                 </div>
@@ -144,21 +154,21 @@ function KnowledgePage() {
                     rel="noreferrer"
                     className="mt-3 inline-block text-xs underline text-muted-foreground"
                   >
-                    来源 →
+                    {t("knowledge.source")}
                   </a>
                 )}
               </article>
             ))}
             {filteredCases.length === 0 && (
-              <p className="text-sm text-muted-foreground">暂无案例</p>
+              <p className="text-sm text-muted-foreground">{t("knowledge.emptyCases")}</p>
             )}
           </div>
         </section>
 
         <p className="mt-16 border-t border-border pt-6 text-xs text-muted-foreground">
-          知识引擎仅由管理员维护，不接受社区投票，以防止情绪污染。
+          {t("knowledge.footer")}
           <Link to="/about" className="ml-2 underline">
-            了解平台原则
+            {t("knowledge.learn")}
           </Link>
         </p>
       </div>

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { bandOf, OBJECT_TYPE_LABELS } from "@/lib/temperature";
+import { bandOf } from "@/lib/temperature";
+import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 interface Event {
   id: string;
@@ -12,20 +13,14 @@ interface Event {
   object: { id: string; name: string; type: string; temperature: number } | null;
 }
 
-const REASON_LABEL: Record<string, string> = {
-  approve_observation: "新增已审核观察",
-  reject_observation: "观察被驳回",
-  manual_admin: "管理员调整",
-  cooling_cycle: "自然降温周期",
-  positive_case: "新增正向案例",
-};
-
 export function FeedEventCard({ ev }: { ev: Event }) {
+  const { language, t, objectType, band: bandLabel } = useI18n();
   if (!ev.object) return null;
   const heating = ev.delta > 0;
   const band = bandOf(ev.temperature_after);
-  const reasonText = REASON_LABEL[ev.reason] ?? ev.reason;
-  const date = new Date(ev.created_at).toLocaleString("zh-CN", {
+  const reasonKey = `feed.reason.${ev.reason}` as Parameters<typeof t>[0];
+  const reasonText = t(reasonKey) === reasonKey ? ev.reason : t(reasonKey);
+  const date = formatDateForLanguage(ev.created_at, language, {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -36,13 +31,13 @@ export function FeedEventCard({ ev }: { ev: Event }) {
     <Link
       to="/objects/$id"
       params={{ id: ev.object.id }}
-      aria-label={`查看对象详情：${ev.object.name}`}
+      aria-label={`${t("objects.viewDetail")}: ${ev.object.name}`}
       className="block cursor-pointer border border-border bg-card p-5 transition-all hover:border-foreground/40 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-            <span>{OBJECT_TYPE_LABELS[ev.object.type] ?? ev.object.type}</span>
+            <span>{objectType(ev.object.type)}</span>
             <span>·</span>
             <span>{date}</span>
           </div>
@@ -63,13 +58,14 @@ export function FeedEventCard({ ev }: { ev: Event }) {
             </span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            原因：<span className="text-foreground">{reasonText}</span>
+            {t("feed.reason")}
+            <span className="text-foreground">{reasonText}</span>
           </p>
         </div>
         <span
           className="mt-1 inline-block h-2.5 w-10 rounded-full"
           style={{ background: band.color }}
-          title={band.label}
+          title={bandLabel(band.band, band.label)}
         />
       </div>
     </Link>

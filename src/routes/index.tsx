@@ -4,8 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
 import { Thermometer } from "@/components/Thermometer";
-import { BANDS, OBJECT_TYPE_LABELS } from "@/lib/temperature";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
+import { useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,6 +23,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { t, objectType, band: bandLabel } = useI18n();
+  usePageMeta("seo.home.title", "seo.home.description");
   const [q, setQ] = useState("");
   const [summary, setSummary] = useState<any>(null);
   const fetchSummary = useServerFn(getHomeSummary);
@@ -53,11 +55,13 @@ function Index() {
               Observatory · Est. 2026
             </div>
             <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-balance md:text-7xl">
-              持续观察<span className="text-accent">女性友好体验</span>的变化。
+              {t("home.hero.title.before")}
+              <span className="text-accent">{t("home.hero.title.accent")}</span>
+              {t("home.hero.title.after")}
             </h1>
             <p className="mt-8 max-w-2xl text-base text-muted-foreground">
-              这里不是评分网站，是观察平台。我们记录每一次女性友好温度变化的来源——案例、证据、议题。
-              <strong className="text-foreground">不做事实认定，不做道德审判。</strong>
+              {t("home.hero.body")}
+              <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
             </p>
             <form
               onSubmit={(e) => {
@@ -69,11 +73,11 @@ function Index() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="搜索品牌、影视、组织、事件…"
+                placeholder={t("home.search.placeholder")}
                 className="flex-1 bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
               />
               <button className="bg-foreground px-5 py-3 text-sm text-background hover:bg-accent">
-                查询
+                {t("home.search.button")}
               </button>
             </form>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -81,30 +85,32 @@ function Index() {
                 to="/objects"
                 className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
               >
-                浏览测评对象
+                {t("home.cta.browse")}
               </Link>
               <Link
                 to="/feed"
                 className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
               >
-                查看观察流
+                {t("home.cta.feed")}
               </Link>
               <Link
                 to="/request-object"
                 className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
               >
-                增加新测评对象
+                {t("home.cta.request")}
               </Link>
             </div>
           </div>
 
           <div className="border border-border bg-card p-6">
             <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              观察
+              {t("home.stats.title")}
             </div>
             <div className="mt-4 font-serif text-4xl tabular-nums">
               {summary?.total_objects ?? "—"}
-              <span className="ml-2 text-sm text-muted-foreground">个对象</span>
+              <span className="ml-2 text-sm text-muted-foreground">
+                {t("common.objectCount", { count: "" }).trim()}
+              </span>
             </div>
             <div className="mt-6 space-y-3 text-xs">
               {(summary?.band_counts ?? []).map((b: any) => (
@@ -114,9 +120,9 @@ function Index() {
                     style={{ background: b.color }}
                   />
                   <span className="font-mono tabular-nums text-muted-foreground">{b.range}</span>
-                  <span>{b.label}</span>
+                  <span>{bandLabel(b.band, b.label)}</span>
                   <span className="ml-auto font-mono tabular-nums text-muted-foreground">
-                    {b.count}个对象
+                    {t("common.objectCount", { count: b.count })}
                   </span>
                 </div>
               ))}
@@ -129,12 +135,12 @@ function Index() {
       <section className="border-b border-border py-16">
         <div className="container-prose">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-serif text-3xl">最新更新的测评对象</h2>
+            <h2 className="font-serif text-3xl">{t("home.newObjects")}</h2>
             <Link
               to="/objects"
               className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
             >
-              查看全部 →
+              {t("common.viewAll")}
             </Link>
           </div>
           {summary?.newest_objects?.length ? (
@@ -154,19 +160,19 @@ function Index() {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        {OBJECT_TYPE_LABELS[o.type] ?? o.type}
+                        {objectType(o.type)}
                       </div>
                       <div className="truncate font-serif">{o.name}</div>
                     </div>
                     <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                      {o.observation_count ?? 0} 观察
+                      {t("common.observationCount", { count: o.observation_count ?? 0 })}
                     </span>
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-6 text-sm text-muted-foreground">暂无对象。</p>
+            <p className="mt-6 text-sm text-muted-foreground">{t("common.noObjects")}</p>
           )}
         </div>
       </section>
@@ -175,14 +181,14 @@ function Index() {
       <section className="border-b border-border py-16">
         <div className="container-prose grid gap-10 md:grid-cols-2">
           <ColumnList
-            title="近期升温对象"
-            hint="过去 7 天累计升温最多"
+            title={t("home.heating")}
+            hint={t("home.heatingHint")}
             items={summary?.heating ?? []}
             positive
           />
           <ColumnList
-            title="近期降温对象"
-            hint="过去 7 天累计降温最多"
+            title={t("home.cooling")}
+            hint={t("home.coolingHint")}
             items={summary?.cooling ?? []}
           />
         </div>
@@ -192,17 +198,17 @@ function Index() {
       <section className="border-b border-border py-16">
         <div className="container-prose">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-serif text-3xl">最新观察事件</h2>
+            <h2 className="font-serif text-3xl">{t("home.latestEvents")}</h2>
             <Link
               to="/feed"
               className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
             >
-              查看全部 →
+              {t("common.viewAll")}
             </Link>
           </div>
           {!summary?.today_events?.length ? (
             <p className="mt-10 border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-              过去 24 小时暂无温度变化。
+              {t("home.noEvents24h")}
             </p>
           ) : (
             <div className="mt-8 grid gap-3 md:grid-cols-2">
@@ -217,8 +223,8 @@ function Index() {
       {/* 最新 AI 观察 */}
       <section className="border-b border-border py-16">
         <div className="container-prose">
-          <h2 className="font-serif text-2xl">最新 AI 观察</h2>
-          <p className="text-xs text-muted-foreground">AI 引擎对最新通过观察的结构化摘要。</p>
+          <h2 className="font-serif text-2xl">{t("home.latestAI")}</h2>
+          <p className="text-xs text-muted-foreground">{t("home.latestAIHint")}</p>
           {summary?.latest_observations?.length ? (
             <ul className="mt-6 grid gap-4 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0">
               {summary.latest_observations.slice(0, 6).map((o: any) => (
@@ -235,14 +241,14 @@ function Index() {
                     ) : (
                       "—"
                     )}{" "}
-                    · 证据 {o.evidence_level ?? "—"}
+                    · {t("common.evidence")} {o.evidence_level ?? "—"}
                   </div>
-                  <p className="mt-1 text-sm">{o.summary ?? "（无摘要）"}</p>
+                  <p className="mt-1 text-sm">{o.summary ?? t("common.noSummary")}</p>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-6 text-sm text-muted-foreground">暂无观察。</p>
+            <p className="mt-6 text-sm text-muted-foreground">{t("common.noObservations")}</p>
           )}
         </div>
       </section>
@@ -251,27 +257,23 @@ function Index() {
       <section className="border-b border-border bg-card/40 py-16">
         <div className="container-prose grid gap-6 md:grid-cols-2">
           <div className="border border-border bg-paper p-6">
-            <h3 className="font-serif text-xl">提交一次观察</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              看到值得记录的现象？在对象页提交一条观察，AI 会清洗内容并参与温度计算。
-            </p>
+            <h3 className="font-serif text-xl">{t("home.submitCardTitle")}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t("home.submitCardBody")}</p>
             <Link
               to="/objects"
               className="mt-4 inline-block border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
             >
-              选择对象 →
+              {t("home.selectObject")}
             </Link>
           </div>
           <div className="border border-border bg-paper p-6">
-            <h3 className="font-serif text-xl">增加新测评对象</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              没找到你关心的品牌、影视或组织？提交申请，由管理员审核后纳入观察。
-            </p>
+            <h3 className="font-serif text-xl">{t("home.requestCardTitle")}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t("home.requestCardBody")}</p>
             <Link
               to="/request-object"
               className="mt-4 inline-block border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
             >
-              增加新测评对象 →
+              {t("home.requestObject")}
             </Link>
           </div>
         </div>
@@ -281,37 +283,39 @@ function Index() {
       <section className="py-12">
         <div className="container-prose">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            研究区 · Secondary
+            {t("home.researchEyebrow")}
           </div>
-          <h2 className="mt-2 font-serif text-xl text-muted-foreground">知识库与案例档案</h2>
-          <p className="mt-2 max-w-2xl text-xs text-muted-foreground">
-            知识库用于解释平台如何理解女性友好与性别偏见。新用户可以先从对象测评和观察提交开始。
-          </p>
+          <h2 className="mt-2 font-serif text-xl text-muted-foreground">
+            {t("home.researchTitle")}
+          </h2>
+          <p className="mt-2 max-w-2xl text-xs text-muted-foreground">{t("home.researchBody")}</p>
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             <Link
               to="/knowledge"
               className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
             >
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                知识引擎
+                {t("home.knowledgeTitle")}
               </div>
-              <div className="mt-1 font-serif">原则与方法论</div>
+              <div className="mt-1 font-serif">{t("home.knowledgeBody")}</div>
             </Link>
             <Link
               to="/archive"
               className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
             >
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                案例库
+                {t("home.archiveTitle")}
               </div>
-              <div className="mt-1 font-serif">沉淀过的典型案例</div>
+              <div className="mt-1 font-serif">{t("home.archiveBody")}</div>
             </Link>
             <Link
               to="/topics"
               className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
             >
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">议题</div>
-              <div className="mt-1 font-serif">热议中的女性体验话题</div>
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                {t("home.topicsTitle")}
+              </div>
+              <div className="mt-1 font-serif">{t("home.topicsBody")}</div>
             </Link>
           </div>
           {summary?.latest_cases?.length ? (
@@ -347,12 +351,13 @@ function ColumnList({
   items: any[];
   positive?: boolean;
 }) {
+  const { t, objectType } = useI18n();
   return (
     <div>
       <h2 className="font-serif text-2xl">{title}</h2>
       <p className="text-xs text-muted-foreground">{hint}</p>
       {items.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">本周无变化。</p>
+        <p className="mt-6 text-sm text-muted-foreground">{t("home.noWeeklyChange")}</p>
       ) : (
         <ul className="mt-6 divide-y divide-border border-y border-border">
           {items.map((o) => (
@@ -365,7 +370,7 @@ function ColumnList({
                 <Thermometer value={o.temperature} size="sm" showLabel={false} />
                 <div className="min-w-0 flex-1">
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {OBJECT_TYPE_LABELS[o.type] ?? o.type}
+                    {objectType(o.type)}
                   </div>
                   <div className="truncate font-serif">{o.name}</div>
                 </div>
