@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
+import { listRecentObjectComments } from "@/lib/api/comment.functions";
 import { OBJECT_TYPE_LABELS } from "@/lib/temperature";
 
 export const Route = createFileRoute("/discussions")({
@@ -12,24 +13,20 @@ export const Route = createFileRoute("/discussions")({
 
 function Discussions() {
   const [items, setItems] = useState<any[]>([]);
+  const fetchComments = useServerFn(listRecentObjectComments);
 
   useEffect(() => {
-    supabase
-      .from("observations_public" as never)
-      .select(
-        "id, cleaned_content, content, tags, evidence_level, created_at, object_id, objects(id, name, type, temperature)",
-      )
-      .order("created_at", { ascending: false })
-      .limit(30)
-      .then(({ data }) => setItems((data as any[] | null) ?? []));
-  }, []);
+    fetchComments({ data: { limit: 30 } })
+      .then((data) => setItems((data as any[] | null) ?? []))
+      .catch(() => setItems([]));
+  }, [fetchComments]);
 
   return (
     <SiteLayout>
       <section className="border-b border-border">
         <div className="container-prose py-16">
           <h1 className="font-serif text-4xl">热门讨论</h1>
-          <p className="mt-3 text-sm text-muted-foreground">最近被审核通过的观察记录。</p>
+          <p className="mt-3 text-sm text-muted-foreground">最近公开的对象留言。</p>
         </div>
       </section>
 
@@ -54,16 +51,10 @@ function Discussions() {
                       <h3 className="mt-2 font-serif text-2xl group-hover:text-accent">
                         {o.objects.name}
                       </h3>
-                      <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">
-                        {o.cleaned_content || o.content}
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-wider text-accent">
-                        <span className="border border-border px-1.5 py-0.5 text-muted-foreground">
-                          证据 {o.evidence_level}
-                        </span>
-                        {(o.tags as string[])?.map((t) => (
-                          <span key={t}>#{t}</span>
-                        ))}
+                      <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{o.body}</p>
+                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <span>{o.author_label}</span>
+                        {o.helpful_count > 0 && <span>有帮助 {o.helpful_count}</span>}
                       </div>
                     </div>
                     <Thermometer value={o.objects.temperature} size="sm" />

@@ -11,6 +11,7 @@ import { TemperatureTimeline } from "@/components/TemperatureTimeline";
 import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
 import { getPublicObjectDetail, getPublicObjectObservations } from "@/lib/api/platform.functions";
 import { FollowButton } from "@/components/FollowButton";
+import { ObjectComments } from "@/components/ObjectComments";
 import { OBJECT_TYPE_LABELS, bandOf } from "@/lib/temperature";
 
 export const Route = createFileRoute("/objects/$id")({
@@ -299,6 +300,8 @@ function ObjectDetail() {
           )}
         </div>
       </section>
+
+      <ObjectComments objectId={id} />
     </SiteLayout>
   );
 }

@@ -2196,7 +2196,7 @@ export const adminGetOverviewCounts = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .eq("role", "admin");
     if (!roles?.length) throw new Error("forbidden");
-    const [o, p, r] = await Promise.all([
+    const [o, p, r, c] = await Promise.all([
       supabaseAdmin.from("objects").select("*", { count: "exact", head: true }),
       supabaseAdmin
         .from("observations")
@@ -2206,8 +2206,17 @@ export const adminGetOverviewCounts = createServerFn({ method: "GET" })
         .from("object_requests")
         .select("*", { count: "exact", head: true })
         .eq("status", "pending"),
+      supabaseAdmin
+        .from("object_comments" as never)
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
     ]);
-    return { objects: o.count ?? 0, pendingObs: p.count ?? 0, pendingReq: r.count ?? 0 };
+    return {
+      objects: o.count ?? 0,
+      pendingObs: p.count ?? 0,
+      pendingReq: r.count ?? 0,
+      pendingComments: c.count ?? 0,
+    };
   });
 
 // 暴露权重元数据给前端
