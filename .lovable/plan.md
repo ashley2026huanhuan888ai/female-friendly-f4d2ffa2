@@ -1,18 +1,12 @@
 ## 目标
-未注册用户在首页能看到「最新更新的 5 条测评对象」。
+将「全部对象」页面（`/objects`）的默认排序从「温度从高到低」改为「最近更新」。
 
-## 现状
-首页 `/`（`src/routes/index.tsx`）已经有"新加入测评对象"区块，向所有访客（含未登录）展示，数据来自公共 server fn `getHomeSummary`（`supabaseAdmin` 读取，不需要登录）。当前限制是 8 条。
-
-## 改动
-
-### `src/lib/api/observation-center.functions.ts`
-- `newestObjs` 查询的 `.limit(8)` 改为 `.limit(5)`。
-
-### `src/routes/index.tsx`
-- 区块标题从「新加入测评对象」改为「最新更新的测评对象」，更贴合"更新"语义。
-- 其他逻辑不变（仍按 `created_at desc`，未登录可见）。
+## 改动范围
+- **`src/routes/objects.index.tsx`**
+  - 修改第 42 行 `useState<"temp" | "recent">("temp")` 为 `useState<"temp" | "recent">("recent")`。
+  - 其他逻辑、筛选器、UI 文案均不改动。
 
 ## 不改动
-- 不新增表/字段/RLS。
-- 其他首页区块、其它页面不动。
+- 不改动 `src/lib/api/platform.functions.ts` 中的 `getPublicObjects` 排序逻辑（该函数已支持 `recent` 参数）。
+- 不改动页面上的下拉选项顺序或标签文案。
+- 不改动任何其他页面或组件。

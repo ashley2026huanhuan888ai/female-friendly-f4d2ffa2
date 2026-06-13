@@ -32,7 +32,7 @@ function AllObjects() {
   const [qInput, setQInput] = useState(initialQ || pendingQ || "");
   const [q, setQ] = useState(initialQ || pendingQ || "");
   const [type, setType] = useState<string>("");
-  const [sort, setSort] = useState<"temp" | "recent">("temp");
+  const [sort, setSort] = useState<"temp" | "recent">("recent");
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [requesting, setRequesting] = useState(false);
