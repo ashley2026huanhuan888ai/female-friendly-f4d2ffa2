@@ -93,12 +93,6 @@ function Index() {
               >
                 {t("home.cta.feed")}
               </Link>
-              <Link
-                to="/request-object"
-                className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
-              >
-                {t("home.cta.request")}
-              </Link>
             </div>
           </div>
 
