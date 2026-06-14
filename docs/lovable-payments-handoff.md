@@ -31,6 +31,7 @@ Hard constraints:
    - data-lovable-payment-plan="pro"
    - data-lovable-payment-plan="one-time"
    - data-lovable-customer-portal
-7. Only replace the placeholder click handlers with Lovable Payments checkout / customer portal calls.
-8. After finishing, list every file changed.
+7. Configure the one-time support plan as CNY 5.99.
+8. Only replace the placeholder click handlers with Lovable Payments checkout / customer portal calls.
+9. After finishing, list every file changed.
 ```
