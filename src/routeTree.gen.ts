@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TopicsRouteImport } from './routes/topics'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as MeRouteImport } from './routes/me'
@@ -44,6 +45,11 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 const TopicsRoute = TopicsRouteImport.update({
   id: '/topics',
   path: '/topics',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -275,6 +283,7 @@ export interface FileRoutesById {
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/request-object'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/request-object'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/request-object'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   MeRoute: typeof MeRoute
   RequestObjectRoute: typeof RequestObjectRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TopicsRoute: typeof TopicsRouteWithChildren
   ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
   ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
@@ -425,6 +438,13 @@ declare module '@tanstack/react-router' {
       path: '/topics'
       fullPath: '/topics'
       preLoaderRoute: typeof TopicsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -695,6 +715,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeRoute: MeRoute,
   RequestObjectRoute: RequestObjectRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TopicsRoute: TopicsRouteWithChildren,
   ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
   ArchiveEvidenceRoute: ArchiveEvidenceRoute,
