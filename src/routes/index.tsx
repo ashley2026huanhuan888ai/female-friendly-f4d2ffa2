@@ -294,15 +294,6 @@ function Index() {
               <div className="mt-1 font-serif">{t("home.knowledgeBody")}</div>
             </Link>
             <Link
-              to="/archive"
-              className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
-            >
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                {t("home.archiveTitle")}
-              </div>
-              <div className="mt-1 font-serif">{t("home.archiveBody")}</div>
-            </Link>
-            <Link
               to="/topics"
               className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
             >
