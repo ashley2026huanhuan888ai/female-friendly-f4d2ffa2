@@ -10,12 +10,10 @@ import { useI18n } from "@/lib/i18n";
 const PRIMARY_NAV = [
   { to: "/objects", labelKey: "nav.objects" },
   { to: "/feed", labelKey: "nav.feed" },
-  { to: "/request-object", labelKey: "nav.requestObject" },
 ] as const;
 
 const SECONDARY_NAV = [
   { to: "/topics", labelKey: "nav.topics" },
-  { to: "/archive", labelKey: "nav.archive" },
   { to: "/archive/evidence", labelKey: "nav.evidence" },
   { to: "/knowledge", labelKey: "nav.knowledge" },
   { to: "/about", labelKey: "nav.about" },

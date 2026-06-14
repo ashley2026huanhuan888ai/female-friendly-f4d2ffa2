@@ -249,7 +249,7 @@ function Index() {
 
       {/* 提交 / 申请 CTA */}
       <section className="border-b border-border bg-card/40 py-16">
-        <div className="container-prose grid gap-6 md:grid-cols-2">
+        <div className="container-prose">
           <div className="border border-border bg-paper p-6">
             <h3 className="font-serif text-xl">{t("home.submitCardTitle")}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{t("home.submitCardBody")}</p>
@@ -258,16 +258,6 @@ function Index() {
               className="mt-4 inline-block border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
             >
               {t("home.selectObject")}
-            </Link>
-          </div>
-          <div className="border border-border bg-paper p-6">
-            <h3 className="font-serif text-xl">{t("home.requestCardTitle")}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{t("home.requestCardBody")}</p>
-            <Link
-              to="/request-object"
-              className="mt-4 inline-block border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
-            >
-              {t("home.requestObject")}
             </Link>
           </div>
         </div>
@@ -283,7 +273,7 @@ function Index() {
             {t("home.researchTitle")}
           </h2>
           <p className="mt-2 max-w-2xl text-xs text-muted-foreground">{t("home.researchBody")}</p>
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
             <Link
               to="/knowledge"
               className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
