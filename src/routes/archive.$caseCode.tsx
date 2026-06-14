@@ -7,6 +7,47 @@ import { getCaseDetail } from "@/lib/api/archive.functions";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/archive/$caseCode")({
+  loader: async ({ params }) => {
+    return getCaseDetail({ data: { code: params.caseCode } });
+  },
+  head: ({ loaderData, params }) => {
+    const c = (loaderData as any)?.case;
+    const o = (loaderData as any)?.object;
+    const title = c?.summary ? `${c.summary} · 案例详情` : "案例详情 · 女性友好体验测评";
+    const description = c?.summary
+      ? `${c.summary} — 关于 ${o?.name || "该对象"} 的女性友好观察。`
+      : "查看女性友好体验测评案例详情。";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "article" },
+      ],
+      links: [{ rel: "canonical", href: `/archive/${params.caseCode}` }],
+    };
+  },
+  errorComponent: ({ error }) => (
+    <SiteLayout>
+      <div className="container-prose py-32 text-center">
+        <h1 className="font-serif text-3xl">{(error as Error).message}</h1>
+        <Link to="/archive" className="mt-4 inline-block text-sm underline">
+          返回案例库
+        </Link>
+      </div>
+    </SiteLayout>
+  ),
+  notFoundComponent: () => (
+    <SiteLayout>
+      <div className="container-prose py-32 text-center">
+        <h1 className="font-serif text-3xl">案例未找到</h1>
+        <Link to="/archive" className="mt-4 inline-block text-sm underline">
+          返回案例库
+        </Link>
+      </div>
+    </SiteLayout>
+  ),
   component: CaseDetail,
 });
 
