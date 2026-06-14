@@ -9,7 +9,7 @@ import { useI18n, usePageMeta } from "@/lib/i18n";
 export const Route = createFileRoute("/feed")({
   head: () => ({
     meta: [
-      { title: "观察流 · 女性友好体验测评" },
+      { title: "温度变化 · 女性友好体验测评" },
       { name: "description", content: "每一次温度变化的来源——升温、降温、新增案例。" },
     ],
   }),
