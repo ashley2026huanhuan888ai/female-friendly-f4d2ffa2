@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TopicsRouteImport } from './routes/topics'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestObjectRouteImport } from './routes/request-object'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
@@ -54,6 +55,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RequestObjectRoute = RequestObjectRouteImport.update({
   id: '/request-object',
   path: '/request-object',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeRoute = MeRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/pricing': typeof PricingRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
   '/topics': typeof TopicsRouteWithChildren
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/pricing': typeof PricingRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
   '/topics': typeof TopicsRouteWithChildren
@@ -273,6 +281,7 @@ export interface FileRoutesById {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/pricing': typeof PricingRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
   '/topics': typeof TopicsRouteWithChildren
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/me'
+    | '/pricing'
     | '/request-object'
     | '/reset-password'
     | '/topics'
@@ -340,6 +350,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/me'
+    | '/pricing'
     | '/request-object'
     | '/reset-password'
     | '/topics'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/me'
+    | '/pricing'
     | '/request-object'
     | '/reset-password'
     | '/topics'
@@ -407,6 +419,7 @@ export interface RootRouteChildren {
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
+  PricingRoute: typeof PricingRoute
   RequestObjectRoute: typeof RequestObjectRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TopicsRoute: typeof TopicsRouteWithChildren
@@ -439,6 +452,13 @@ declare module '@tanstack/react-router' {
       path: '/request-object'
       fullPath: '/request-object'
       preLoaderRoute: typeof RequestObjectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/me': {
@@ -693,6 +713,7 @@ const rootRouteChildren: RootRouteChildren = {
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
+  PricingRoute: PricingRoute,
   RequestObjectRoute: RequestObjectRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TopicsRoute: TopicsRouteWithChildren,
@@ -706,3 +727,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
