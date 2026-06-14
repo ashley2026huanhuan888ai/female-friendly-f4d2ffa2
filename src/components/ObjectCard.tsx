@@ -58,19 +58,6 @@ export function ObjectCard({
               <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{ai_summary}</p>
             )}
 
-            {tags.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {tags.map((t) => (
-                  <span
-                    key={t.tag}
-                    className="border border-border px-2 py-0.5 text-[11px] text-muted-foreground"
-                  >
-                    #{tag(t.tag)}
-                  </span>
-                ))}
-              </div>
-            )}
-
             {(heatLabel || coolLabel) && (
               <div className="mt-3 space-y-0.5 text-[11px] text-muted-foreground">
                 {heatLabel && (
@@ -103,6 +90,25 @@ export function ObjectCard({
 
         <Thermometer value={temperature} size="sm" unmeasured={observation_count === 0} />
       </Link>
+
+      {tags.length > 0 && (
+        <div className="-mt-3 flex flex-wrap gap-1.5 px-6 pb-4">
+          {tags.map((tagItem) => {
+            const label = tag(tagItem.tag);
+            return (
+              <Link
+                key={tagItem.tag}
+                to="/objects"
+                search={{ tag: tagItem.tag }}
+                aria-label={t("objects.viewTagObjects", { tag: label })}
+                className="border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:border-foreground/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                #{label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       {showActions && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border px-6 py-4">

@@ -46,7 +46,15 @@ function TopicDetail() {
       <section className="border-b border-border">
         <div className="container-prose py-16">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Topic</div>
-          <h1 className="mt-4 font-serif text-5xl text-balance">#{tagLabel(data.tag)}</h1>
+          <h1 className="mt-4 font-serif text-5xl text-balance">
+            <Link
+              to="/objects"
+              search={{ tag: data.tag }}
+              className="underline-offset-8 hover:text-accent hover:underline"
+            >
+              #{tagLabel(data.tag)}
+            </Link>
+          </h1>
           <p className="mt-4 text-sm text-muted-foreground">
             {t("topics.summary", {
               total: data.total,

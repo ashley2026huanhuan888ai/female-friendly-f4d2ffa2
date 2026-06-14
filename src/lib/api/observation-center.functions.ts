@@ -236,11 +236,26 @@ export const getTopicDetail = createServerFn({ method: "GET" })
     const { data: objs } = ids.length
       ? await supabaseAdmin
           .from("objects")
-          .select("id, name, type, temperature")
+          .select(
+            "id, name, type, temperature, observation_count, ai_summary, top_tags, heat_sources, cooling_sources, updated_at",
+          )
           .in("id", ids)
           .eq("hidden", false)
           .eq("status", "published")
-      : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
+      : {
+          data: [] as Array<{
+            id: string;
+            name: string;
+            type: string;
+            temperature: number;
+            observation_count: number;
+            ai_summary: string | null;
+            top_tags: { tag: string; count: number }[] | null;
+            heat_sources: { label?: string; title?: string }[] | null;
+            cooling_sources: { label?: string; title?: string }[] | null;
+            updated_at: string | null;
+          }>,
+        };
     const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
     // 月度趋势

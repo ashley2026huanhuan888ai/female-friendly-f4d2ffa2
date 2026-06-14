@@ -11,12 +11,14 @@ import { useI18n, usePageMeta } from "@/lib/i18n";
 type ObjectsSearch = {
   q?: string;
   pending?: string;
+  tag?: string;
 };
 
 export const Route = createFileRoute("/objects/")({
   validateSearch: (s: Record<string, unknown>): ObjectsSearch => ({
     q: typeof s.q === "string" ? s.q : undefined,
     pending: typeof s.pending === "string" ? s.pending : undefined,
+    tag: typeof s.tag === "string" ? s.tag : undefined,
   }),
   head: () => ({
     meta: [
@@ -28,9 +30,11 @@ export const Route = createFileRoute("/objects/")({
 });
 
 function AllObjects() {
-  const { t, objectType } = useI18n();
+  const { t, objectType, tag: tagLabel } = useI18n();
   usePageMeta("seo.objects.title", "seo.objects.description");
-  const { q: initialQ, pending: pendingQ } = Route.useSearch();
+  const { q: initialQ, pending: pendingQ, tag: tagParam } = Route.useSearch();
+  const tagFilter = (tagParam ?? "").trim();
+  const readableTag = tagFilter ? tagLabel(tagFilter) : "";
   const [qInput, setQInput] = useState(initialQ || pendingQ || "");
   const [q, setQ] = useState(initialQ || pendingQ || "");
   const [type, setType] = useState<string>("");
@@ -45,9 +49,15 @@ function AllObjects() {
   const getObjects = useServerFn(getPublicObjects);
 
   useEffect(() => {
+    const nextQ = initialQ || pendingQ || "";
+    setQInput(nextQ);
+    setQ(nextQ);
+  }, [initialQ, pendingQ, tagFilter]);
+
+  useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    getObjects({ data: { q, type, sort, limit: 60 } })
+    getObjects({ data: { q, tag: tagFilter, type, sort, limit: 60 } })
       .then((res) => {
         if (cancelled) return;
         setItems(res.items ?? []);
@@ -63,7 +73,7 @@ function AllObjects() {
     return () => {
       cancelled = true;
     };
-  }, [q, type, sort, getObjects, t]);
+  }, [q, tagFilter, type, sort, getObjects, t]);
 
   // 登录后若带 pending 参数，自动继续申请
   useEffect(() => {
@@ -106,7 +116,8 @@ function AllObjects() {
   }
 
   const searchedKeyword = q.trim();
-  const showEmptyWithRequest = !loading && searchedKeyword && items.length === 0;
+  const showTagEmpty = !loading && Boolean(tagFilter) && items.length === 0;
+  const showEmptyWithRequest = !tagFilter && !loading && searchedKeyword && items.length === 0;
 
   return (
     <SiteLayout>
@@ -162,6 +173,23 @@ function AllObjects() {
               {t("common.search")}
             </button>
           </form>
+          {tagFilter && (
+            <div className="mt-6 border border-border bg-card p-4">
+              <div className="font-serif text-xl">
+                {t("objects.tagTitle", { tag: readableTag })}
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("objects.tagBody", { tag: readableTag })}
+              </p>
+              <Link
+                to="/objects"
+                search={{ q: q || undefined }}
+                className="mt-3 inline-block text-xs uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {t("objects.clearTag")}
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
@@ -169,6 +197,10 @@ function AllObjects() {
         <div className="container-prose">
           {loading ? (
             <p className="py-16 text-center text-sm text-muted-foreground">{t("common.loading")}</p>
+          ) : showTagEmpty ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">
+              {t("objects.noTagMatch", { tag: readableTag })}
+            </p>
           ) : showEmptyWithRequest ? (
             <div className="border border-border bg-card p-8 text-center">
               <p className="font-serif text-2xl">

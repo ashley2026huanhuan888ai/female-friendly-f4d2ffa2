@@ -1173,6 +1173,7 @@ export const getPublicObjects = createServerFn({ method: "GET" })
     z
       .object({
         q: z.string().max(120).optional().default(""),
+        tag: z.string().max(80).optional().default(""),
         type: z.string().max(80).optional().default(""),
         sort: z.enum(["temp", "recent"]).optional().default("temp"),
         limit: z.number().int().min(1).max(120).optional().default(60),
@@ -1180,6 +1181,33 @@ export const getPublicObjects = createServerFn({ method: "GET" })
       .parse(input ?? {}),
   )
   .handler(async ({ data }) => {
+    const tagFilter = data.tag.trim();
+    const tagObjectOrder = new Map<string, number>();
+    let tagObjectIds: string[] | null = null;
+
+    if (tagFilter) {
+      const { data: taggedObservations, error: tagError } = await supabaseAdmin
+        .from("observations")
+        .select("object_id, created_at")
+        .eq("status", "approved")
+        .contains("tags", [tagFilter])
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (tagError) throw new Error(tagError.message);
+
+      tagObjectIds = [];
+      for (const row of (taggedObservations ?? []) as Array<{
+        object_id: string | null;
+        created_at: string;
+      }>) {
+        if (!row.object_id || tagObjectOrder.has(row.object_id)) continue;
+        tagObjectOrder.set(row.object_id, tagObjectOrder.size);
+        tagObjectIds.push(row.object_id);
+      }
+
+      if (tagObjectIds.length === 0) return { items: [] };
+    }
+
     let query = supabaseAdmin
       .from("objects")
       .select(
@@ -1188,17 +1216,29 @@ export const getPublicObjects = createServerFn({ method: "GET" })
       .eq("status", "published")
       .eq("hidden", false);
 
+    if (tagObjectIds) query = query.in("id", tagObjectIds);
     if (data.type) query = query.eq("type", data.type as never);
     if (data.q.trim()) query = query.ilike("name", `%${data.q.trim()}%`);
 
-    query =
-      data.sort === "temp"
-        ? query.order("temperature", { ascending: false })
-        : query.order("updated_at", { ascending: false });
+    if (!(tagObjectIds && data.sort === "recent")) {
+      query =
+        data.sort === "temp"
+          ? query.order("temperature", { ascending: false })
+          : query.order("updated_at", { ascending: false });
+    }
 
-    const { data: items, error } = await query.limit(data.limit);
+    const queryLimit = tagObjectIds && data.sort === "recent" ? tagObjectIds.length : data.limit;
+    const { data: items, error } = await query.limit(queryLimit);
     if (error) throw new Error(error.message);
-    return { items: items ?? [] };
+    const sortedItems =
+      tagObjectIds && data.sort === "recent"
+        ? [...(items ?? [])].sort(
+            (a: any, b: any) =>
+              (tagObjectOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+              (tagObjectOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+          )
+        : (items ?? []);
+    return { items: sortedItems.slice(0, data.limit) };
   });
 
 const PUBLIC_OBJECT_OBSERVATION_COLUMNS =
