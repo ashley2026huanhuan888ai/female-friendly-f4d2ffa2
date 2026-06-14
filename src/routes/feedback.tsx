@@ -6,6 +6,13 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { submitPlatformFeedback } from "@/lib/api/feedback.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
 
+const FEEDBACK_PROMPTS = [
+  { labelKey: "feedback.prompt.addObject", textKey: "feedback.prompt.addObjectText" },
+  { labelKey: "feedback.prompt.pageIssue", textKey: "feedback.prompt.pageIssueText" },
+  { labelKey: "feedback.prompt.feature", textKey: "feedback.prompt.featureText" },
+  { labelKey: "feedback.prompt.info", textKey: "feedback.prompt.infoText" },
+] as const;
+
 export const Route = createFileRoute("/feedback")({
   head: () => ({
     meta: [
@@ -29,6 +36,13 @@ function FeedbackPage() {
   const [website, setWebsite] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  function addPrompt(text: string) {
+    setMessage((current) => {
+      const trimmed = current.trim();
+      return trimmed ? `${trimmed}\n\n${text}` : text;
+    });
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,6 +99,21 @@ function FeedbackPage() {
                 <label htmlFor="feedback-message" className="text-sm font-medium">
                   {t("feedback.messageLabel")}
                 </label>
+                <div className="mt-3 border border-border bg-card/60 p-4">
+                  <p className="text-xs text-muted-foreground">{t("feedback.promptIntro")}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {FEEDBACK_PROMPTS.map((prompt) => (
+                      <button
+                        key={prompt.labelKey}
+                        type="button"
+                        onClick={() => addPrompt(t(prompt.textKey))}
+                        className="border border-border bg-paper px-3 py-1.5 text-xs text-muted-foreground hover:border-foreground hover:text-foreground"
+                      >
+                        {t(prompt.labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <textarea
                   id="feedback-message"
                   value={message}
