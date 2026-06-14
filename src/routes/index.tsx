@@ -23,12 +23,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { t, objectType, band: bandLabel, language } = useI18n();
+  const { t, objectType, tag: tagLabel, language } = useI18n();
   usePageMeta("seo.home.title", "seo.home.description");
   const [q, setQ] = useState("");
   const [summary, setSummary] = useState<any>(null);
   const fetchSummary = useServerFn(getHomeSummary);
   const sentenceGap = language === "en" ? " " : "";
+  const topicWall = (summary?.trending_tags ?? []).slice(0, 14);
+  const maxTopicCount = Math.max(1, ...topicWall.map((item: any) => Number(item.count) || 0));
 
   useEffect(() => {
     fetchSummary()
@@ -42,6 +44,7 @@ function Index() {
           latest_cases: [],
           latest_observations: [],
           newest_objects: [],
+          trending_tags: [],
         }),
       );
   }, [fetchSummary]);
@@ -108,28 +111,46 @@ function Index() {
 
           <div className="border border-border bg-card p-6">
             <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              {t("home.stats.title")}
+              {t("home.topicWall.title")}
             </div>
-            <div className="mt-4 font-serif text-4xl tabular-nums">
-              {summary?.total_objects ?? "—"}
-              <span className="ml-2 text-sm text-muted-foreground">
-                {t("common.objectCount", { count: "" }).trim()}
-              </span>
-            </div>
-            <div className="mt-6 space-y-3 text-xs">
-              {(summary?.band_counts ?? []).map((b: any) => (
-                <div key={b.band} className="flex items-center gap-3">
-                  <span
-                    className="inline-block h-2.5 w-7 rounded-full"
-                    style={{ background: b.color }}
-                  />
-                  <span className="font-mono tabular-nums text-muted-foreground">{b.range}</span>
-                  <span>{bandLabel(b.band, b.label)}</span>
-                  <span className="ml-auto font-mono tabular-nums text-muted-foreground">
-                    {t("common.objectCount", { count: b.count })}
-                  </span>
+            {topicWall.length ? (
+              <>
+                <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-2 leading-none">
+                  {topicWall.map((item: any) => {
+                    const label = tagLabel(item.tag);
+                    return (
+                      <Link
+                        key={item.tag}
+                        to="/topics/$tag"
+                        params={{ tag: item.tag }}
+                        aria-label={t("home.topicWall.viewTopic", { tag: label })}
+                        className={`${topicWordClass(Number(item.count) || 0, maxTopicCount)} underline-offset-4 hover:text-accent hover:underline`}
+                      >
+                        #{label}
+                      </Link>
+                    );
+                  })}
                 </div>
-              ))}
+                <p className="mt-6 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
+                  {t("home.topicWall.hint")}
+                </p>
+              </>
+            ) : (
+              <p className="mt-6 text-sm leading-6 text-muted-foreground">
+                {t("home.topicWall.empty")}
+              </p>
+            )}
+            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs">
+              <div>
+                <div className="font-mono text-lg tabular-nums">{topicWall.length || "—"}</div>
+                <div className="mt-1 text-muted-foreground">{t("home.topicWall.active")}</div>
+              </div>
+              <div>
+                <div className="font-mono text-lg tabular-nums">
+                  {summary?.total_objects ?? "—"}
+                </div>
+                <div className="mt-1 text-muted-foreground">{t("home.topicWall.objects")}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -323,6 +344,14 @@ function Index() {
       </section>
     </SiteLayout>
   );
+}
+
+function topicWordClass(count: number, maxCount: number) {
+  const ratio = maxCount <= 0 ? 0 : count / maxCount;
+  if (ratio >= 0.78) return "font-serif text-3xl text-foreground md:text-4xl";
+  if (ratio >= 0.5) return "font-serif text-2xl text-foreground";
+  if (ratio >= 0.28) return "text-base text-foreground";
+  return "text-sm text-muted-foreground";
 }
 
 function ColumnList({

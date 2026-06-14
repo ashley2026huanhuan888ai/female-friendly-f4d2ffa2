@@ -59,8 +59,9 @@ export const getObservationFeed = createServerFn({ method: "GET" })
 export const getHomeSummary = createServerFn({ method: "GET" }).handler(async () => {
   const since24h = new Date(Date.now() - 86400_000).toISOString();
   const since7d = new Date(Date.now() - 7 * 86400_000).toISOString();
+  const since30d = new Date(Date.now() - 30 * 86400_000).toISOString();
 
-  const [todayEvents, recentEvents, latestCases, latestObs, newestObjs, allObjTemps] =
+  const [todayEvents, recentEvents, latestCases, latestObs, newestObjs, allObjTemps, recentTags] =
     await Promise.all([
       supabaseAdmin
         .from("temperature_events" as never)
@@ -96,6 +97,11 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
         .select("temperature")
         .eq("status", "published")
         .eq("hidden", false),
+      supabaseAdmin
+        .from("observations")
+        .select("tags, created_at")
+        .eq("status", "approved")
+        .gte("created_at", since30d),
     ]);
 
   const events7d = (recentEvents.data ?? []) as Array<{ object_id: string; delta: number }>;
@@ -159,6 +165,15 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
       return v >= b.range[0] && v <= b.range[1];
     }).length,
   }));
+  const tagCount = new Map<string, number>();
+  for (const o of (recentTags.data ?? []) as Array<{ tags: unknown }>) {
+    const tags = Array.isArray(o.tags) ? (o.tags as string[]) : [];
+    for (const t of tags) tagCount.set(t, (tagCount.get(t) ?? 0) + 1);
+  }
+  const trendingTags = [...tagCount.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 14);
 
   return {
     today_events: todayWithObj,
@@ -173,6 +188,7 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
     newest_objects: newestObjs.data ?? [],
     band_counts: bandCounts,
     total_objects: temps.length,
+    trending_tags: trendingTags,
   };
 });
 
