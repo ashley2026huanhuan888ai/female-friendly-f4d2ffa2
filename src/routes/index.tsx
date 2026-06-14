@@ -23,11 +23,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { t, objectType, band: bandLabel } = useI18n();
+  const { t, objectType, band: bandLabel, language } = useI18n();
   usePageMeta("seo.home.title", "seo.home.description");
   const [q, setQ] = useState("");
   const [summary, setSummary] = useState<any>(null);
   const fetchSummary = useServerFn(getHomeSummary);
+  const sentenceGap = language === "en" ? " " : "";
 
   useEffect(() => {
     fetchSummary()
@@ -61,7 +62,10 @@ function Index() {
             </h1>
             <p className="mt-8 max-w-2xl text-base text-muted-foreground">
               {t("home.hero.body")}
+              {sentenceGap}
               <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
+              {sentenceGap}
+              {t("home.hero.actions")}
             </p>
             <form
               onSubmit={(e) => {

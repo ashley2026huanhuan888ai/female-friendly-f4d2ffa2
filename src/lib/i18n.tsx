@@ -144,8 +144,9 @@ const COPY = {
     "home.hero.title.accent": "女性友好体验",
     "home.hero.title.after": "的变化。",
     "home.hero.body":
-      "这里不是评分网站，是观察平台。我们记录每一次女性友好温度变化的来源——案例、证据、议题。",
-    "home.hero.disclaimer": "不做事实认定，不做道德审判。",
+      "这不是评分网站，而是观察平台。我们记录每一次女性友好温度变化的来源：案例、证据、议题。",
+    "home.hero.disclaimer": "不做事实认定，也不做道德审判。",
+    "home.hero.actions": "创建对象，发起测评，持续观察，共同监督，推动提升……",
     "home.search.placeholder": "搜索品牌、影视、组织、事件…",
     "home.search.button": "查询",
     "home.cta.browse": "浏览测评对象",
@@ -666,6 +667,8 @@ const COPY = {
     "home.hero.body":
       "This is not a rating site. It is an observatory. We record the source of each temperature change: cases, evidence, and topics.",
     "home.hero.disclaimer": "No findings of fact. No moral judgment.",
+    "home.hero.actions":
+      "Create objects, launch assessments, keep observing, monitor together, and drive improvement...",
     "home.search.placeholder": "Search brands, media, organizations, events...",
     "home.search.button": "Search",
     "home.cta.browse": "Browse objects",
