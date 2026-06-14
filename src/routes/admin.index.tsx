@@ -14,6 +14,7 @@ function Overview() {
     pendingObs: 0,
     pendingReq: 0,
     pendingComments: 0,
+    pendingFeedback: 0,
   });
   useEffect(() => {
     getCounts({})
@@ -24,10 +25,11 @@ function Overview() {
   return (
     <div className="container-prose py-12">
       <h1 className="font-serif text-3xl">概览</h1>
-      <div className="mt-8 grid gap-4 md:grid-cols-4">
+      <div className="mt-8 grid gap-4 md:grid-cols-5">
         <Stat label="评估对象" value={stats.objects} to="/admin/objects" />
         <Stat label="待审核观察" value={stats.pendingObs} to="/admin/observations" />
         <Stat label="待审核留言" value={stats.pendingComments} to="/admin/comments" />
+        <Stat label="新建议" value={stats.pendingFeedback} to="/admin/feedback" />
         <Stat label="待审核申请" value={stats.pendingReq} to="/admin/requests" />
       </div>
     </div>

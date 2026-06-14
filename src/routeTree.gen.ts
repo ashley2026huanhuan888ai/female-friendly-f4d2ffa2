@@ -15,6 +15,7 @@ import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -34,6 +35,7 @@ import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
 import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
 import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
+import { Route as AdminFeedbackRouteImport } from './routes/admin.feedback'
 import { Route as AdminCommentsRouteImport } from './routes/admin.comments'
 import { Route as AdminBulkImportRouteImport } from './routes/admin.bulk-import'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
@@ -67,6 +69,11 @@ const LoginRoute = LoginRouteImport.update({
 const KnowledgeRoute = KnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedRoute = FeedRouteImport.update({
@@ -164,6 +171,11 @@ const AdminKnowledgeRoute = AdminKnowledgeRouteImport.update({
   path: '/knowledge',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCommentsRoute = AdminCommentsRouteImport.update({
   id: '/comments',
   path: '/comments',
@@ -191,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
+  '/feedback': typeof FeedbackRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
@@ -201,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
@@ -221,6 +235,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
+  '/feedback': typeof FeedbackRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
@@ -231,6 +246,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
@@ -253,6 +269,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
+  '/feedback': typeof FeedbackRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
@@ -263,6 +280,7 @@ export interface FileRoutesById {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
@@ -286,6 +304,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/discussions'
     | '/feed'
+    | '/feedback'
     | '/knowledge'
     | '/login'
     | '/me'
@@ -296,6 +315,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
@@ -316,6 +336,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/discussions'
     | '/feed'
+    | '/feedback'
     | '/knowledge'
     | '/login'
     | '/me'
@@ -326,6 +347,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
@@ -347,6 +369,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/discussions'
     | '/feed'
+    | '/feedback'
     | '/knowledge'
     | '/login'
     | '/me'
@@ -357,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
@@ -379,6 +403,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   DiscussionsRoute: typeof DiscussionsRoute
   FeedRoute: typeof FeedRoute
+  FeedbackRoute: typeof FeedbackRoute
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
@@ -435,6 +460,13 @@ declare module '@tanstack/react-router' {
       path: '/knowledge'
       fullPath: '/knowledge'
       preLoaderRoute: typeof KnowledgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feed': {
@@ -570,6 +602,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminKnowledgeRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/feedback': {
+      id: '/admin/feedback'
+      path: '/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AdminFeedbackRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/comments': {
       id: '/admin/comments'
       path: '/comments'
@@ -606,6 +645,7 @@ interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBulkImportRoute: typeof AdminBulkImportRoute
   AdminCommentsRoute: typeof AdminCommentsRoute
+  AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminKnowledgeRoute: typeof AdminKnowledgeRoute
   AdminObjectsRoute: typeof AdminObjectsRoute
   AdminObservationsRoute: typeof AdminObservationsRoute
@@ -620,6 +660,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminBulkImportRoute: AdminBulkImportRoute,
   AdminCommentsRoute: AdminCommentsRoute,
+  AdminFeedbackRoute: AdminFeedbackRoute,
   AdminKnowledgeRoute: AdminKnowledgeRoute,
   AdminObjectsRoute: AdminObjectsRoute,
   AdminObservationsRoute: AdminObservationsRoute,
@@ -648,6 +689,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   DiscussionsRoute: DiscussionsRoute,
   FeedRoute: FeedRoute,
+  FeedbackRoute: FeedbackRoute,
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
