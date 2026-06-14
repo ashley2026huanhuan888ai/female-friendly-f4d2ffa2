@@ -15,6 +15,8 @@ function Overview() {
     pendingReq: 0,
     pendingComments: 0,
     pendingFeedback: 0,
+    onlineNow: 0,
+    todayOnline: 0,
   });
   useEffect(() => {
     getCounts({})
@@ -25,7 +27,9 @@ function Overview() {
   return (
     <div className="container-prose py-12">
       <h1 className="font-serif text-3xl">概览</h1>
-      <div className="mt-8 grid gap-4 md:grid-cols-5">
+      <div className="mt-8 grid gap-4 md:grid-cols-3 xl:grid-cols-7">
+        <Stat label="当前在线" value={stats.onlineNow} />
+        <Stat label="今日上线" value={stats.todayOnline} />
         <Stat label="评估对象" value={stats.objects} to="/admin/objects" />
         <Stat label="待审核观察" value={stats.pendingObs} to="/admin/observations" />
         <Stat label="待审核留言" value={stats.pendingComments} to="/admin/comments" />
@@ -36,14 +40,24 @@ function Overview() {
   );
 }
 
-function Stat({ label, value, to }: { label: string; value: number; to: string }) {
+function Stat({ label, value, to }: { label: string; value: number; to?: string }) {
+  const content = (
+    <>
+      <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
+      <div className="mt-3 font-serif text-3xl">{value}</div>
+    </>
+  );
+
+  if (!to) {
+    return <div className="border border-border bg-card p-6">{content}</div>;
+  }
+
   return (
     <Link
       to={to}
       className="block border border-border bg-card p-6 transition hover:border-foreground"
     >
-      <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
-      <div className="mt-3 font-serif text-3xl">{value}</div>
+      {content}
     </Link>
   );
 }
