@@ -15,25 +15,6 @@ import { ObjectComments } from "@/components/ObjectComments";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/objects/$id")({
-  loader: async ({ params }) => {
-    return getPublicObjectDetail({ data: { id: params.id } });
-  },
-  head: ({ loaderData, params }) => {
-    const obj = (loaderData as any)?.object;
-    const title = obj ? `${obj.name} · 女性友好体验测评` : "对象详情 · 女性友好体验测评";
-    const description = obj
-      ? obj.ai_summary || `查看 ${obj.name} 的女性友好温度与观察记录。`
-      : "浏览对象的女性友好温度与观察记录。";
-    return {
-      meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-      ],
-      links: [{ rel: "canonical", href: `/objects/${params.id}` }],
-    };
-  },
   component: ObjectDetail,
   notFoundComponent: ObjectNotFound,
   errorComponent: ({ error }) => (

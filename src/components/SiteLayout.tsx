@@ -1,17 +1,11 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
 
 import { useAuth } from "@/components/auth-context";
-import { recordPresence } from "@/lib/api/presence.functions";
 import { useI18n } from "@/lib/i18n";
-
-const PRESENCE_VISITOR_KEY = "ff_presence_visitor_id";
-const PRESENCE_INTERVAL_MS = 90_000;
-const PRESENCE_VISITOR_PATTERN = /^[A-Za-z0-9_-]{16,80}$/;
 
 const PRIMARY_NAV = [
   { to: "/objects", labelKey: "nav.objects" },
@@ -25,32 +19,10 @@ const SECONDARY_NAV = [
   { to: "/about", labelKey: "nav.about" },
 ] as const;
 
-function createPresenceVisitorId() {
-  const rawId =
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
-  return `ff_${rawId.replace(/[^A-Za-z0-9_-]/g, "")}`;
-}
-
-function getPresenceVisitorId() {
-  if (typeof window === "undefined") return null;
-  try {
-    const stored = window.localStorage.getItem(PRESENCE_VISITOR_KEY);
-    if (stored && PRESENCE_VISITOR_PATTERN.test(stored)) return stored;
-
-    const next = createPresenceVisitorId();
-    window.localStorage.setItem(PRESENCE_VISITOR_KEY, next);
-    return next;
-  } catch {
-    return null;
-  }
-}
-
 export function SiteLayout({ children }: { children: ReactNode }) {
   const { email, isAdmin, unread, signOut: authSignOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const { language, setLanguage, t } = useI18n();
-  const recordPresenceFn = useServerFn(recordPresence);
 
   const router = useRouter();
 
@@ -58,36 +30,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMenuOpen(false);
   }, [router.state.location.pathname]);
-
-  useEffect(() => {
-    const visitorId = getPresenceVisitorId();
-    if (!visitorId) return;
-
-    let stopped = false;
-    let lastSentAt = 0;
-    const sendPresence = () => {
-      if (stopped || document.visibilityState === "hidden") return;
-      const now = Date.now();
-      if (now - lastSentAt < 30_000) return;
-      lastSentAt = now;
-      void recordPresenceFn({ data: { visitor_id: visitorId } }).catch(() => {});
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") sendPresence();
-    };
-
-    sendPresence();
-    const intervalId = window.setInterval(sendPresence, PRESENCE_INTERVAL_MS);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", sendPresence);
-
-    return () => {
-      stopped = true;
-      window.clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", sendPresence);
-    };
-  }, [recordPresenceFn]);
 
   const signOut = async () => {
     await authSignOut();

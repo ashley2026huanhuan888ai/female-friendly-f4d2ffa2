@@ -9,10 +9,7 @@ export const Route = createFileRoute("/about")({
     meta: [
       { title: "关于项目 · 女性友好体验测评" },
       { name: "description", content: "了解「女性友好体验测评」平台的方法论、温度逻辑与硬规则。" },
-      { property: "og:title", content: "关于项目 · 女性友好体验测评" },
-      { property: "og:description", content: "了解「女性友好体验测评」平台的方法论、温度逻辑与硬规则。" },
     ],
-    links: [{ rel: "canonical", href: "/about" }],
   }),
   component: About,
 });

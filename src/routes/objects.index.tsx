@@ -24,10 +24,7 @@ export const Route = createFileRoute("/objects/")({
     meta: [
       { title: "全部对象 · 女性友好体验测评" },
       { name: "description", content: "浏览所有评估对象，按温度排序，按类型筛选。" },
-      { property: "og:title", content: "全部对象 · 女性友好体验测评" },
-      { property: "og:description", content: "浏览所有评估对象，按温度排序，按类型筛选。" },
     ],
-    links: [{ rel: "canonical", href: "/objects" }],
   }),
   component: AllObjects,
 });
