@@ -88,10 +88,12 @@ function ObsAdmin() {
     setSelected((s) => (s.size === items.length ? new Set() : new Set(items.map((i) => i.id))));
 
   const runBatch = async (action: "approve" | "reject") => {
-    if (selected.size === 0) return;
-    if (!confirm(`确认批量${action === "approve" ? "通过" : "驳回"} ${selected.size} 条？`)) return;
+    const ids = action === "approve" ? items.map((item) => item.id) : [...selected];
+    if (ids.length === 0) return;
+    if (action === "approve") setSelected(new Set(ids));
+    if (!confirm(`确认批量${action === "approve" ? "通过当前全部" : "驳回"} ${ids.length} 条？`))
+      return;
     setBatchBusy(true);
-    const ids = [...selected];
     const objIds = new Set<string>();
     let ok = 0,
       fail = 0;
@@ -269,8 +271,8 @@ function ObsAdmin() {
             />
             <button
               onClick={() => runBatch("approve")}
-              disabled={batchBusy || selected.size === 0}
-              className="border border-foreground bg-foreground px-3 py-1 text-background disabled:opacity-40"
+              disabled={batchBusy || items.length === 0}
+              className="border border-[var(--archive-pink)] bg-[var(--archive-pink)] px-9 py-3 text-sm font-medium text-white hover:border-foreground hover:bg-foreground disabled:opacity-40"
             >
               批量通过
             </button>

@@ -31,20 +31,55 @@ function Overview() {
         <Stat label="当前在线" value={stats.onlineNow} />
         <Stat label="今日上线" value={stats.todayOnline} />
         <Stat label="评估对象" value={stats.objects} to="/admin/objects" />
-        <Stat label="待审核观察" value={stats.pendingObs} to="/admin/observations" />
-        <Stat label="待审核留言" value={stats.pendingComments} to="/admin/comments" />
-        <Stat label="新建议" value={stats.pendingFeedback} to="/admin/feedback" />
-        <Stat label="待审核申请" value={stats.pendingReq} to="/admin/requests" />
+        <Stat
+          label="待审核观察"
+          value={stats.pendingObs}
+          to="/admin/observations"
+          highlightWhenNonZero
+        />
+        <Stat
+          label="待审核留言"
+          value={stats.pendingComments}
+          to="/admin/comments"
+          highlightWhenNonZero
+        />
+        <Stat
+          label="新建议"
+          value={stats.pendingFeedback}
+          to="/admin/feedback"
+          highlightWhenNonZero
+        />
+        <Stat
+          label="待审核申请"
+          value={stats.pendingReq}
+          to="/admin/requests"
+          highlightWhenNonZero
+        />
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, to }: { label: string; value: number; to?: string }) {
+function Stat({
+  label,
+  value,
+  to,
+  highlightWhenNonZero = false,
+}: {
+  label: string;
+  value: number;
+  to?: string;
+  highlightWhenNonZero?: boolean;
+}) {
+  const highlighted = highlightWhenNonZero && value !== 0;
   const content = (
     <>
       <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
-      <div className="mt-3 font-serif text-3xl">{value}</div>
+      <div
+        className={`mt-3 font-serif text-3xl ${highlighted ? "text-[var(--archive-pink)]" : ""}`}
+      >
+        {value}
+      </div>
     </>
   );
 
