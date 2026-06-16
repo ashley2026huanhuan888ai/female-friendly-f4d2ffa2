@@ -9,6 +9,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { APP_BUILT_AT, APP_COMMIT } from "@/lib/build-info";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BackToHome } from "@/components/BackToHome";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,6 +94,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       { name: "google-site-verification", content: "L551CW5rBlsTsiBwNEF2UUVMlf1FyA6yNOaXqI_9oeQ" },
+      { name: "app-commit", content: APP_COMMIT },
+      { name: "app-built-at", content: APP_BUILT_AT },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

@@ -109,6 +109,7 @@ function AdminLayout() {
             { to: "/admin/requests", label: "对象申请" },
             { to: "/admin/users", label: "用户信誉" },
             { to: "/admin/audit", label: "审计日志" },
+            { to: "/admin/publish", label: "发布校验" },
           ].map((t) => (
             <Link
               key={t.to}
