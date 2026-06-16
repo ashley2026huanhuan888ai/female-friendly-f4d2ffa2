@@ -137,7 +137,6 @@ function Index() {
                       {archiveCopy.intake.code}
                     </p>
                   </div>
-                  <ArchiveStamp>{archiveCopy.table.pending}</ArchiveStamp>
                 </div>
 
                 <div className="mt-5">
@@ -166,10 +165,10 @@ function Index() {
                 </div>
 
                 <textarea
-                  rows={4}
+                  rows={7}
                   maxLength={500}
                   placeholder={archiveCopy.intake.bodyPlaceholder}
-                  className="mt-5 w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
+                  className="mt-5 min-h-[180px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm leading-6 outline-none placeholder:text-muted-foreground focus:border-foreground"
                 />
 
                 <label className="mt-4 block">
@@ -542,7 +541,8 @@ function getArchiveHomeCopy(language: "zh" | "en") {
         title: "Submit your experience record",
         code: "Archive No.: FF-2026-____",
         types: "Record type",
-        bodyPlaceholder: "What happened? Specific details help drive change.",
+        bodyPlaceholder:
+          "Use this structure if helpful:\n1. Context: where and when did you see it?\n2. Details: exact wording, scene, rule, or interaction.\n3. Impact: who was affected, and how did it feel?\n4. Evidence: link, screenshot, or source note.",
         source: "Source link (optional)",
         sourcePlaceholder: "Public article, page, original text...",
         rules: "Read recording guidelines",
@@ -581,7 +581,8 @@ function getArchiveHomeCopy(language: "zh" | "en") {
       title: "提交你的体验记录",
       code: "档案编号：FF-2026-____",
       types: "记录类型",
-      bodyPlaceholder: "发生了什么？越具体越有助于推动改变。",
+      bodyPlaceholder:
+        "可以按这个框架写：\n1. 场景：在哪里、何时看到或经历？\n2. 细节：具体原话、画面、规则或互动是什么？\n3. 影响：让谁受到影响，带来什么感受？\n4. 依据：链接、截图、出处或补充说明。",
       source: "来源链接（可选）",
       sourcePlaceholder: "公开报道、网页、原文链接…",
       rules: "了解记录规范",
