@@ -113,6 +113,16 @@ const checks = [
       source.includes('.from("notifications" as never)'),
   },
   {
+    name: "non-admin users do not see the admin entry in site navigation",
+    file: "src/components/SiteLayout.tsx",
+    test: (source) =>
+      source.includes("canSeeAdminNav") &&
+      source.includes("access.isAdmin") &&
+      source.includes('{t("nav.admin")}') &&
+      !source.includes('t("nav.adminEntry")') &&
+      !source.includes("email && !isAdmin"),
+  },
+  {
     name: "Supabase admin config can be checked before creating service role client",
     file: "src/integrations/supabase/client.server.ts",
     test: (source) =>

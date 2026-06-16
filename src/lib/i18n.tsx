@@ -28,7 +28,7 @@ const COPY = {
     "nav.requestObject": "增加\n新测评\n对象",
     "nav.topics": "热议议题",
     "nav.archive": "案例库",
-    "nav.evidence": "证据库",
+    "nav.evidence": "女性观察原文",
     "nav.knowledge": "知识引擎",
     "nav.about": "关于",
     "nav.more": "更多",
@@ -337,7 +337,7 @@ const COPY = {
     "archive.title": "案例档案库",
     "archive.body": "所有通过审核的观察均沉淀为可检索的长期案例资产。共 {total} 条案例。",
     "archive.searchPlaceholder": "搜索案例编号、关键词、对象名…",
-    "archive.evidenceLink": "证据库（A 级）→",
+    "archive.evidenceLink": "女性观察原文 →",
     "archive.category": "档案分类",
     "archive.objectType": "对象类型",
     "archive.topicTag": "议题标签",
@@ -357,12 +357,12 @@ const COPY = {
     "archive.reference": "参考：",
     "archive.screenshot": "截图：",
 
-    "evidence.title": "证据库",
-    "evidence.eyebrow": "Evidence Library · A 级",
+    "evidence.title": "女性观察原文",
+    "evidence.eyebrow": "被观察对象 · 原文记录",
     "evidence.body":
-      "仅收录附原始截图、广告原文、台词、采访原文、公开资料引用的 A 级证据案例。共 {total} 条。",
+      "这里收录女性用户围绕被观察对象提交的具体经历、感受与判断。作品、产品、品牌不是评价主体，而是被女性经验照见和评估的对象。",
     "evidence.back": "← 返回全部案例",
-    "evidence.empty": "暂无 A 级证据案例。",
+    "evidence.empty": "暂无女性观察原文。",
 
     "knowledge.title": "女性友好测评 · 知识引擎",
     "knowledge.body":
@@ -564,7 +564,7 @@ const COPY = {
     "seo.login.title": "登录 · 女性友好体验测评",
     "seo.reset.title": "重置密码 · 女性友好体验测评",
     "seo.submit.title": "提交观察 · 女性友好体验测评",
-    "seo.evidence.title": "证据库（A 级） · 女性友好体验测评",
+    "seo.evidence.title": "女性观察原文 · 女性友好体验测评",
     "seo.discussions.title": "热门讨论 · 女性友好体验测评",
     "seo.discussions.description": "最近公开的对象留言。",
   },
@@ -582,7 +582,7 @@ const COPY = {
     "nav.requestObject": "Add\nObject",
     "nav.topics": "Topics",
     "nav.archive": "Cases",
-    "nav.evidence": "Evidence",
+    "nav.evidence": "Women's Observations",
     "nav.knowledge": "Knowledge",
     "nav.about": "About",
     "nav.more": "More",
@@ -914,7 +914,7 @@ const COPY = {
     "archive.body":
       "All approved observations become searchable long-term case assets. {total} cases in total.",
     "archive.searchPlaceholder": "Search case code, keyword, or object name...",
-    "archive.evidenceLink": "Evidence library (A level) ->",
+    "archive.evidenceLink": "Women's observations ->",
     "archive.category": "Category",
     "archive.objectType": "Object type",
     "archive.topicTag": "Topic tag",
@@ -934,12 +934,12 @@ const COPY = {
     "archive.reference": "Reference: ",
     "archive.screenshot": "Screenshot: ",
 
-    "evidence.title": "Evidence Library",
-    "evidence.eyebrow": "Evidence Library · A level",
+    "evidence.title": "Women's Observation Originals",
+    "evidence.eyebrow": "Observed objects · original records",
     "evidence.body":
-      "Only A-level evidence cases with original screenshots, ad copy, lines, interview text, or public-source citations are included. {total} entries.",
+      "This page collects concrete experiences, feelings, and judgments submitted by women users around observed objects. Works, products, and brands are not the judging subjects; they are the objects illuminated and assessed through women's experiences.",
     "evidence.back": "<- Back to all cases",
-    "evidence.empty": "No A-level evidence cases yet.",
+    "evidence.empty": "No women's observation originals yet.",
 
     "knowledge.title": "Female-Friendly Assessment · Knowledge Engine",
     "knowledge.body":
@@ -1163,7 +1163,7 @@ const COPY = {
     "seo.login.title": "Log in · Female-Friendly Experience Assessment",
     "seo.reset.title": "Reset Password · Female-Friendly Experience Assessment",
     "seo.submit.title": "Submit Observation · Female-Friendly Experience Assessment",
-    "seo.evidence.title": "Evidence Library (A Level) · Female-Friendly Experience Assessment",
+    "seo.evidence.title": "Women's Observation Originals · Female-Friendly Experience Assessment",
     "seo.discussions.title": "Popular Discussions · Female-Friendly Experience Assessment",
     "seo.discussions.description": "Recent public object comments.",
   },

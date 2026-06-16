@@ -7,6 +7,7 @@ import { BackToHome } from "@/components/BackToHome";
 
 import { useAuth } from "@/components/auth-context";
 import { recordPresence } from "@/lib/api/presence.functions";
+import { getCurrentUserAccess } from "@/lib/api/platform.functions";
 import { useI18n } from "@/lib/i18n";
 
 const PRESENCE_VISITOR_KEY = "ff_presence_visitor_id";
@@ -47,10 +48,12 @@ function getPresenceVisitorId() {
 }
 
 export function SiteLayout({ children }: { children: ReactNode }) {
-  const { email, isAdmin, unread, signOut: authSignOut } = useAuth();
+  const { ready, user, email, isAdmin, unread, signOut: authSignOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [canSeeAdminNav, setCanSeeAdminNav] = useState(false);
   const { language, setLanguage, t } = useI18n();
   const recordPresenceFn = useServerFn(recordPresence);
+  const getAccess = useServerFn(getCurrentUserAccess);
 
   const router = useRouter();
 
@@ -88,6 +91,32 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       window.removeEventListener("focus", sendPresence);
     };
   }, [recordPresenceFn]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkAdminAccess = async () => {
+      if (!ready || !user) {
+        setCanSeeAdminNav(false);
+        return;
+      }
+      if (isAdmin) {
+        setCanSeeAdminNav(true);
+        return;
+      }
+      try {
+        const access = await getAccess({});
+        if (!cancelled) setCanSeeAdminNav(access.isAdmin);
+      } catch {
+        if (!cancelled) setCanSeeAdminNav(false);
+      }
+    };
+
+    void checkAdminAccess();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, user, isAdmin, getAccess]);
 
   const signOut = async () => {
     await authSignOut();
@@ -127,16 +156,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           {/* 右侧账号区（桌面） */}
           <div className="hidden items-center gap-3 text-sm md:flex">
             <LanguageToggle language={language} setLanguage={setLanguage} />
-            {email && (
-              <Link
-                to="/admin"
-                className={
-                  isAdmin
-                    ? "text-accent hover:text-accent/80"
-                    : "text-muted-foreground hover:text-foreground"
-                }
-              >
-                {isAdmin ? t("nav.admin") : t("nav.adminEntry")}
+            {canSeeAdminNav && (
+              <Link to="/admin" className="text-accent hover:text-accent/80">
+                {t("nav.admin")}
               </Link>
             )}
             {email ? (
@@ -232,7 +254,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               <div className="border-b border-border/50 py-3">
                 <LanguageToggle language={language} setLanguage={setLanguage} />
               </div>
-              {isAdmin && (
+              {canSeeAdminNav && (
                 <>
                   <Link to="/admin" className="border-b border-border/50 py-3 text-accent">
                     {t("nav.admin")}
@@ -250,11 +272,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                     {t("nav.adminRequests")}
                   </Link>
                 </>
-              )}
-              {email && !isAdmin && (
-                <Link to="/admin" className="border-b border-border/50 py-3 text-muted-foreground">
-                  {t("nav.adminEntry")}
-                </Link>
               )}
               {email ? (
                 <>

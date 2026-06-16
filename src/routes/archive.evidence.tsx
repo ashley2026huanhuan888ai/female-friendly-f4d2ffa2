@@ -6,7 +6,7 @@ import { getEvidenceLibrary } from "@/lib/api/archive.functions";
 import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/archive/evidence")({
-  head: () => ({ meta: [{ title: "证据库（A 级） · 女性友好体验测评" }] }),
+  head: () => ({ meta: [{ title: "女性观察原文 · 女性友好体验测评" }] }),
   component: EvidenceLib,
 });
 
