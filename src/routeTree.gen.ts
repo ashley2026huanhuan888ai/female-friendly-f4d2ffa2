@@ -33,6 +33,7 @@ import { Route as ArchiveCaseCodeRouteImport } from './routes/archive.$caseCode'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTemperatureRouteImport } from './routes/admin.temperature'
 import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
+import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
 import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
@@ -163,6 +164,11 @@ const AdminRequestsRoute = AdminRequestsRouteImport.update({
   path: '/requests',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPublishRoute = AdminPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminObservationsRoute = AdminObservationsRouteImport.update({
   id: '/observations',
   path: '/observations',
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
+  '/admin/publish': typeof AdminPublishRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
+  '/admin/publish': typeof AdminPublishRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
+  '/admin/publish': typeof AdminPublishRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
@@ -338,6 +347,7 @@ export interface FileRouteTypes {
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
+    | '/admin/publish'
     | '/admin/requests'
     | '/admin/temperature'
     | '/admin/users'
@@ -372,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
+    | '/admin/publish'
     | '/admin/requests'
     | '/admin/temperature'
     | '/admin/users'
@@ -407,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
+    | '/admin/publish'
     | '/admin/requests'
     | '/admin/temperature'
     | '/admin/users'
@@ -614,6 +626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/publish': {
+      id: '/admin/publish'
+      path: '/publish'
+      fullPath: '/admin/publish'
+      preLoaderRoute: typeof AdminPublishRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/observations': {
       id: '/admin/observations'
       path: '/observations'
@@ -689,6 +708,7 @@ interface AdminRouteChildren {
   AdminKnowledgeRoute: typeof AdminKnowledgeRoute
   AdminObjectsRoute: typeof AdminObjectsRoute
   AdminObservationsRoute: typeof AdminObservationsRoute
+  AdminPublishRoute: typeof AdminPublishRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
   AdminTemperatureRoute: typeof AdminTemperatureRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -704,6 +724,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminKnowledgeRoute: AdminKnowledgeRoute,
   AdminObjectsRoute: AdminObjectsRoute,
   AdminObservationsRoute: AdminObservationsRoute,
+  AdminPublishRoute: AdminPublishRoute,
   AdminRequestsRoute: AdminRequestsRoute,
   AdminTemperatureRoute: AdminTemperatureRoute,
   AdminUsersRoute: AdminUsersRoute,
