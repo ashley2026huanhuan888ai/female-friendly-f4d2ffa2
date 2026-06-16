@@ -9,7 +9,7 @@ export const Route = createFileRoute("/topics")({
   head: () => ({
     meta: [
       { title: "热议议题 · 女性友好体验测评" },
-      { name: "description", content: "近期被持续观察的标签与议题。" },
+      { name: "description", content: "近期大家持续记录的标签与议题。" },
     ],
   }),
   component: TopicsPage,

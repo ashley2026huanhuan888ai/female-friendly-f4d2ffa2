@@ -154,11 +154,11 @@ const COPY = {
     "home.cta.feedback": "给平台提建议",
     "home.cta.request": "增加新测评对象",
     "home.stats.title": "观察",
-    "home.topicWall.title": "正在被观察",
-    "home.topicWall.hint": "字越大，最近 30 天被提到越多。点击查看相关观察。",
+    "home.topicWall.title": "大家正在记录",
+    "home.topicWall.hint": "字越大，最近 30 天大家提到越多。点击查看相关观察。",
     "home.topicWall.empty": "还没有足够的近期议题。我们等第一条观察。",
     "home.topicWall.active": "近期活跃议题",
-    "home.topicWall.objects": "观察对象",
+    "home.topicWall.objects": "大家记录的对象",
     "home.topicWall.viewTopic": "查看「{tag}」相关观察",
     "home.newObjects": "最新更新的测评对象",
     "home.heating": "近期升温对象",
@@ -322,7 +322,7 @@ const COPY = {
     "feed.reason.positive_case": "新增正向案例",
 
     "topics.title": "热议议题",
-    "topics.body": "过去 30 天内，被持续观察的女性议题标签。点击任一标签查看案例、相关对象与趋势。",
+    "topics.body": "过去 30 天内，大家持续记录的女性议题标签。点击任一标签查看案例、相关对象与趋势。",
     "topics.empty": "近 30 天暂无足够观察形成趋势。",
     "topics.count": "{count} 次观察",
     "topics.summary": "共 {total} 条已审核观察 · 涉及 {objects} 个对象 · {cases} 个知识案例。",
@@ -337,7 +337,7 @@ const COPY = {
     "archive.title": "女性观察档案",
     "archive.eyebrow": "Female Observation Archive",
     "archive.body":
-      "这里保存女性用户围绕被观察对象提交的原文记录，并将其中具有代表性的观察整理为可检索案例。当前列表共 {total} 条记录。",
+      "这里保存女性用户围绕品牌、产品、作品等对象提交的原文记录，并将其中具有代表性的观察整理为可检索案例。当前列表共 {total} 条记录。",
     "archive.tabs.label": "档案类型",
     "archive.tabs.originals": "观察原文",
     "archive.tabs.originalsBody": "用户提交的具体经历、感受、判断。这是女性主体的第一手记录。",
@@ -366,9 +366,9 @@ const COPY = {
     "archive.screenshot": "截图：",
 
     "evidence.title": "观察原文",
-    "evidence.eyebrow": "被观察对象 · 原文记录",
+    "evidence.eyebrow": "女性经验 · 原文记录",
     "evidence.body":
-      "这里收录女性用户围绕被观察对象提交的具体经历、感受与判断。作品、产品、品牌不是评价主体，而是被女性经验照见和评估的对象。",
+      "这里收录女性用户围绕品牌、产品、作品等对象提交的具体经历、感受与判断。作品、产品、品牌不是评价主体，而是被女性经验照见和评估的对象。",
     "evidence.back": "← 返回全部案例",
     "evidence.empty": "暂无观察原文。",
 
@@ -560,7 +560,7 @@ const COPY = {
     "seo.feed.title": "温度变化 · 女性友好体验测评",
     "seo.feed.description": "每一次温度变化的来源——升温、降温、新增案例。",
     "seo.topics.title": "热议议题 · 女性友好体验测评",
-    "seo.topics.description": "近期被持续观察的标签与议题。",
+    "seo.topics.description": "近期大家持续记录的标签与议题。",
     "seo.archive.title": "女性观察档案 · 整理案例 · 女性友好体验测评",
     "seo.archive.description": "女性观察原文与平台整理案例的分层档案。",
     "seo.knowledge.title": "知识引擎 · 女性友好测评",
@@ -726,13 +726,13 @@ const COPY = {
     "home.cta.feedback": "Give platform feedback",
     "home.cta.request": "Add assessment object",
     "home.stats.title": "Observations",
-    "home.topicWall.title": "Currently observed",
+    "home.topicWall.title": "People are recording",
     "home.topicWall.hint":
-      "Larger words were mentioned more often in the past 30 days. Select a topic to view related observations.",
+      "Larger words are topics people mentioned more often in the past 30 days. Select a topic to view related observations.",
     "home.topicWall.empty":
       "Not enough recent topics yet. We are waiting for the first observation.",
     "home.topicWall.active": "Active topics",
-    "home.topicWall.objects": "Observed objects",
+    "home.topicWall.objects": "Objects people record",
     "home.topicWall.viewTopic": 'View observations related to "{tag}"',
     "home.newObjects": "Recently updated objects",
     "home.heating": "Recently heating objects",
@@ -905,7 +905,7 @@ const COPY = {
 
     "topics.title": "Trending Topics",
     "topics.body":
-      "Female-experience topic tags that have been continuously observed in the past 30 days. Select any tag to view cases, related objects, and trends.",
+      "Female-experience topic tags people have kept recording in the past 30 days. Select any tag to view cases, related objects, and trends.",
     "topics.empty": "Not enough observations to form trends in the past 30 days.",
     "topics.count": "{count} observations",
     "topics.summary":
@@ -921,7 +921,7 @@ const COPY = {
     "archive.title": "Women's Observation Archive",
     "archive.eyebrow": "Female Observation Archive",
     "archive.body":
-      "This archive preserves original records submitted by women users around observed objects, and turns representative observations into searchable cases. {total} records in this list.",
+      "This archive preserves original records submitted by women users around brands, products, works, and other objects, and turns representative observations into searchable cases. {total} records in this list.",
     "archive.tabs.label": "Archive type",
     "archive.tabs.originals": "Observation originals",
     "archive.tabs.originalsBody":
@@ -951,9 +951,9 @@ const COPY = {
     "archive.screenshot": "Screenshot: ",
 
     "evidence.title": "Observation Originals",
-    "evidence.eyebrow": "Observed objects · original records",
+    "evidence.eyebrow": "Women's experiences · original records",
     "evidence.body":
-      "This page collects concrete experiences, feelings, and judgments submitted by women users around observed objects. Works, products, and brands are not the judging subjects; they are the objects illuminated and assessed through women's experiences.",
+      "This page collects concrete experiences, feelings, and judgments submitted by women users around brands, products, works, and other objects. Works, products, and brands are not the judging subjects; they are the objects illuminated and assessed through women's experiences.",
     "evidence.back": "<- Back to all cases",
     "evidence.empty": "No observation originals yet.",
 
@@ -1166,7 +1166,7 @@ const COPY = {
     "seo.feed.description":
       "Every temperature change has a source: heating, cooling, and new cases.",
     "seo.topics.title": "Trending Topics · Female-Friendly Experience Assessment",
-    "seo.topics.description": "Tags and topics that have been continuously observed recently.",
+    "seo.topics.description": "Tags and topics people have kept recording recently.",
     "seo.archive.title":
       "Women's Observation Archive · Organized Cases · Female-Friendly Experience Assessment",
     "seo.archive.description":
