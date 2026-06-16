@@ -129,6 +129,12 @@ const COPY = {
     "login.error.alreadyExists.hint": "请直接登录，或使用其他邮箱注册。",
     "login.error.weakPassword.title": "密码不符合要求",
     "login.error.weakPassword.hint": "请按密码规则设置。",
+    "login.error.pwnedPassword.title": "请更换一个更安全的密码",
+    "login.error.pwnedPassword.hint":
+      "这个密码已出现在公开泄露密码库中（约 {count} 次记录）。请使用没有在其他网站用过的新密码。",
+    "login.error.passwordCheckUnavailable.title": "暂时无法完成密码安全检查",
+    "login.error.passwordCheckUnavailable.hint":
+      "为了保护账号安全，注册前需要完成泄露密码检查。请稍后再试。",
     "login.error.unknown.title": "登录失败",
     "login.error.unknown.hint": "未知错误，请稍后重试。",
     "login.error.passwordMin.title": "密码至少需要 8 位",
@@ -302,6 +308,9 @@ const COPY = {
     "reset.backLogin": "返回登录",
     "reset.passwordMin": "密码至少 8 位",
     "reset.passwordMismatch": "两次输入的密码不一致",
+    "reset.passwordPwned":
+      "这个密码已出现在公开泄露密码库中（约 {count} 次记录）。请更换一个没有在其他网站用过的新密码。",
+    "reset.passwordCheckUnavailable": "暂时无法完成密码安全检查，请稍后再试。",
     "reset.updated": "密码已更新，请使用新密码登录",
     "reset.updateFailed": "更新密码失败",
     "reset.newPassword": "新密码（至少 8 位）",
@@ -697,6 +706,12 @@ const COPY = {
     "login.error.alreadyExists.hint": "Please log in directly, or sign up with another email.",
     "login.error.weakPassword.title": "Password does not meet requirements",
     "login.error.weakPassword.hint": "Please follow the password rules.",
+    "login.error.pwnedPassword.title": "Choose a safer password",
+    "login.error.pwnedPassword.hint":
+      "This password appears in public breach datasets about {count} times. Use a new password that you have not used on other sites.",
+    "login.error.passwordCheckUnavailable.title": "Password safety check is unavailable",
+    "login.error.passwordCheckUnavailable.hint":
+      "For account safety, sign-up requires a leaked-password check. Please try again later.",
     "login.error.unknown.title": "Login failed",
     "login.error.unknown.hint": "Unknown error. Please try again later.",
     "login.error.passwordMin.title": "Password must be at least 8 characters",
@@ -883,6 +898,10 @@ const COPY = {
     "reset.backLogin": "Back to login",
     "reset.passwordMin": "Password must be at least 8 characters",
     "reset.passwordMismatch": "The two passwords do not match",
+    "reset.passwordPwned":
+      "This password appears in public breach datasets about {count} times. Use a new password that you have not used on other sites.",
+    "reset.passwordCheckUnavailable":
+      "Password safety check is temporarily unavailable. Please try again later.",
     "reset.updated": "Password updated. Please log in with the new password.",
     "reset.updateFailed": "Failed to update password",
     "reset.newPassword": "New password (at least 8 characters)",
