@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getSupabaseAdminConfigStatus, supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getPresenceCounts } from "@/lib/api/presence.functions";
 import { FEMINIST_TAGS, TAG_WEIGHTS, EVIDENCE_STRENGTH, computeImpact } from "@/lib/temperature";
 import { recomputeObjectWithEngine } from "@/lib/api/temperature.functions";
 import { detectTags, detectEvidenceA } from "@/lib/api/bulk-import.functions";
@@ -2265,7 +2266,7 @@ export const adminGetOverviewCounts = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .eq("role", "admin");
     if (!roles?.length) throw new Error("forbidden");
-    const [o, p, r, c, f] = await Promise.all([
+    const [o, p, r, c, f, presence] = await Promise.all([
       supabaseAdmin.from("objects").select("*", { count: "exact", head: true }),
       supabaseAdmin
         .from("observations")
@@ -2283,6 +2284,10 @@ export const adminGetOverviewCounts = createServerFn({ method: "GET" })
         .from("platform_feedback" as never)
         .select("*", { count: "exact", head: true })
         .eq("status", "new"),
+      getPresenceCounts().catch((error) => {
+        console.warn("[presence] Unable to load admin counts", error);
+        return { onlineNow: 0, todayOnline: 0 };
+      }),
     ]);
     return {
       objects: o.count ?? 0,
@@ -2290,6 +2295,8 @@ export const adminGetOverviewCounts = createServerFn({ method: "GET" })
       pendingReq: r.count ?? 0,
       pendingComments: c.count ?? 0,
       pendingFeedback: f.count ?? 0,
+      onlineNow: presence.onlineNow,
+      todayOnline: presence.todayOnline,
     };
   });
 

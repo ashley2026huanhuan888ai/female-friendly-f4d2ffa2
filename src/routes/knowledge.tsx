@@ -20,7 +20,10 @@ export const Route = createFileRoute("/knowledge")({
         name: "description",
         content: "女性友好测评平台的原则、标签与案例知识库。所有 AI 分析均基于此知识库。",
       },
+      { property: "og:title", content: "知识引擎 · 女性友好测评" },
+      { property: "og:description", content: "女性友好测评平台的原则、标签与案例知识库。所有 AI 分析均基于此知识库。" },
     ],
+    links: [{ rel: "canonical", href: "/knowledge" }],
   }),
   component: KnowledgePage,
 });
