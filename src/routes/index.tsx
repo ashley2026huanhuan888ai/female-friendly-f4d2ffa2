@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
@@ -23,10 +23,14 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+const RECORD_TYPE_OPTIONS = ["brand", "film", "service", "game", "event", "organization"] as const;
+
 function Index() {
   const { t, objectType, tag: tagLabel, language } = useI18n();
   usePageMeta("seo.home.title", "seo.home.description");
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
+  const [recordType, setRecordType] = useState<(typeof RECORD_TYPE_OPTIONS)[number]>("brand");
   const [summary, setSummary] = useState<any>(null);
   const fetchSummary = useServerFn(getHomeSummary);
   const sentenceGap = language === "en" ? " " : "";
@@ -117,69 +121,82 @@ function Index() {
             </div>
 
             <PaperSheet tone="offset" className="p-6 md:p-8">
-              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-foreground pb-4">
-                <div>
-                  <h2 className="font-serif text-3xl">{archiveCopy.intake.title}</h2>
-                  <p className="mt-1 font-mono text-xs text-muted-foreground">
-                    {archiveCopy.intake.code}
-                  </p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  navigate({
+                    to: "/objects",
+                    search: { type: recordType },
+                  });
+                }}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-foreground pb-4">
+                  <div>
+                    <h2 className="font-serif text-3xl">{archiveCopy.intake.title}</h2>
+                    <p className="mt-1 font-mono text-xs text-muted-foreground">
+                      {archiveCopy.intake.code}
+                    </p>
+                  </div>
+                  <ArchiveStamp>{archiveCopy.table.pending}</ArchiveStamp>
                 </div>
-                <ArchiveStamp>{archiveCopy.table.pending}</ArchiveStamp>
-              </div>
 
-              <div className="mt-5">
-                <div className="text-sm font-medium">{archiveCopy.intake.types}</div>
-                <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                  {["brand", "film", "service", "game", "event", "organization"].map((type, i) => (
-                    <label key={type} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        defaultChecked={i === 0}
-                        className="accent-[var(--archive-pink)]"
-                      />
-                      <span>{objectType(type)}</span>
-                    </label>
-                  ))}
+                <div className="mt-5">
+                  <div className="text-sm font-medium">{archiveCopy.intake.types}</div>
+                  <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                    {RECORD_TYPE_OPTIONS.map((type) => (
+                      <label
+                        key={type}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-2 border border-border px-3 py-2 hover:border-foreground/60",
+                          recordType === type && "border-[var(--archive-pink)] bg-card",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="archive-record-type"
+                          value={type}
+                          checked={recordType === type}
+                          onChange={() => setRecordType(type)}
+                          className="accent-[var(--archive-pink)]"
+                        />
+                        <span>{objectType(type)}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <textarea
-                rows={4}
-                maxLength={500}
-                placeholder={archiveCopy.intake.bodyPlaceholder}
-                className="mt-5 w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
-              />
-
-              <label className="mt-4 block">
-                <span className="text-xs text-muted-foreground">{archiveCopy.intake.source}</span>
-                <input
-                  type="url"
-                  placeholder={archiveCopy.intake.sourcePlaceholder}
-                  className="mt-1 w-full border border-border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
+                <textarea
+                  rows={4}
+                  maxLength={500}
+                  placeholder={archiveCopy.intake.bodyPlaceholder}
+                  className="mt-5 w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
                 />
-              </label>
 
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" className="accent-[var(--archive-pink)]" />
-                  <span>{archiveCopy.intake.anonymous}</span>
+                <label className="mt-4 block">
+                  <span className="text-xs text-muted-foreground">{archiveCopy.intake.source}</span>
+                  <input
+                    type="url"
+                    placeholder={archiveCopy.intake.sourcePlaceholder}
+                    className="mt-1 w-full border border-border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
+                  />
                 </label>
-                <div className="flex flex-wrap items-center gap-3">
+
+                <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
                   <Link
                     to="/about"
                     className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                   >
                     {archiveCopy.intake.rules}
                   </Link>
-                  <Link
-                    to="/objects"
+                  <button
+                    type="submit"
                     className="border border-[var(--archive-pink)] bg-[var(--archive-pink)] px-5 py-2.5 text-sm font-medium text-white hover:bg-foreground hover:border-foreground"
                   >
                     {archiveCopy.intake.submit}
-                  </Link>
+                  </button>
                 </div>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">{archiveCopy.intake.helper}</p>
+                <p className="mt-3 text-xs text-muted-foreground">{archiveCopy.intake.helper}</p>
+              </form>
             </PaperSheet>
           </div>
 
@@ -524,11 +541,10 @@ function getArchiveHomeCopy(language: "zh" | "en") {
       intake: {
         title: "Submit your experience record",
         code: "Archive No.: FF-2026-____",
-        types: "Record type (multi-select)",
+        types: "Record type",
         bodyPlaceholder: "What happened? Specific details help drive change.",
         source: "Source link (optional)",
         sourcePlaceholder: "Public article, page, original text...",
-        anonymous: "Submit anonymously",
         rules: "Read recording guidelines",
         submit: "Submit record",
         helper: "No link is required. You can add one later.",
@@ -564,11 +580,10 @@ function getArchiveHomeCopy(language: "zh" | "en") {
     intake: {
       title: "提交你的体验记录",
       code: "档案编号：FF-2026-____",
-      types: "记录类型（可多选）",
+      types: "记录类型",
       bodyPlaceholder: "发生了什么？越具体越有助于推动改变。",
       source: "来源链接（可选）",
       sourcePlaceholder: "公开报道、网页、原文链接…",
-      anonymous: "匿名提交",
       rules: "了解记录规范",
       submit: "提交记录",
       helper: "没有链接也可以记录，后续可补充。",
