@@ -21,7 +21,7 @@ const PRIMARY_NAV = [
 
 const SECONDARY_NAV = [
   { to: "/topics", labelKey: "nav.topics" },
-  { to: "/archive", labelKey: "nav.archive" },
+  { to: "/archive/evidence", labelKey: "nav.archive" },
   { to: "/knowledge", labelKey: "nav.knowledge" },
   { to: "/about", labelKey: "nav.about" },
 ] as const;
