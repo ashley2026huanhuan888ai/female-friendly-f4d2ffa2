@@ -53,6 +53,9 @@
   --archive-pink: oklch(0.62 0.24 355);
   --archive-rule: oklch(0.74 0.006 80);
   --archive-shadow: oklch(0.18 0.01 60 / 18%);
+  --archive-paper-edge: oklch(0.44 0.01 60 / 18%);
+  --archive-copy-noise: oklch(0.2 0.01 60 / 7%);
+  --archive-faint-ink: oklch(0.36 0.01 60 / 44%);
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 60);
@@ -133,21 +136,104 @@
     margin-inline: auto;
     padding-inline: 1.5rem;
   }
+  .archive-desk {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(circle at 12% 8%, oklch(1 0 0 / 82%) 0 12rem, transparent 22rem),
+      linear-gradient(110deg, oklch(0.98 0.004 80), oklch(0.93 0.006 75));
+  }
+  .archive-desk::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.52;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 5px, oklch(0.2 0.01 60 / 2.5%) 5px 6px),
+      repeating-linear-gradient(0deg, transparent 0 17px, oklch(0.2 0.01 60 / 2%) 17px 18px),
+      radial-gradient(circle at 22% 34%, oklch(0.2 0.01 60 / 5%) 0 1px, transparent 1px),
+      radial-gradient(circle at 71% 62%, oklch(0.2 0.01 60 / 4%) 0 1px, transparent 1px);
+    background-size:
+      auto,
+      auto,
+      19px 23px,
+      31px 29px;
+    mix-blend-mode: multiply;
+  }
+  .archive-desk-dark {
+    background:
+      linear-gradient(90deg, oklch(0.25 0.018 55 / 18%), transparent 12rem),
+      linear-gradient(120deg, oklch(0.25 0.018 55), oklch(0.18 0.012 60));
+  }
   .archive-paper {
     position: relative;
+    overflow: hidden;
     border: 1px solid var(--archive-rule);
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 72%), oklch(0.985 0.003 80 / 92%)), var(--color-paper);
+      linear-gradient(180deg, oklch(1 0 0 / 80%), oklch(0.982 0.004 80 / 96%)),
+      linear-gradient(90deg, transparent, oklch(0.75 0.008 80 / 18%) 49%, transparent 51%),
+      var(--color-paper);
     box-shadow:
       0 1px 0 oklch(1 0 0 / 70%) inset,
+      0 0 0 1px oklch(0.2 0.01 60 / 3%) inset,
       0 12px 28px -22px var(--archive-shadow),
       8px 10px 0 -5px oklch(0.7 0.006 80 / 24%);
+    transform: rotate(var(--paper-rotate, 0deg));
+    transform-origin: center;
+  }
+  .archive-paper > * {
+    position: relative;
+    z-index: 1;
+  }
+  .archive-paper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.68;
+    background:
+      radial-gradient(circle at 11% 24%, var(--archive-copy-noise) 0 1px, transparent 1px),
+      radial-gradient(circle at 83% 46%, var(--archive-copy-noise) 0 1px, transparent 1px),
+      radial-gradient(circle at 41% 72%, oklch(0.2 0.01 60 / 5%) 0 1px, transparent 1px),
+      repeating-linear-gradient(0deg, transparent 0 11px, oklch(0.2 0.01 60 / 2.5%) 11px 12px);
+    background-size:
+      17px 19px,
+      29px 31px,
+      23px 21px,
+      auto;
+    mix-blend-mode: multiply;
+  }
+  .archive-paper::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        90deg,
+        var(--archive-paper-edge),
+        transparent 8%,
+        transparent 92%,
+        var(--archive-paper-edge)
+      ),
+      linear-gradient(
+        180deg,
+        var(--archive-paper-edge),
+        transparent 9%,
+        transparent 91%,
+        var(--archive-paper-edge)
+      );
+    opacity: 0.42;
   }
   .archive-paper-lifted {
     box-shadow:
       0 1px 0 oklch(1 0 0 / 70%) inset,
-      0 22px 42px -28px var(--archive-shadow),
-      10px 12px 0 -5px oklch(0.65 0.006 80 / 24%);
+      0 26px 52px -30px var(--archive-shadow),
+      12px 14px 0 -5px oklch(0.65 0.006 80 / 24%);
   }
   .archive-paper-offset {
     box-shadow:
@@ -155,6 +241,41 @@
       10px 10px 0 -6px oklch(0.88 0.004 80),
       12px 12px 0 -6px var(--archive-rule),
       0 18px 36px -30px var(--archive-shadow);
+  }
+  .archive-paper-dossier {
+    --paper-rotate: -0.35deg;
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 72%) inset,
+      0 32px 64px -34px oklch(0.12 0.01 60 / 34%),
+      14px 14px 0 -7px oklch(0.76 0.006 80 / 36%),
+      -10px 18px 0 -12px oklch(0.45 0.008 60 / 20%);
+  }
+  .archive-paper-slip {
+    --paper-rotate: 0.7deg;
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 72%) inset,
+      0 18px 42px -30px oklch(0.12 0.01 60 / 28%),
+      -9px 12px 0 -8px oklch(0.62 0.006 80 / 25%);
+  }
+  .archive-paper-stack {
+    position: relative;
+    isolation: isolate;
+  }
+  .archive-paper-stack::before,
+  .archive-paper-stack::after {
+    content: "";
+    position: absolute;
+    inset: 0.9rem -0.55rem -0.65rem 0.7rem;
+    z-index: -1;
+    border: 1px solid oklch(0.63 0.006 80 / 42%);
+    background: linear-gradient(180deg, oklch(0.99 0.003 80), oklch(0.94 0.005 80));
+    box-shadow: 0 18px 42px -32px var(--archive-shadow);
+    transform: rotate(1.25deg);
+  }
+  .archive-paper-stack::after {
+    inset: 1.65rem -0.9rem -1rem 1.15rem;
+    opacity: 0.55;
+    transform: rotate(-0.65deg);
   }
   .archive-rule {
     border-color: var(--archive-rule);
@@ -173,6 +294,71 @@
     color: var(--archive-pink);
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+  .archive-stamp-soft {
+    background: linear-gradient(90deg, oklch(0.62 0.24 355 / 12%), oklch(0.62 0.24 355 / 5%));
+    box-shadow: 4px 3px 0 -2px oklch(0.62 0.24 355 / 20%);
+  }
+  .paper-field {
+    border-bottom: 1px solid var(--archive-faint-ink);
+    padding-block: 0.55rem;
+  }
+  .paper-input {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--archive-faint-ink);
+    background: transparent;
+    border-radius: 0;
+    padding: 0.45rem 0;
+    outline: none;
+  }
+  .paper-input:focus {
+    border-color: var(--archive-pink);
+  }
+  .paper-textarea {
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 1.72rem,
+      var(--archive-faint-ink) 1.72rem,
+      var(--archive-faint-ink) calc(1.72rem + 1px)
+    );
+    line-height: 1.72rem;
+  }
+  .paper-row {
+    border-top: 1px solid var(--archive-rule);
+  }
+  .paper-row:last-child {
+    border-bottom: 1px solid var(--archive-rule);
+  }
+  .paper-divider {
+    border-top: 1px solid var(--archive-faint-ink);
+  }
+  .paper-tag {
+    border: 1px solid var(--archive-rule);
+    background: oklch(1 0 0 / 34%);
+  }
+  .paper-tag-active {
+    border-color: var(--archive-pink);
+    color: var(--archive-pink);
+    background: oklch(0.62 0.24 355 / 7%);
+  }
+  .paper-action {
+    border: 1px solid var(--color-foreground);
+    background: var(--color-foreground);
+    color: var(--color-background);
+  }
+  .paper-action:hover {
+    border-color: var(--archive-pink);
+    background: var(--archive-pink);
+  }
+  .paper-action-secondary {
+    border: 1px solid var(--archive-faint-ink);
+    background: transparent;
+    color: var(--color-foreground);
+  }
+  .paper-action-secondary:hover {
+    border-color: var(--color-foreground);
   }
 }
 

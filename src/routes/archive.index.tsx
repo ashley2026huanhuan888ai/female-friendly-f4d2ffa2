@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArchiveSectionTabs } from "@/components/ArchiveSectionTabs";
+import { ArchiveStamp, DossierPanel, PaperSheet, PaperStack } from "@/components/archive-ui";
 import { SiteLayout } from "@/components/SiteLayout";
 import { searchArchive, ARCHIVE_CATEGORIES } from "@/lib/api/archive.functions";
 import { FEMINIST_TAGS, bandOf } from "@/lib/temperature";
@@ -68,104 +69,114 @@ function ArchivePage() {
 
   return (
     <SiteLayout>
-      <section className="border-b border-border">
+      <section className="archive-desk border-b border-border">
         <div className="container-prose py-14">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            {t("archive.eyebrow")}
-          </div>
-          <h1 className="mt-3 font-serif text-4xl md:text-5xl">{t("archive.title")}</h1>
-          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-            {t("archive.body", { total: total.toLocaleString() })}
-          </p>
-          <ArchiveSectionTabs active="cases" />
-          <div className="mt-6 flex gap-3">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={t("archive.searchPlaceholder")}
-              className="flex-1 border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-foreground"
-            />
-          </div>
+          <PaperStack>
+            <DossierPanel
+              title={t("archive.title")}
+              eyebrow={t("archive.eyebrow")}
+              stamp={`TOTAL ${total.toLocaleString()}`}
+            >
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                {t("archive.body", { total: total.toLocaleString() })}
+              </p>
+              <ArchiveSectionTabs active="cases" />
+              <div className="mt-6 flex gap-3">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder={t("archive.searchPlaceholder")}
+                  className="paper-input flex-1"
+                />
+              </div>
+            </DossierPanel>
+          </PaperStack>
         </div>
       </section>
 
-      <section className="border-b border-border bg-card/40">
+      <section className="archive-desk border-b border-border">
         <div className="container-prose space-y-4 py-6 text-xs">
-          <Row label={t("archive.category")}>
-            {ARCHIVE_CATEGORIES.map((c) => (
-              <Chip
-                key={c}
-                active={categories.includes(c)}
-                onClick={() => toggle(categories, c, setCategories)}
-              >
-                {archiveCategory(c)}
-              </Chip>
-            ))}
-          </Row>
-          <Row label={t("archive.objectType")}>
-            {["brand", "product", "service", "organization", "film", "game", "show", "event"].map(
-              (k) => (
-                <Chip key={k} active={types.includes(k)} onClick={() => toggle(types, k, setTypes)}>
-                  {objectType(k)}
+          <PaperSheet tone="slip" className="space-y-4 p-5">
+            <Row label={t("archive.category")}>
+              {ARCHIVE_CATEGORIES.map((c) => (
+                <Chip
+                  key={c}
+                  active={categories.includes(c)}
+                  onClick={() => toggle(categories, c, setCategories)}
+                >
+                  {archiveCategory(c)}
                 </Chip>
-              ),
-            )}
-          </Row>
-          <Row label={t("archive.topicTag")}>
-            {FEMINIST_TAGS.map((tagName) => (
-              <Chip
-                key={tagName}
-                active={tags.includes(tagName)}
-                onClick={() => toggle(tags, tagName, setTags)}
-              >
-                #{tag(tagName)}
-              </Chip>
-            ))}
-          </Row>
-          <Row label={t("archive.evidenceLevel")}>
-            {(["A", "B", "C", "D"] as const).map((e) => (
-              <Chip
-                key={e}
-                active={evidence.includes(e)}
-                onClick={() => toggle(evidence, e, setEvidence)}
-              >
-                {e}
-              </Chip>
-            ))}
-          </Row>
-          <Row label={t("archive.temperatureRange", { min: tempRange[0], max: tempRange[1] })}>
-            <input
-              type="range"
-              min={20}
-              max={100}
-              value={tempRange[0]}
-              onChange={(e) => setTempRange([Number(e.target.value), tempRange[1]])}
-              className="w-40"
-            />
-            <input
-              type="range"
-              min={20}
-              max={100}
-              value={tempRange[1]}
-              onChange={(e) => setTempRange([tempRange[0], Number(e.target.value)])}
-              className="w-40"
-            />
-          </Row>
+              ))}
+            </Row>
+            <Row label={t("archive.objectType")}>
+              {["brand", "product", "service", "organization", "film", "game", "show", "event"].map(
+                (k) => (
+                  <Chip
+                    key={k}
+                    active={types.includes(k)}
+                    onClick={() => toggle(types, k, setTypes)}
+                  >
+                    {objectType(k)}
+                  </Chip>
+                ),
+              )}
+            </Row>
+            <Row label={t("archive.topicTag")}>
+              {FEMINIST_TAGS.map((tagName) => (
+                <Chip
+                  key={tagName}
+                  active={tags.includes(tagName)}
+                  onClick={() => toggle(tags, tagName, setTags)}
+                >
+                  #{tag(tagName)}
+                </Chip>
+              ))}
+            </Row>
+            <Row label={t("archive.evidenceLevel")}>
+              {(["A", "B", "C", "D"] as const).map((e) => (
+                <Chip
+                  key={e}
+                  active={evidence.includes(e)}
+                  onClick={() => toggle(evidence, e, setEvidence)}
+                >
+                  {e}
+                </Chip>
+              ))}
+            </Row>
+            <Row label={t("archive.temperatureRange", { min: tempRange[0], max: tempRange[1] })}>
+              <input
+                type="range"
+                min={20}
+                max={100}
+                value={tempRange[0]}
+                onChange={(e) => setTempRange([Number(e.target.value), tempRange[1]])}
+                className="w-40 accent-[var(--accent)]"
+              />
+              <input
+                type="range"
+                min={20}
+                max={100}
+                value={tempRange[1]}
+                onChange={(e) => setTempRange([tempRange[0], Number(e.target.value)])}
+                className="w-40 accent-[var(--accent)]"
+              />
+            </Row>
+          </PaperSheet>
         </div>
       </section>
 
-      <section className="py-10">
+      <section className="archive-desk py-10">
         <div className="container-prose">
           {loading && items.length === 0 ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">
+            <PaperSheet tone="slip" className="p-10 text-center text-sm text-muted-foreground">
               {t("archive.searching")}
-            </p>
+            </PaperSheet>
           ) : items.length === 0 ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">
+            <PaperSheet tone="slip" className="p-10 text-center text-sm text-muted-foreground">
               {t("archive.noMatch")}
-            </p>
+            </PaperSheet>
           ) : (
-            <ul className="divide-y divide-border border-y border-border">
+            <ul className="space-y-4">
               {items.map((it) => (
                 <CaseRow key={it.id} item={it} />
               ))}
@@ -177,7 +188,7 @@ function ArchivePage() {
               <button
                 disabled={page === 1}
                 onClick={() => setPage(page - 1)}
-                className="border border-border px-3 py-1.5 disabled:opacity-30"
+                className="paper-action-secondary px-3 py-1.5 disabled:opacity-30"
               >
                 {t("common.previous")}
               </button>
@@ -187,7 +198,7 @@ function ArchivePage() {
               <button
                 disabled={items.length < 20}
                 onClick={() => setPage(page + 1)}
-                className="border border-border px-3 py-1.5 disabled:opacity-30"
+                className="paper-action-secondary px-3 py-1.5 disabled:opacity-30"
               >
                 {t("common.next")}
               </button>
@@ -221,7 +232,7 @@ function Chip({
   return (
     <button
       onClick={onClick}
-      className={`border px-2 py-0.5 transition ${active ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"}`}
+      className={`paper-tag transition ${active ? "paper-tag-active" : "text-muted-foreground hover:border-foreground hover:text-foreground"}`}
     >
       {children}
     </button>
@@ -232,39 +243,41 @@ function CaseRow({ item }: { item: Item }) {
   const { language, t, objectType, tag, archiveCategory } = useI18n();
   const band = bandOf(item.object.temperature);
   return (
-    <li className="py-5">
+    <li>
       <Link to="/archive/$caseCode" params={{ caseCode: item.case_code }} className="group block">
-        <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-          <span className="font-mono text-foreground">{item.case_code}</span>
-          <span>·</span>
-          <span>{archiveCategory(item.archive_category)}</span>
-          <span>·</span>
-          <span className="border border-border px-1.5">
-            {t("common.evidence")} {item.evidence_level}
-          </span>
-          <span>·</span>
-          <span className="text-foreground">{item.object.name}</span>
-          <span className="text-muted-foreground">({objectType(item.object.type)})</span>
-          <span
-            className="ml-auto"
-            style={{
-              color: `var(--temp-${band.band === "comfort" ? "cool" : band.band === "minor" ? "neutral" : band.band === "notable" ? "warm" : band.band === "high" ? "hot" : "critical"})`,
-            }}
-          >
-            {item.object.temperature.toFixed(1)}°C
-          </span>
-        </div>
-        <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
-          {item.summary || t("common.noSummary")}
-        </p>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          {item.tags.slice(0, 6).map((t) => (
-            <span key={t} className="text-accent">
-              #{tag(t)}
+        <PaperSheet
+          tone="slip"
+          className="p-4 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-accent/50"
+        >
+          <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+            <span className="font-mono text-foreground">{item.case_code}</span>
+            <span>{archiveCategory(item.archive_category)}</span>
+            <ArchiveStamp className="archive-stamp-soft text-[10px]">
+              {t("common.evidence")} {item.evidence_level}
+            </ArchiveStamp>
+            <span className="text-foreground">{item.object.name}</span>
+            <span className="text-muted-foreground">({objectType(item.object.type)})</span>
+            <span
+              className="ml-auto font-serif text-base archive-highlight"
+              style={{
+                color: `var(--temp-${band.band === "comfort" ? "cool" : band.band === "minor" ? "neutral" : band.band === "notable" ? "warm" : band.band === "high" ? "hot" : "critical"})`,
+              }}
+            >
+              {item.object.temperature.toFixed(1)}°C
             </span>
-          ))}
-          <span className="ml-auto">{formatDateForLanguage(item.created_at, language)}</span>
-        </div>
+          </div>
+          <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
+            {item.summary || t("common.noSummary")}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {item.tags.slice(0, 6).map((t) => (
+              <span key={t} className="paper-tag">
+                #{tag(t)}
+              </span>
+            ))}
+            <span className="ml-auto">{formatDateForLanguage(item.created_at, language)}</span>
+          </div>
+        </PaperSheet>
       </Link>
     </li>
   );

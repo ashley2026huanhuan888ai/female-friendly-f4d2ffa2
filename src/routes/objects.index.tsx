@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
 import { ObjectCard } from "@/components/ObjectCard";
+import { DossierPanel, PaperSheet, PaperStack } from "@/components/archive-ui";
 import { useAuth } from "@/components/auth-context";
 import { getPublicObjects, requestObjectFromSearch } from "@/lib/api/platform.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
@@ -142,93 +143,100 @@ function AllObjects() {
 
   return (
     <SiteLayout>
-      <section className="border-b border-border">
+      <section className="archive-desk border-b border-border">
         <div className="container-prose py-16">
-          <h1 className="font-serif text-4xl">{t("objects.title")}</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {t("objects.description")}
-            <Link to="/request-object" className="underline">
-              {t("objects.requestLink")}
-            </Link>
-          </p>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              navigate({
-                to: "/objects",
-                search: {
-                  q: qInput.trim() || undefined,
-                  tag: tagFilter || undefined,
-                  type: type || undefined,
-                },
-              });
-            }}
-            className="mt-10 grid gap-3 md:grid-cols-[1fr_auto_auto_auto]"
-          >
-            <input
-              value={qInput}
-              onChange={(e) => setQInput(e.target.value)}
-              placeholder={t("objects.searchPlaceholder")}
-              className="border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-foreground"
-            />
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="border border-border bg-card px-4 py-2.5 text-sm"
+          <PaperStack>
+            <DossierPanel
+              title={t("objects.title")}
+              eyebrow="Object Library"
+              stamp="FF-2026"
+              meta={
+                <>
+                  {t("objects.description")}
+                  <Link to="/request-object" className="ml-1 underline">
+                    {t("objects.requestLink")}
+                  </Link>
+                </>
+              }
             >
-              <option value="">{t("objects.allTypes")}</option>
-              {OBJECT_TYPE_OPTIONS.map((k) => (
-                <option key={k} value={k}>
-                  {objectType(k)}
-                </option>
-              ))}
-            </select>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as any)}
-              className="border border-border bg-card px-4 py-2.5 text-sm"
-            >
-              <option value="temp">{t("objects.sortTemp")}</option>
-              <option value="recent">{t("objects.sortRecent")}</option>
-            </select>
-            <button
-              type="submit"
-              className="border border-foreground bg-foreground px-5 py-2.5 text-sm text-background hover:bg-accent"
-            >
-              {t("common.search")}
-            </button>
-          </form>
-          {tagFilter && (
-            <div className="mt-6 border border-border bg-card p-4">
-              <div className="font-serif text-xl">
-                {t("objects.tagTitle", { tag: readableTag })}
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("objects.tagBody", { tag: readableTag })}
-              </p>
-              <Link
-                to="/objects"
-                search={{ q: q || undefined, type: type || undefined }}
-                className="mt-3 inline-block text-xs uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  navigate({
+                    to: "/objects",
+                    search: {
+                      q: qInput.trim() || undefined,
+                      tag: tagFilter || undefined,
+                      type: type || undefined,
+                    },
+                  });
+                }}
+                className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]"
               >
-                {t("objects.clearTag")}
-              </Link>
-            </div>
-          )}
+                <input
+                  value={qInput}
+                  onChange={(e) => setQInput(e.target.value)}
+                  placeholder={t("objects.searchPlaceholder")}
+                  className="paper-input px-0 text-sm placeholder:text-muted-foreground"
+                />
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="border border-border bg-transparent px-4 py-2.5 text-sm"
+                >
+                  <option value="">{t("objects.allTypes")}</option>
+                  {OBJECT_TYPE_OPTIONS.map((k) => (
+                    <option key={k} value={k}>
+                      {objectType(k)}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as any)}
+                  className="border border-border bg-transparent px-4 py-2.5 text-sm"
+                >
+                  <option value="temp">{t("objects.sortTemp")}</option>
+                  <option value="recent">{t("objects.sortRecent")}</option>
+                </select>
+                <button type="submit" className="paper-action px-5 py-2.5 text-sm">
+                  {t("common.search")}
+                </button>
+              </form>
+              {tagFilter && (
+                <PaperSheet tone="slip" className="mt-6 p-4">
+                  <div className="font-serif text-xl">
+                    {t("objects.tagTitle", { tag: readableTag })}
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {t("objects.tagBody", { tag: readableTag })}
+                  </p>
+                  <Link
+                    to="/objects"
+                    search={{ q: q || undefined, type: type || undefined }}
+                    className="mt-3 inline-block text-xs uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    {t("objects.clearTag")}
+                  </Link>
+                </PaperSheet>
+              )}
+            </DossierPanel>
+          </PaperStack>
         </div>
       </section>
 
-      <section className="py-12">
+      <section className="archive-desk py-12">
         <div className="container-prose">
           {loading ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">{t("common.loading")}</p>
+            <p className="archive-paper py-16 text-center text-sm text-muted-foreground">
+              {t("common.loading")}
+            </p>
           ) : showTagEmpty ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">
+            <p className="archive-paper py-16 text-center text-sm text-muted-foreground">
               {t("objects.noTagMatch", { tag: readableTag })}
             </p>
           ) : showEmptyWithRequest ? (
-            <div className="border border-border bg-card p-8 text-center">
+            <PaperSheet tone="dossier" className="p-8 text-center">
               <p className="font-serif text-2xl">
                 {t("objects.emptyTitle", { keyword: searchedKeyword })}
               </p>
@@ -238,15 +246,15 @@ function AllObjects() {
               <button
                 onClick={() => handleRequest(searchedKeyword)}
                 disabled={requesting}
-                className="mt-6 border border-foreground bg-foreground px-6 py-2.5 text-sm text-background hover:bg-accent disabled:opacity-50"
+                className="paper-action mt-6 px-6 py-2.5 text-sm disabled:opacity-50"
               >
                 {requesting
                   ? t("objects.requesting")
                   : t("objects.requestKeyword", { keyword: searchedKeyword })}
               </button>
-            </div>
+            </PaperSheet>
           ) : items.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">
+            <p className="archive-paper py-16 text-center text-sm text-muted-foreground">
               {t("common.noObjects")}
             </p>
           ) : (

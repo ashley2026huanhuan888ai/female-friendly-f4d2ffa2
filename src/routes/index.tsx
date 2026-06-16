@@ -3,7 +3,14 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
-import { ArchiveStamp, HeatRuler, PaperSheet } from "@/components/archive-ui";
+import {
+  ArchiveStamp,
+  DossierPanel,
+  PaperField,
+  PaperSheet,
+  PaperStack,
+  TemperatureVerdict,
+} from "@/components/archive-ui";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -58,7 +65,7 @@ function Index() {
 
   return (
     <SiteLayout>
-      <section className="border-b border-border">
+      <section className="archive-desk border-b border-border">
         <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
           <div className="grid gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-start">
             <div className="pt-2">
@@ -84,7 +91,7 @@ function Index() {
                   e.preventDefault();
                   window.location.href = `/objects?q=${encodeURIComponent(q)}`;
                 }}
-                className="mt-8 flex max-w-xl border-2 border-foreground bg-paper"
+                className="archive-paper mt-8 flex max-w-xl border-2 border-foreground bg-paper"
               >
                 <input
                   value={q}
@@ -120,91 +127,93 @@ function Index() {
               )}
             </div>
 
-            <PaperSheet tone="offset" className="p-6 md:p-8">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  navigate({
-                    to: "/objects",
-                    search: { type: recordType },
-                  });
-                }}
+            <PaperStack>
+              <DossierPanel
+                title={archiveCopy.intake.title}
+                eyebrow="Female-Friendly Experience Archive"
+                stamp={archiveCopy.table.pending}
+                meta={archiveCopy.intake.code}
+                className="md:p-8"
               >
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-foreground pb-4">
-                  <div>
-                    <h2 className="font-serif text-3xl">{archiveCopy.intake.title}</h2>
-                    <p className="mt-1 font-mono text-xs text-muted-foreground">
-                      {archiveCopy.intake.code}
-                    </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    navigate({
+                      to: "/objects",
+                      search: { type: recordType },
+                    });
+                  }}
+                >
+                  <PaperField label={archiveCopy.intake.types}>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {RECORD_TYPE_OPTIONS.map((type) => (
+                        <label
+                          key={type}
+                          className={cn(
+                            "paper-tag flex cursor-pointer items-center gap-2 px-3 py-2 text-foreground hover:border-foreground/60",
+                            recordType === type && "paper-tag-active",
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name="archive-record-type"
+                            value={type}
+                            checked={recordType === type}
+                            onChange={() => setRecordType(type)}
+                            className="accent-[var(--archive-pink)]"
+                          />
+                          <span>{objectType(type)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </PaperField>
+
+                  <label className="mt-5 block">
+                    <span className="text-sm font-medium">{archiveCopy.intake.feeling}</span>
+                    <textarea
+                      rows={7}
+                      maxLength={500}
+                      placeholder={archiveCopy.intake.bodyPlaceholder}
+                      className="paper-textarea mt-3 min-h-[190px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--archive-pink)]"
+                    />
+                  </label>
+
+                  <label className="mt-5 block">
+                    <span className="text-xs text-muted-foreground">
+                      {archiveCopy.intake.source}
+                    </span>
+                    <input
+                      type="url"
+                      placeholder={archiveCopy.intake.sourcePlaceholder}
+                      className="paper-input mt-1 text-sm placeholder:text-muted-foreground"
+                    />
+                  </label>
+
+                  <div className="paper-divider mt-6 flex flex-wrap items-center justify-end gap-3 pt-4">
+                    <Link
+                      to="/about"
+                      className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    >
+                      {archiveCopy.intake.rules}
+                    </Link>
+                    <button type="submit" className="paper-action px-5 py-2.5 text-sm font-medium">
+                      {archiveCopy.intake.submit}
+                    </button>
                   </div>
-                </div>
-
-                <div className="mt-5">
-                  <div className="text-sm font-medium">{archiveCopy.intake.types}</div>
-                  <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
-                    {RECORD_TYPE_OPTIONS.map((type) => (
-                      <label
-                        key={type}
-                        className={cn(
-                          "flex cursor-pointer items-center gap-2 border border-border px-3 py-2 hover:border-foreground/60",
-                          recordType === type && "border-[var(--archive-pink)] bg-card",
-                        )}
-                      >
-                        <input
-                          type="radio"
-                          name="archive-record-type"
-                          value={type}
-                          checked={recordType === type}
-                          onChange={() => setRecordType(type)}
-                          className="accent-[var(--archive-pink)]"
-                        />
-                        <span>{objectType(type)}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <textarea
-                  rows={7}
-                  maxLength={500}
-                  placeholder={archiveCopy.intake.bodyPlaceholder}
-                  className="mt-5 min-h-[180px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm leading-6 outline-none placeholder:text-muted-foreground focus:border-foreground"
-                />
-
-                <label className="mt-4 block">
-                  <span className="text-xs text-muted-foreground">{archiveCopy.intake.source}</span>
-                  <input
-                    type="url"
-                    placeholder={archiveCopy.intake.sourcePlaceholder}
-                    className="mt-1 w-full border border-border bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-foreground"
-                  />
-                </label>
-
-                <div className="mt-5 flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
-                  <Link
-                    to="/about"
-                    className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                  >
-                    {archiveCopy.intake.rules}
-                  </Link>
-                  <button
-                    type="submit"
-                    className="border border-[var(--archive-pink)] bg-[var(--archive-pink)] px-5 py-2.5 text-sm font-medium text-white hover:bg-foreground hover:border-foreground"
-                  >
-                    {archiveCopy.intake.submit}
-                  </button>
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground">{archiveCopy.intake.helper}</p>
-              </form>
-            </PaperSheet>
+                  <p className="mt-3 text-xs text-muted-foreground">{archiveCopy.intake.helper}</p>
+                </form>
+              </DossierPanel>
+            </PaperStack>
           </div>
 
           <PaperSheet
-            tone="flat"
-            className="mt-10 grid gap-6 p-5 md:grid-cols-[0.88fr_1.12fr] md:items-center"
+            tone="slip"
+            className="mt-10 grid gap-6 p-5 md:grid-cols-[0.82fr_1.18fr] md:items-center"
           >
             <div className="flex items-start gap-4">
-              <ArchiveStamp>{archiveCopy.heat.title}</ArchiveStamp>
+              <ArchiveStamp className="archive-stamp-soft rotate-[-3deg]">
+                {archiveCopy.heat.title}
+              </ArchiveStamp>
               <div>
                 <p className="text-sm leading-6 text-muted-foreground">{archiveCopy.heat.body}</p>
                 <Link
@@ -215,12 +224,12 @@ function Index() {
                 </Link>
               </div>
             </div>
-            <HeatRuler value={heatValue ?? null} compact />
+            <TemperatureVerdict value={heatValue ?? null} compact />
           </PaperSheet>
         </div>
       </section>
 
-      <section className="border-b border-border py-14">
+      <section className="archive-desk border-b border-border py-14">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="font-serif text-3xl archive-marker">{archiveCopy.table.title}</h2>
@@ -235,7 +244,7 @@ function Index() {
         </div>
       </section>
 
-      <section className="border-b border-border py-16">
+      <section className="archive-desk border-b border-border py-16">
         <div className="container-prose grid gap-10 md:grid-cols-2">
           <ColumnList
             title={t("home.heating")}
@@ -251,7 +260,7 @@ function Index() {
         </div>
       </section>
 
-      <section className="border-b border-border py-16">
+      <section className="archive-desk border-b border-border py-16">
         <div className="container-prose">
           <div className="flex items-baseline justify-between">
             <h2 className="font-serif text-3xl">{t("home.latestEvents")}</h2>
@@ -263,7 +272,7 @@ function Index() {
             </Link>
           </div>
           {!summary?.today_events?.length ? (
-            <p className="mt-10 border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+            <p className="archive-paper mt-10 border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
               {t("home.noEvents24h")}
             </p>
           ) : (
@@ -276,7 +285,7 @@ function Index() {
         </div>
       </section>
 
-      <section className="border-b border-border py-16">
+      <section className="archive-desk border-b border-border py-16">
         <div className="container-prose">
           <h2 className="font-serif text-2xl">{t("home.latestAI")}</h2>
           <p className="text-xs text-muted-foreground">{t("home.latestAIHint")}</p>
@@ -308,7 +317,7 @@ function Index() {
         </div>
       </section>
 
-      <section className="py-12">
+      <section className="archive-desk py-12">
         <div className="container-prose">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             {t("home.researchEyebrow")}
@@ -320,7 +329,7 @@ function Index() {
           <div className="mt-6 grid gap-3 md:grid-cols-2">
             <Link
               to="/knowledge"
-              className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
+              className="archive-paper block border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
             >
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 {t("home.knowledgeTitle")}
@@ -329,7 +338,7 @@ function Index() {
             </Link>
             <Link
               to="/topics"
-              className="border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
+              className="archive-paper block border border-border bg-card/60 p-4 text-sm hover:border-foreground/40"
             >
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 {t("home.topicsTitle")}
@@ -372,83 +381,85 @@ function LatestArchiveTable({ rows }: { rows: any[] }) {
   }
 
   return (
-    <PaperSheet tone="flat" className="mt-7 overflow-x-auto p-0">
-      <table className="w-full min-w-[860px] border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-foreground/70 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-            <th className="px-4 py-3 font-normal">{archiveCopy.table.type}</th>
-            <th className="px-4 py-3 font-normal">{archiveCopy.table.name}</th>
-            <th className="px-4 py-3 font-normal">{archiveCopy.table.temperature}</th>
-            <th className="px-4 py-3 font-normal">{archiveCopy.table.code}</th>
-            <th className="px-4 py-3 font-normal">{archiveCopy.table.status}</th>
-            <th className="px-4 py-3 font-normal">{archiveCopy.table.tags}</th>
-            <th className="px-4 py-3" aria-label={t("objects.viewDetail")} />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((o: any, index: number) => {
-            const measured = (o.observation_count ?? 0) > 0;
-            const tags = (o.top_tags ?? []).slice(0, 3);
-            return (
-              <tr key={o.id} className="group hover:bg-card/60">
-                <td className="px-4 py-4">
-                  <div className="font-medium">{objectType(o.type)}</div>
-                </td>
-                <td className="px-4 py-4">
-                  <Link
-                    to="/objects/$id"
-                    params={{ id: o.id }}
-                    className="font-serif text-lg underline-offset-4 group-hover:text-[var(--archive-pink)] group-hover:underline"
-                  >
-                    {o.name}
-                  </Link>
-                  {o.ai_summary && (
-                    <div className="mt-1 max-w-xs truncate text-xs text-muted-foreground">
-                      {o.ai_summary}
-                    </div>
-                  )}
-                </td>
-                <td className="px-4 py-4">
-                  <MiniHeat value={measured ? o.temperature : null} />
-                </td>
-                <td className="px-4 py-4 font-mono text-xs">{archiveCode(o.id, index)}</td>
-                <td className="px-4 py-4">
-                  <ArchiveStamp className={cn(!measured && "text-muted-foreground")}>
-                    {measured ? archiveCopy.table.recorded : archiveCopy.table.pending}
-                  </ArchiveStamp>
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {tags.length > 0 ? (
-                      tags.map((tagItem: any) => (
-                        <span
-                          key={tagItem.tag}
-                          className="border border-border px-2 py-0.5 text-[11px]"
-                        >
-                          {tag(tagItem.tag)}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+    <PaperStack className="mt-7">
+      <PaperSheet tone="dossier" className="overflow-x-auto p-0">
+        <table className="w-full min-w-[860px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-foreground/70 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+              <th className="px-4 py-3 font-normal">{archiveCopy.table.type}</th>
+              <th className="px-4 py-3 font-normal">{archiveCopy.table.name}</th>
+              <th className="px-4 py-3 font-normal">{archiveCopy.table.temperature}</th>
+              <th className="px-4 py-3 font-normal">{archiveCopy.table.code}</th>
+              <th className="px-4 py-3 font-normal">{archiveCopy.table.status}</th>
+              <th className="px-4 py-3 font-normal">{archiveCopy.table.tags}</th>
+              <th className="px-4 py-3" aria-label={t("objects.viewDetail")} />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {rows.map((o: any, index: number) => {
+              const measured = (o.observation_count ?? 0) > 0;
+              const tags = (o.top_tags ?? []).slice(0, 3);
+              return (
+                <tr key={o.id} className="group hover:bg-card/60">
+                  <td className="px-4 py-4">
+                    <div className="font-medium">{objectType(o.type)}</div>
+                  </td>
+                  <td className="px-4 py-4">
+                    <Link
+                      to="/objects/$id"
+                      params={{ id: o.id }}
+                      className="font-serif text-lg underline-offset-4 group-hover:text-[var(--archive-pink)] group-hover:underline"
+                    >
+                      {o.name}
+                    </Link>
+                    {o.ai_summary && (
+                      <div className="mt-1 max-w-xs truncate text-xs text-muted-foreground">
+                        {o.ai_summary}
+                      </div>
                     )}
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-right">
-                  <Link
-                    to="/objects/$id"
-                    params={{ id: o.id }}
-                    className="text-xl leading-none hover:text-[var(--archive-pink)]"
-                    aria-label={`${t("objects.viewDetail")}: ${o.name}`}
-                  >
-                    →
-                  </Link>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </PaperSheet>
+                  </td>
+                  <td className="px-4 py-4">
+                    <MiniHeat value={measured ? o.temperature : null} />
+                  </td>
+                  <td className="px-4 py-4 font-mono text-xs">{archiveCode(o.id, index)}</td>
+                  <td className="px-4 py-4">
+                    <ArchiveStamp className={cn(!measured && "text-muted-foreground")}>
+                      {measured ? archiveCopy.table.recorded : archiveCopy.table.pending}
+                    </ArchiveStamp>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex flex-wrap gap-1.5">
+                      {tags.length > 0 ? (
+                        tags.map((tagItem: any) => (
+                          <span
+                            key={tagItem.tag}
+                            className="border border-border px-2 py-0.5 text-[11px]"
+                          >
+                            {tag(tagItem.tag)}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <Link
+                      to="/objects/$id"
+                      params={{ id: o.id }}
+                      className="text-xl leading-none hover:text-[var(--archive-pink)]"
+                      aria-label={`${t("objects.viewDetail")}: ${o.name}`}
+                    >
+                      →
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </PaperSheet>
+    </PaperStack>
   );
 }
 
@@ -491,7 +502,7 @@ function ColumnList({
 }) {
   const { t, objectType } = useI18n();
   return (
-    <PaperSheet tone="flat" className="p-5">
+    <PaperSheet tone={positive ? "dossier" : "slip"} className="p-5">
       <h2 className="font-serif text-2xl">{title}</h2>
       <p className="text-xs text-muted-foreground">{hint}</p>
       {items.length === 0 ? (
@@ -541,8 +552,9 @@ function getArchiveHomeCopy(language: "zh" | "en") {
         title: "Submit your experience record",
         code: "Archive No.: FF-2026-____",
         types: "Record type",
+        feeling: "My experience",
         bodyPlaceholder:
-          "Use this structure if helpful:\n1. Context: where and when did you see it?\n2. Details: exact wording, scene, rule, or interaction.\n3. Impact: who was affected, and how did it feel?\n4. Evidence: link, screenshot, or source note.",
+          "Use this structure if helpful:\n1. Context: where and when did you see it?\n2. Details: exact wording, scene, rule, or interaction.\n3. Impact: who was affected, and how did it feel?\n4. Evidence: link, source note, or original text.",
         source: "Source link (optional)",
         sourcePlaceholder: "Public article, page, original text...",
         rules: "Read recording guidelines",
@@ -581,6 +593,7 @@ function getArchiveHomeCopy(language: "zh" | "en") {
       title: "提交你的体验记录",
       code: "档案编号：FF-2026-____",
       types: "记录类型",
+      feeling: "我的感受",
       bodyPlaceholder:
         "可以按这个框架写：\n1. 场景：在哪里、何时看到或经历？\n2. 细节：具体原话、画面、规则或互动是什么？\n3. 影响：让谁受到影响，带来什么感受？\n4. 依据：链接、截图、出处或补充说明。",
       source: "来源链接（可选）",

@@ -3,7 +3,14 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
-import { Thermometer } from "@/components/Thermometer";
+import {
+  ArchiveStamp,
+  DossierPanel,
+  PaperRows,
+  PaperSheet,
+  PaperStack,
+  TemperatureVerdict,
+} from "@/components/archive-ui";
 import { ObjectTimeline } from "@/components/ObjectTimeline";
 import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
 import { HeatSources } from "@/components/HeatSources";
@@ -145,102 +152,127 @@ function ObjectDetail() {
   }
 
   const topTags: { tag: string; count: number }[] = obj.top_tags ?? [];
+  const archiveNo = objectArchiveCode(id);
 
   return (
     <SiteLayout>
-      <section className="border-b border-border">
-        <div className="container-prose grid gap-12 py-16 md:grid-cols-[1fr_auto] md:py-24">
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              {objectType(obj.type)}
-            </div>
-            <h1 className="mt-4 font-serif text-5xl text-balance md:text-6xl">{obj.name}</h1>
-            {obj.description && (
-              <p className="mt-6 max-w-2xl text-base text-muted-foreground">{obj.description}</p>
-            )}
-
-            <div className="mt-10">
-              <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-                {t("objectDetail.aiSummary")}
-              </div>
-              <p className="mt-3 max-w-2xl text-base leading-relaxed">
-                {obj.ai_summary ?? t("objectDetail.noAISummary")}
-              </p>
-            </div>
-
-            {topTags.length > 0 && (
-              <div className="mt-10">
-                <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-                  {t("objectDetail.topTags")}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {topTags.map((t) => (
-                    <span key={t.tag} className="border border-border px-3 py-1 text-xs">
-                      {tag(t.tag)} <span className="text-muted-foreground">· {t.count}</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-10 flex flex-wrap items-center gap-3">
-              <Link
-                to="/submit/$objectId"
-                params={{ objectId: id }}
-                className="inline-block border border-foreground bg-foreground px-5 py-3 text-sm text-background hover:bg-accent hover:border-accent"
-              >
-                {t("objectDetail.submit")}
-              </Link>
-              <FollowButton objectId={id} />
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center md:items-end">
-            <Thermometer
-              value={obj.temperature}
-              size="lg"
-              unmeasured={obj.observation_count === 0}
-            />
-            <div className="mt-4 text-right text-xs text-muted-foreground">
-              {t("objectDetail.reviewedCount", { count: obj.observation_count })}
-            </div>
-            <button
-              onClick={() => setShowExpl((v) => !v)}
-              className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+      <section className="archive-desk border-b border-border">
+        <div className="mx-auto grid max-w-7xl gap-8 px-6 py-14 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start lg:py-20">
+          <PaperStack>
+            <DossierPanel
+              title={obj.name}
+              eyebrow={objectType(obj.type)}
+              stamp={archiveNo}
+              meta={
+                obj.description || t("objectDetail.reviewedCount", { count: obj.observation_count })
+              }
+              className="md:p-8"
             >
-              {showExpl ? t("objectDetail.collapse") : t("objectDetail.why")}
-            </button>
-          </div>
+              <PaperRows
+                rows={[
+                  { label: t("common.object"), value: objectType(obj.type) },
+                  {
+                    label: t("objectDetail.reviewedCount", { count: obj.observation_count }),
+                    value: archiveNo,
+                    accent: true,
+                  },
+                ]}
+              />
+
+              <div className="mt-8">
+                <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+                  {t("objectDetail.aiSummary")}
+                </div>
+                <p className="mt-3 max-w-3xl text-base leading-relaxed">
+                  {obj.ai_summary ?? t("objectDetail.noAISummary")}
+                </p>
+              </div>
+
+              {topTags.length > 0 && (
+                <div className="mt-8">
+                  <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+                    {t("objectDetail.topTags")}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {topTags.map((t) => (
+                      <span key={t.tag} className="paper-tag px-3 py-1 text-xs">
+                        {tag(t.tag)} <span className="text-muted-foreground">· {t.count}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="paper-divider mt-8 flex flex-wrap items-center gap-3 pt-5">
+                <Link
+                  to="/submit/$objectId"
+                  params={{ objectId: id }}
+                  className="paper-action inline-block px-5 py-3 text-sm"
+                >
+                  {t("objectDetail.submit")}
+                </Link>
+                <FollowButton objectId={id} />
+              </div>
+            </DossierPanel>
+          </PaperStack>
+
+          <PaperStack>
+            <DossierPanel
+              tone="slip"
+              eyebrow="Temperature Result"
+              title={t("objectDetail.why")}
+              stamp={obj.observation_count === 0 ? t("common.unmeasured") : "ARCHIVED"}
+            >
+              <TemperatureVerdict
+                value={obj.observation_count === 0 ? null : obj.temperature}
+                compact
+              />
+              <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                {t("objectDetail.reviewedCount", { count: obj.observation_count })}
+              </p>
+              <button
+                onClick={() => setShowExpl((v) => !v)}
+                className="paper-action-secondary mt-4 w-full px-4 py-2 text-xs uppercase tracking-wider"
+              >
+                {showExpl ? t("objectDetail.collapse") : t("objectDetail.why")}
+              </button>
+            </DossierPanel>
+          </PaperStack>
         </div>
       </section>
 
       {showExpl && (
-        <section className="border-b border-border bg-card/40 py-12">
+        <section className="archive-desk border-b border-border py-12">
           <div className="container-prose space-y-8">
-            <TemperatureBreakdown data={expl?.breakdown ?? null} />
-            <HeatSources heat={obj.heat_sources ?? []} cooling={obj.cooling_sources ?? []} />
-            <div>
+            <PaperSheet tone="dossier" className="p-5">
+              <TemperatureBreakdown data={expl?.breakdown ?? null} />
+            </PaperSheet>
+            <PaperSheet tone="slip" className="p-5">
+              <HeatSources heat={obj.heat_sources ?? []} cooling={obj.cooling_sources ?? []} />
+            </PaperSheet>
+            <PaperSheet tone="flat" className="p-5">
               <h3 className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
                 {t("objectDetail.timeline")}
               </h3>
               <div className="mt-4">
                 <TemperatureTimeline objectId={id} limit={30} />
               </div>
-            </div>
+            </PaperSheet>
           </div>
         </section>
       )}
 
-      <section className="py-16">
+      <section className="archive-desk py-16">
         <div className="container-prose">
-          <h2 className="font-serif text-2xl">{t("objectDetail.caseTimeline")}</h2>
-          <div className="mt-6">
-            <ObjectTimeline objectId={id} />
-          </div>
+          <PaperStack>
+            <DossierPanel title={t("objectDetail.caseTimeline")} eyebrow="Case Timeline">
+              <ObjectTimeline objectId={id} />
+            </DossierPanel>
+          </PaperStack>
         </div>
       </section>
 
-      <section className="border-t border-border py-16">
+      <section className="archive-desk border-t border-border py-16">
         <div className="container-prose">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -252,7 +284,7 @@ function ObjectDetail() {
             <Link
               to="/submit/$objectId"
               params={{ objectId: id }}
-              className="border border-foreground/60 px-3 py-1.5 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+              className="paper-action-secondary px-3 py-1.5 text-xs uppercase tracking-wider"
             >
               {t("objectDetail.addObservation")}
             </Link>
@@ -260,13 +292,13 @@ function ObjectDetail() {
           {obs.length === 0 ? (
             <p className="mt-8 text-sm text-muted-foreground">{t("objectDetail.noReviewed")}</p>
           ) : (
-            <div className="mt-8 divide-y divide-border border-t border-border">
+            <div className="mt-8 grid gap-4">
               {obs.map((o) => (
-                <article key={o.id} className="py-6">
+                <PaperSheet key={o.id} tone="flat" className="p-5">
                   <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <span className="border border-border px-1.5 py-0.5">
+                    <ArchiveStamp className="archive-stamp-soft">
                       {t("common.evidence")} {o.evidence_level}
-                    </span>
+                    </ArchiveStamp>
                     {(o.tags as string[])?.map((t) => (
                       <span key={t} className="text-accent">
                         #{tag(t)}
@@ -281,31 +313,19 @@ function ObjectDetail() {
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     {o.cleaned_content || o.content}
                   </p>
-                  {(o.reference_url || o.screenshot_url) && (
+                  {o.reference_url && (
                     <div className="mt-3 flex flex-wrap gap-3 text-xs">
-                      {o.reference_url && (
-                        <a
-                          href={o.reference_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="underline-offset-4 hover:underline"
-                        >
-                          {t("objectDetail.sourceLink")}
-                        </a>
-                      )}
-                      {o.screenshot_url && (
-                        <a
-                          href={o.screenshot_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="underline-offset-4 hover:underline"
-                        >
-                          {t("objectDetail.screenshotEvidence")}
-                        </a>
-                      )}
+                      <a
+                        href={o.reference_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline-offset-4 hover:underline"
+                      >
+                        {t("objectDetail.sourceLink")}
+                      </a>
                     </div>
                   )}
-                </article>
+                </PaperSheet>
               ))}
             </div>
           )}
@@ -314,7 +334,7 @@ function ObjectDetail() {
               <button
                 onClick={loadMoreObservations}
                 disabled={loadingMore}
-                className="border border-foreground/60 px-5 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground disabled:opacity-50"
+                className="paper-action-secondary px-5 py-2 text-xs uppercase tracking-wider disabled:opacity-50"
               >
                 {loadingMore ? t("common.loading") : t("objectDetail.loadMore")}
               </button>
@@ -326,4 +346,9 @@ function ObjectDetail() {
       <ObjectComments objectId={id} />
     </SiteLayout>
   );
+}
+
+function objectArchiveCode(id: string) {
+  const suffix = id.replace(/-/g, "").slice(0, 4).toUpperCase() || "0000";
+  return `FF-2026-${suffix}`;
 }

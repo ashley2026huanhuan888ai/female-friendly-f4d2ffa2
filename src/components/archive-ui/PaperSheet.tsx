@@ -1,12 +1,14 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type PaperTone = "flat" | "lifted" | "offset";
+type PaperTone = "flat" | "lifted" | "offset" | "dossier" | "slip";
 
 const toneClass: Record<PaperTone, string> = {
   flat: "archive-paper",
   lifted: "archive-paper archive-paper-lifted",
   offset: "archive-paper archive-paper-offset",
+  dossier: "archive-paper archive-paper-dossier",
+  slip: "archive-paper archive-paper-slip",
 };
 
 export function PaperSheet({

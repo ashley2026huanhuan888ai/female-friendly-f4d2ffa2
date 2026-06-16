@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArchiveSectionTabs } from "@/components/ArchiveSectionTabs";
+import { ArchiveStamp, DossierPanel, PaperSheet, PaperStack } from "@/components/archive-ui";
 import { SiteLayout } from "@/components/SiteLayout";
 import { getEvidenceLibrary } from "@/lib/api/archive.functions";
 import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
@@ -28,70 +29,77 @@ function ObservationOriginals() {
 
   return (
     <SiteLayout>
-      <section className="border-b border-border">
+      <section className="archive-desk border-b border-border">
         <div className="container-prose py-14">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            {t("archive.eyebrow")}
-          </div>
-          <h1 className="mt-3 font-serif text-4xl md:text-5xl">{t("archive.title")}</h1>
-          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-            {t("archive.body", { total: total.toLocaleString() })}
-          </p>
-          <ArchiveSectionTabs active="originals" />
-          <div className="mt-6 border-t border-border pt-5">
-            <h2 className="font-serif text-2xl">{t("evidence.title")}</h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{t("evidence.body")}</p>
-          </div>
+          <PaperStack>
+            <DossierPanel
+              title={t("archive.title")}
+              eyebrow={t("archive.eyebrow")}
+              stamp={`SOURCE ${total.toLocaleString()}`}
+            >
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                {t("archive.body", { total: total.toLocaleString() })}
+              </p>
+              <ArchiveSectionTabs active="originals" />
+              <PaperSheet tone="slip" className="mt-6 p-5">
+                <h2 className="font-serif text-2xl">{t("evidence.title")}</h2>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{t("evidence.body")}</p>
+              </PaperSheet>
+            </DossierPanel>
+          </PaperStack>
         </div>
       </section>
 
-      <section className="py-10">
+      <section className="archive-desk py-10">
         <div className="container-prose">
           {items.length === 0 ? (
-            <p className="py-20 text-center text-sm text-muted-foreground">{t("evidence.empty")}</p>
+            <PaperSheet tone="slip" className="p-10 text-center text-sm text-muted-foreground">
+              {t("evidence.empty")}
+            </PaperSheet>
           ) : (
-            <ul className="divide-y divide-border border-y border-border">
+            <ul className="space-y-4">
               {items.map((it) => (
-                <li key={it.id} className="py-5">
+                <li key={it.id}>
                   <Link
                     to="/archive/$caseCode"
                     params={{ caseCode: it.case_code }}
                     className="group block"
                   >
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                      <span className="font-mono text-foreground">{it.case_code}</span>
-                      <span>·</span>
-                      <span className="border border-accent px-1.5 text-accent">
-                        {t("common.evidence")} {it.evidence_level ?? "—"}
-                      </span>
-                      <span>·</span>
-                      <span>{archiveCategory(it.archive_category)}</span>
-                      <span>·</span>
-                      <span className="text-foreground">{it.object.name}</span>
-                      <span>({objectType(it.object.type)})</span>
-                      <span className="ml-auto">
-                        {formatDateForLanguage(it.created_at, language)}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
-                      {it.original_text || it.summary || t("common.noSummary")}
-                    </p>
-                    {it.cleaned_text && it.cleaned_text !== it.original_text && (
-                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        {it.cleaned_text}
-                      </p>
-                    )}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
-                      {it.tags.slice(0, 6).map((t: string) => (
-                        <span key={t} className="text-accent">
-                          #{tag(t)}
+                    <PaperSheet
+                      tone="dossier"
+                      className="p-4 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-accent/50"
+                    >
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <span className="font-mono text-foreground">{it.case_code}</span>
+                        <ArchiveStamp className="archive-stamp-soft text-[10px]">
+                          {t("common.evidence")} {it.evidence_level ?? "-"}
+                        </ArchiveStamp>
+                        <span>{archiveCategory(it.archive_category)}</span>
+                        <span className="text-foreground">{it.object.name}</span>
+                        <span>({objectType(it.object.type)})</span>
+                        <span className="ml-auto">
+                          {formatDateForLanguage(it.created_at, language)}
                         </span>
-                      ))}
-                      {it.reference_url && (
-                        <span className="ml-auto">📎 {t("common.referenceLink")}</span>
+                      </div>
+                      <p className="mt-3 whitespace-pre-wrap text-base leading-relaxed group-hover:text-accent">
+                        {it.original_text || it.summary || t("common.noSummary")}
+                      </p>
+                      {it.cleaned_text && it.cleaned_text !== it.original_text && (
+                        <p className="mt-3 border-t border-dashed border-border pt-3 text-sm leading-relaxed text-muted-foreground">
+                          {it.cleaned_text}
+                        </p>
                       )}
-                      {it.screenshot_url && <span>🖼 {t("common.screenshot")}</span>}
-                    </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {it.tags.slice(0, 6).map((t: string) => (
+                          <span key={t} className="paper-tag">
+                            #{tag(t)}
+                          </span>
+                        ))}
+                        {it.reference_url && (
+                          <span className="paper-tag ml-auto">{t("common.referenceLink")}</span>
+                        )}
+                      </div>
+                    </PaperSheet>
                   </Link>
                 </li>
               ))}
@@ -103,7 +111,7 @@ function ObservationOriginals() {
               <button
                 disabled={page === 1}
                 onClick={() => setPage(page - 1)}
-                className="border border-border px-3 py-1.5 disabled:opacity-30"
+                className="paper-action-secondary px-3 py-1.5 disabled:opacity-30"
               >
                 {t("common.previous")}
               </button>
@@ -111,7 +119,7 @@ function ObservationOriginals() {
               <button
                 disabled={items.length < 20}
                 onClick={() => setPage(page + 1)}
-                className="border border-border px-3 py-1.5 disabled:opacity-30"
+                className="paper-action-secondary px-3 py-1.5 disabled:opacity-30"
               >
                 {t("common.next")}
               </button>
