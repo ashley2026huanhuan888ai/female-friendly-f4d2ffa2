@@ -33,7 +33,7 @@ export const Route = createFileRoute("/archive/$caseCode")({
       <div className="container-prose py-32 text-center">
         <h1 className="font-serif text-3xl">{(error as Error).message}</h1>
         <Link to="/archive" className="mt-4 inline-block text-sm underline">
-          返回案例库
+          返回女性观察档案
         </Link>
       </div>
     </SiteLayout>
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/archive/$caseCode")({
       <div className="container-prose py-32 text-center">
         <h1 className="font-serif text-3xl">案例未找到</h1>
         <Link to="/archive" className="mt-4 inline-block text-sm underline">
-          返回案例库
+          返回女性观察档案
         </Link>
       </div>
     </SiteLayout>

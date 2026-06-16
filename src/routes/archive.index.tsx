@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { ArchiveSectionTabs } from "@/components/ArchiveSectionTabs";
 import { SiteLayout } from "@/components/SiteLayout";
 import { searchArchive, ARCHIVE_CATEGORIES } from "@/lib/api/archive.functions";
 import { FEMINIST_TAGS, bandOf } from "@/lib/temperature";
@@ -9,8 +10,11 @@ import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
 export const Route = createFileRoute("/archive/")({
   head: () => ({
     meta: [
-      { title: "案例档案库 · 女性友好体验测评" },
-      { name: "description", content: "可检索、可研究的女性友好体验案例数据库。" },
+      { title: "女性观察档案 · 女性友好体验测评" },
+      {
+        name: "description",
+        content: "女性观察原文与平台整理案例的分层档案。",
+      },
     ],
   }),
   component: ArchivePage,
@@ -67,12 +71,13 @@ function ArchivePage() {
       <section className="border-b border-border">
         <div className="container-prose py-14">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            Archive
+            {t("archive.eyebrow")}
           </div>
           <h1 className="mt-3 font-serif text-4xl md:text-5xl">{t("archive.title")}</h1>
           <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
             {t("archive.body", { total: total.toLocaleString() })}
           </p>
+          <ArchiveSectionTabs active="cases" />
           <div className="mt-6 flex gap-3">
             <input
               value={q}
@@ -80,12 +85,6 @@ function ArchivePage() {
               placeholder={t("archive.searchPlaceholder")}
               className="flex-1 border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-foreground"
             />
-            <Link
-              to="/archive/evidence"
-              className="border border-border px-4 py-2.5 text-sm hover:border-foreground"
-            >
-              {t("archive.evidenceLink")}
-            </Link>
           </div>
         </div>
       </section>

@@ -1,16 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { ArchiveSectionTabs } from "@/components/ArchiveSectionTabs";
 import { SiteLayout } from "@/components/SiteLayout";
 import { getEvidenceLibrary } from "@/lib/api/archive.functions";
 import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/archive/evidence")({
-  head: () => ({ meta: [{ title: "女性观察原文 · 女性友好体验测评" }] }),
-  component: EvidenceLib,
+  head: () => ({ meta: [{ title: "女性观察档案 · 观察原文 · 女性友好体验测评" }] }),
+  component: ObservationOriginals,
 });
 
-function EvidenceLib() {
+function ObservationOriginals() {
   const { language, t, objectType, tag, archiveCategory } = useI18n();
   usePageMeta("seo.evidence.title");
   const fetcher = useServerFn(getEvidenceLibrary);
@@ -30,18 +31,17 @@ function EvidenceLib() {
       <section className="border-b border-border">
         <div className="container-prose py-14">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            {t("evidence.eyebrow")}
+            {t("archive.eyebrow")}
           </div>
-          <h1 className="mt-3 font-serif text-4xl">{t("evidence.title")}</h1>
+          <h1 className="mt-3 font-serif text-4xl md:text-5xl">{t("archive.title")}</h1>
           <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-            {t("evidence.body", { total: total.toLocaleString() })}
+            {t("archive.body", { total: total.toLocaleString() })}
           </p>
-          <Link
-            to="/archive"
-            className="mt-4 inline-block text-sm text-muted-foreground hover:text-foreground"
-          >
-            {t("evidence.back")}
-          </Link>
+          <ArchiveSectionTabs active="originals" />
+          <div className="mt-6 border-t border-border pt-5">
+            <h2 className="font-serif text-2xl">{t("evidence.title")}</h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{t("evidence.body")}</p>
+          </div>
         </div>
       </section>
 
@@ -62,7 +62,7 @@ function EvidenceLib() {
                       <span className="font-mono text-foreground">{it.case_code}</span>
                       <span>·</span>
                       <span className="border border-accent px-1.5 text-accent">
-                        {t("common.evidence")} A
+                        {t("common.evidence")} {it.evidence_level ?? "—"}
                       </span>
                       <span>·</span>
                       <span>{archiveCategory(it.archive_category)}</span>
@@ -74,8 +74,13 @@ function EvidenceLib() {
                       </span>
                     </div>
                     <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
-                      {it.summary}
+                      {it.original_text || it.summary || t("common.noSummary")}
                     </p>
+                    {it.cleaned_text && it.cleaned_text !== it.original_text && (
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {it.cleaned_text}
+                      </p>
+                    )}
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
                       {it.tags.slice(0, 6).map((t: string) => (
                         <span key={t} className="text-accent">

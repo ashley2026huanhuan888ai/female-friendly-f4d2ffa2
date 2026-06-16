@@ -27,8 +27,8 @@ const COPY = {
     "nav.feed": "温度变化",
     "nav.requestObject": "增加\n新测评\n对象",
     "nav.topics": "热议议题",
-    "nav.archive": "案例库",
-    "nav.evidence": "女性观察原文",
+    "nav.archive": "女性观察档案",
+    "nav.evidence": "观察原文",
     "nav.knowledge": "知识引擎",
     "nav.about": "关于",
     "nav.more": "更多",
@@ -56,7 +56,7 @@ const COPY = {
     "common.details": "技术细节",
     "common.home": "返回首页",
     "common.backToObjects": "返回全部对象",
-    "common.backToArchive": "返回案例库",
+    "common.backToArchive": "返回女性观察档案",
     "common.previous": "上一页",
     "common.next": "下一页",
     "common.pageCount": "第 {page} 页 / 约 {total} 页",
@@ -183,8 +183,8 @@ const COPY = {
       "知识库用于解释平台如何理解女性友好与性别偏见。新用户可以先从对象测评和观察提交开始。",
     "home.knowledgeTitle": "知识引擎",
     "home.knowledgeBody": "原则与方法论",
-    "home.archiveTitle": "案例库",
-    "home.archiveBody": "沉淀过的典型案例",
+    "home.archiveTitle": "女性观察档案",
+    "home.archiveBody": "观察原文与整理案例",
     "home.topicsTitle": "议题",
     "home.topicsBody": "热议中的女性体验话题",
 
@@ -334,11 +334,19 @@ const COPY = {
     "discussions.body": "最近公开的对象留言。",
     "discussions.empty": "暂无讨论",
 
-    "archive.title": "案例档案库",
-    "archive.body": "所有通过审核的观察均沉淀为可检索的长期案例资产。共 {total} 条案例。",
+    "archive.title": "女性观察档案",
+    "archive.eyebrow": "Female Observation Archive",
+    "archive.body":
+      "这里保存女性用户围绕被观察对象提交的原文记录，并将其中具有代表性的观察整理为可检索案例。当前列表共 {total} 条记录。",
+    "archive.tabs.label": "档案类型",
+    "archive.tabs.originals": "观察原文",
+    "archive.tabs.originalsBody": "用户提交的具体经历、感受、判断。这是女性主体的第一手记录。",
+    "archive.tabs.cases": "整理案例",
+    "archive.tabs.casesBody":
+      "平台把观察原文整理、归类、摘要后形成的案例，用于检索、理解议题、追踪对象变化。",
     "archive.searchPlaceholder": "搜索案例编号、关键词、对象名…",
-    "archive.evidenceLink": "女性观察原文 →",
-    "archive.category": "档案分类",
+    "archive.evidenceLink": "观察原文 →",
+    "archive.category": "案例分类",
     "archive.objectType": "对象类型",
     "archive.topicTag": "议题标签",
     "archive.evidenceLevel": "证据等级",
@@ -357,12 +365,12 @@ const COPY = {
     "archive.reference": "参考：",
     "archive.screenshot": "截图：",
 
-    "evidence.title": "女性观察原文",
+    "evidence.title": "观察原文",
     "evidence.eyebrow": "被观察对象 · 原文记录",
     "evidence.body":
       "这里收录女性用户围绕被观察对象提交的具体经历、感受与判断。作品、产品、品牌不是评价主体，而是被女性经验照见和评估的对象。",
     "evidence.back": "← 返回全部案例",
-    "evidence.empty": "暂无女性观察原文。",
+    "evidence.empty": "暂无观察原文。",
 
     "knowledge.title": "女性友好测评 · 知识引擎",
     "knowledge.body":
@@ -553,8 +561,8 @@ const COPY = {
     "seo.feed.description": "每一次温度变化的来源——升温、降温、新增案例。",
     "seo.topics.title": "热议议题 · 女性友好体验测评",
     "seo.topics.description": "近期被持续观察的标签与议题。",
-    "seo.archive.title": "案例档案库 · 女性友好体验测评",
-    "seo.archive.description": "可检索、可研究的女性友好体验案例数据库。",
+    "seo.archive.title": "女性观察档案 · 整理案例 · 女性友好体验测评",
+    "seo.archive.description": "女性观察原文与平台整理案例的分层档案。",
     "seo.knowledge.title": "知识引擎 · 女性友好测评",
     "seo.knowledge.description":
       "女性友好测评平台的原则、标签与案例知识库。所有 AI 分析均基于此知识库。",
@@ -564,7 +572,7 @@ const COPY = {
     "seo.login.title": "登录 · 女性友好体验测评",
     "seo.reset.title": "重置密码 · 女性友好体验测评",
     "seo.submit.title": "提交观察 · 女性友好体验测评",
-    "seo.evidence.title": "女性观察原文 · 女性友好体验测评",
+    "seo.evidence.title": "女性观察档案 · 观察原文 · 女性友好体验测评",
     "seo.discussions.title": "热门讨论 · 女性友好体验测评",
     "seo.discussions.description": "最近公开的对象留言。",
   },
@@ -581,8 +589,8 @@ const COPY = {
     "nav.feed": "Feed",
     "nav.requestObject": "Add\nObject",
     "nav.topics": "Topics",
-    "nav.archive": "Cases",
-    "nav.evidence": "Women's Observations",
+    "nav.archive": "Women's Observation Archive",
+    "nav.evidence": "Observation Originals",
     "nav.knowledge": "Knowledge",
     "nav.about": "About",
     "nav.more": "More",
@@ -610,7 +618,7 @@ const COPY = {
     "common.details": "Technical details",
     "common.home": "Back to home",
     "common.backToObjects": "Back to all objects",
-    "common.backToArchive": "Back to case library",
+    "common.backToArchive": "Back to women's observation archive",
     "common.previous": "Previous",
     "common.next": "Next",
     "common.pageCount": "Page {page} / about {total}",
@@ -751,8 +759,8 @@ const COPY = {
       "The knowledge base explains how the platform understands female-friendly experience and gender bias. New users can start with object assessments and observation submission.",
     "home.knowledgeTitle": "Knowledge Engine",
     "home.knowledgeBody": "Principles and methodology",
-    "home.archiveTitle": "Case Library",
-    "home.archiveBody": "Archived typical cases",
+    "home.archiveTitle": "Women's Observation Archive",
+    "home.archiveBody": "Original observations and organized cases",
     "home.topicsTitle": "Topics",
     "home.topicsBody": "Active female-experience topics",
 
@@ -910,12 +918,20 @@ const COPY = {
     "discussions.body": "Recent public object comments.",
     "discussions.empty": "No discussions yet",
 
-    "archive.title": "Case Archive",
+    "archive.title": "Women's Observation Archive",
+    "archive.eyebrow": "Female Observation Archive",
     "archive.body":
-      "All approved observations become searchable long-term case assets. {total} cases in total.",
+      "This archive preserves original records submitted by women users around observed objects, and turns representative observations into searchable cases. {total} records in this list.",
+    "archive.tabs.label": "Archive type",
+    "archive.tabs.originals": "Observation originals",
+    "archive.tabs.originalsBody":
+      "Concrete experiences, feelings, and judgments submitted by users. These are first-hand records from women as subjects.",
+    "archive.tabs.cases": "Organized cases",
+    "archive.tabs.casesBody":
+      "Cases formed after the platform organizes, categorizes, and summarizes observation originals for search, issue understanding, and object tracking.",
     "archive.searchPlaceholder": "Search case code, keyword, or object name...",
-    "archive.evidenceLink": "Women's observations ->",
-    "archive.category": "Category",
+    "archive.evidenceLink": "Observation originals ->",
+    "archive.category": "Case category",
     "archive.objectType": "Object type",
     "archive.topicTag": "Topic tag",
     "archive.evidenceLevel": "Evidence level",
@@ -934,12 +950,12 @@ const COPY = {
     "archive.reference": "Reference: ",
     "archive.screenshot": "Screenshot: ",
 
-    "evidence.title": "Women's Observation Originals",
+    "evidence.title": "Observation Originals",
     "evidence.eyebrow": "Observed objects · original records",
     "evidence.body":
       "This page collects concrete experiences, feelings, and judgments submitted by women users around observed objects. Works, products, and brands are not the judging subjects; they are the objects illuminated and assessed through women's experiences.",
     "evidence.back": "<- Back to all cases",
-    "evidence.empty": "No women's observation originals yet.",
+    "evidence.empty": "No observation originals yet.",
 
     "knowledge.title": "Female-Friendly Assessment · Knowledge Engine",
     "knowledge.body":
@@ -1151,9 +1167,10 @@ const COPY = {
       "Every temperature change has a source: heating, cooling, and new cases.",
     "seo.topics.title": "Trending Topics · Female-Friendly Experience Assessment",
     "seo.topics.description": "Tags and topics that have been continuously observed recently.",
-    "seo.archive.title": "Case Archive · Female-Friendly Experience Assessment",
+    "seo.archive.title":
+      "Women's Observation Archive · Organized Cases · Female-Friendly Experience Assessment",
     "seo.archive.description":
-      "A searchable, research-ready case database for female-friendly experience observations.",
+      "A layered archive of women's observation originals and platform-organized cases.",
     "seo.knowledge.title": "Knowledge Engine · Female-Friendly Assessment",
     "seo.knowledge.description":
       "The platform's principles, tags, and case knowledge base. All AI analysis is grounded in this knowledge base.",
@@ -1163,7 +1180,8 @@ const COPY = {
     "seo.login.title": "Log in · Female-Friendly Experience Assessment",
     "seo.reset.title": "Reset Password · Female-Friendly Experience Assessment",
     "seo.submit.title": "Submit Observation · Female-Friendly Experience Assessment",
-    "seo.evidence.title": "Women's Observation Originals · Female-Friendly Experience Assessment",
+    "seo.evidence.title":
+      "Women's Observation Archive · Observation Originals · Female-Friendly Experience Assessment",
     "seo.discussions.title": "Popular Discussions · Female-Friendly Experience Assessment",
     "seo.discussions.description": "Recent public object comments.",
   },
