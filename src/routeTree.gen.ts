@@ -33,6 +33,7 @@ import { Route as ArchiveCaseCodeRouteImport } from './routes/archive.$caseCode'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTemperatureRouteImport } from './routes/admin.temperature'
 import { Route as AdminRequestsRouteImport } from './routes/admin.requests'
+import { Route as AdminPublishRouteImport } from './routes/admin.publish'
 import { Route as AdminObservationsRouteImport } from './routes/admin.observations'
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
 import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
@@ -41,6 +42,7 @@ import { Route as AdminCommentsRouteImport } from './routes/admin.comments'
 import { Route as AdminBulkImportRouteImport } from './routes/admin.bulk-import'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 
 const TopicsRoute = TopicsRouteImport.update({
   id: '/topics',
@@ -162,6 +164,11 @@ const AdminRequestsRoute = AdminRequestsRouteImport.update({
   path: '/requests',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPublishRoute = AdminPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminObservationsRoute = AdminObservationsRouteImport.update({
   id: '/observations',
   path: '/observations',
@@ -202,6 +209,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
+  id: '/api/public/version',
+  path: '/api/public/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -225,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
+  '/admin/publish': typeof AdminPublishRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
@@ -236,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/archive/': typeof ArchiveIndexRoute
   '/objects/': typeof ObjectsIndexRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -258,6 +272,7 @@ export interface FileRoutesByTo {
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
+  '/admin/publish': typeof AdminPublishRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
@@ -269,6 +284,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/archive': typeof ArchiveIndexRoute
   '/objects': typeof ObjectsIndexRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -293,6 +309,7 @@ export interface FileRoutesById {
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
   '/admin/observations': typeof AdminObservationsRoute
+  '/admin/publish': typeof AdminPublishRoute
   '/admin/requests': typeof AdminRequestsRoute
   '/admin/temperature': typeof AdminTemperatureRoute
   '/admin/users': typeof AdminUsersRoute
@@ -304,6 +321,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/archive/': typeof ArchiveIndexRoute
   '/objects/': typeof ObjectsIndexRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -329,6 +347,7 @@ export interface FileRouteTypes {
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
+    | '/admin/publish'
     | '/admin/requests'
     | '/admin/temperature'
     | '/admin/users'
@@ -340,6 +359,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/archive/'
     | '/objects/'
+    | '/api/public/version'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -362,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
+    | '/admin/publish'
     | '/admin/requests'
     | '/admin/temperature'
     | '/admin/users'
@@ -373,6 +394,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archive'
     | '/objects'
+    | '/api/public/version'
   id:
     | '__root__'
     | '/'
@@ -396,6 +418,7 @@ export interface FileRouteTypes {
     | '/admin/knowledge'
     | '/admin/objects'
     | '/admin/observations'
+    | '/admin/publish'
     | '/admin/requests'
     | '/admin/temperature'
     | '/admin/users'
@@ -407,6 +430,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/archive/'
     | '/objects/'
+    | '/api/public/version'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -429,6 +453,7 @@ export interface RootRouteChildren {
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
   ArchiveIndexRoute: typeof ArchiveIndexRoute
   ObjectsIndexRoute: typeof ObjectsIndexRoute
+  ApiPublicVersionRoute: typeof ApiPublicVersionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -601,6 +626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/publish': {
+      id: '/admin/publish'
+      path: '/publish'
+      fullPath: '/admin/publish'
+      preLoaderRoute: typeof AdminPublishRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/observations': {
       id: '/admin/observations'
       path: '/observations'
@@ -657,6 +689,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/version': {
+      id: '/api/public/version'
+      path: '/api/public/version'
+      fullPath: '/api/public/version'
+      preLoaderRoute: typeof ApiPublicVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -669,6 +708,7 @@ interface AdminRouteChildren {
   AdminKnowledgeRoute: typeof AdminKnowledgeRoute
   AdminObjectsRoute: typeof AdminObjectsRoute
   AdminObservationsRoute: typeof AdminObservationsRoute
+  AdminPublishRoute: typeof AdminPublishRoute
   AdminRequestsRoute: typeof AdminRequestsRoute
   AdminTemperatureRoute: typeof AdminTemperatureRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -684,6 +724,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminKnowledgeRoute: AdminKnowledgeRoute,
   AdminObjectsRoute: AdminObjectsRoute,
   AdminObservationsRoute: AdminObservationsRoute,
+  AdminPublishRoute: AdminPublishRoute,
   AdminRequestsRoute: AdminRequestsRoute,
   AdminTemperatureRoute: AdminTemperatureRoute,
   AdminUsersRoute: AdminUsersRoute,
@@ -723,17 +764,8 @@ const rootRouteChildren: RootRouteChildren = {
   SubmitObjectIdRoute: SubmitObjectIdRoute,
   ArchiveIndexRoute: ArchiveIndexRoute,
   ObjectsIndexRoute: ObjectsIndexRoute,
+  ApiPublicVersionRoute: ApiPublicVersionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
