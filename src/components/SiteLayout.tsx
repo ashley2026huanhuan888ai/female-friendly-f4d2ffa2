@@ -385,7 +385,7 @@ function MobileLanguageButton({
   setLanguage: (language: "zh" | "en") => void;
 }) {
   const nextLanguage = language === "zh" ? "en" : "zh";
-  const label = language === "zh" ? "中文" : "EN";
+  const label = language === "zh" ? "EN" : "中文";
   const actionLabel = language === "zh" ? "切换到 English" : "Switch to 中文";
 
   return (
