@@ -146,15 +146,15 @@ export function SiteLayout({
         }
       >
         <div className="container-prose flex h-16 items-center justify-between gap-3">
-          <Link to="/" className="flex items-baseline gap-3">
-            <span className="font-serif text-xl tracking-tight">{t("app.name")}</span>
-            <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground md:inline">
+          <Link to="/" className="flex min-w-0 items-baseline gap-3 lg:min-w-fit">
+            <span className="block truncate font-serif text-xl tracking-tight">{t("app.name")}</span>
+            <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground lg:inline">
               {t("app.brand.en")}
             </span>
           </Link>
 
           {/* 桌面端主导航 */}
-          <nav className="hidden items-center gap-5 text-sm md:flex">
+          <nav className="hidden items-center gap-5 text-sm lg:flex">
             {PRIMARY_NAV.map((l) => (
               <Link
                 key={l.to}
@@ -173,7 +173,7 @@ export function SiteLayout({
           </nav>
 
           {/* 右侧账号区（桌面） */}
-          <div className="hidden items-center gap-3 text-sm md:flex">
+          <div className="hidden items-center gap-3 text-sm lg:flex">
             <LanguageToggle language={language} setLanguage={setLanguage} />
             {canSeeAdminNav && (
               <Link to="/admin" className="text-accent hover:text-accent/80">
@@ -204,8 +204,9 @@ export function SiteLayout({
             )}
           </div>
 
-          {/* 移动端：登录/注册 + 汉堡 */}
-          <div className="flex items-center gap-2 md:hidden">
+          {/* 手机/平板：语言 + 登录/我的 + 汉堡 */}
+          <div className="flex shrink-0 items-center gap-2 lg:hidden">
+            <MobileLanguageButton language={language} setLanguage={setLanguage} />
             {!email && (
               <Link
                 to="/login"
@@ -250,8 +251,8 @@ export function SiteLayout({
           <div
             className={
               isDeskVariant
-                ? "border-t border-white/10 bg-[oklch(0.16_0.012_60/0.96)] md:hidden"
-                : "border-t border-border bg-paper md:hidden"
+                ? "border-t border-white/10 bg-[oklch(0.16_0.012_60/0.96)] lg:hidden"
+                : "border-t border-border bg-paper lg:hidden"
             }
           >
             <nav className="container-prose flex flex-col py-2 text-sm">
@@ -276,9 +277,6 @@ export function SiteLayout({
                   {t(l.labelKey)}
                 </Link>
               ))}
-              <div className="border-b border-border/50 py-3">
-                <LanguageToggle language={language} setLanguage={setLanguage} />
-              </div>
               {canSeeAdminNav && (
                 <>
                   <Link to="/admin" className="border-b border-border/50 py-3 text-accent">
@@ -376,5 +374,29 @@ function LanguageToggle({
         EN
       </button>
     </div>
+  );
+}
+
+function MobileLanguageButton({
+  language,
+  setLanguage,
+}: {
+  language: "zh" | "en";
+  setLanguage: (language: "zh" | "en") => void;
+}) {
+  const nextLanguage = language === "zh" ? "en" : "zh";
+  const label = language === "zh" ? "中文" : "EN";
+  const actionLabel = language === "zh" ? "切换到 English" : "Switch to 中文";
+
+  return (
+    <button
+      type="button"
+      aria-label={actionLabel}
+      title={actionLabel}
+      onClick={() => setLanguage(nextLanguage)}
+      className="flex h-9 min-w-12 items-center justify-center border border-border px-2 text-[11px] font-medium uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background"
+    >
+      {label}
+    </button>
   );
 }
