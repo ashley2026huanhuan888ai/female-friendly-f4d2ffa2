@@ -331,14 +331,15 @@ const COPY = {
     "feed.reason.positive_case": "新增正向案例",
 
     "topics.title": "热议议题",
-    "topics.body": "过去 30 天内，大家持续记录的女性议题标签。点击任一标签查看案例、相关对象与趋势。",
+    "topics.body":
+      "过去 30 天内，大家持续记录的女性议题标签。点击任一标签查看所有带有这个标签的观察记录。",
     "topics.empty": "近 30 天暂无足够观察形成趋势。",
     "topics.count": "{count} 次观察",
     "topics.summary": "共 {total} 条已审核观察 · 涉及 {objects} 个对象 · {cases} 个知识案例。",
     "topics.monthlyTrend": "观察月度趋势",
     "topics.relatedObjects": "相关对象",
     "topics.citedCases": "引用案例",
-    "topics.recentObservations": "最近观察",
+    "topics.recentObservations": "全部观察记录",
     "discussions.title": "热门讨论",
     "discussions.body": "最近公开的对象留言。",
     "discussions.empty": "暂无讨论",
@@ -924,7 +925,7 @@ const COPY = {
 
     "topics.title": "Trending Topics",
     "topics.body":
-      "Female-experience topic tags people have kept recording in the past 30 days. Select any tag to view cases, related objects, and trends.",
+      "Female-experience topic tags people have kept recording in the past 30 days. Select any tag to view all observation records with that tag.",
     "topics.empty": "Not enough observations to form trends in the past 30 days.",
     "topics.count": "{count} observations",
     "topics.summary":
@@ -932,7 +933,7 @@ const COPY = {
     "topics.monthlyTrend": "Monthly observation trend",
     "topics.relatedObjects": "Related objects",
     "topics.citedCases": "Cited cases",
-    "topics.recentObservations": "Recent observations",
+    "topics.recentObservations": "All observation records",
     "discussions.title": "Popular Discussions",
     "discussions.body": "Recent public object comments.",
     "discussions.empty": "No discussions yet",

@@ -47,13 +47,7 @@ function TopicDetail() {
         <div className="container-prose py-16">
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Topic</div>
           <h1 className="mt-4 font-serif text-5xl text-balance">
-            <Link
-              to="/objects"
-              search={{ tag: data.tag }}
-              className="underline-offset-8 hover:text-accent hover:underline"
-            >
-              #{tagLabel(data.tag)}
-            </Link>
+            #{tagLabel(data.tag)}
           </h1>
           <p className="mt-4 text-sm text-muted-foreground">
             {t("topics.summary", {
@@ -62,6 +56,62 @@ function TopicDetail() {
               cases: data.cases.length,
             })}
           </p>
+        </div>
+      </section>
+
+      <section className="border-b border-border py-12">
+        <div className="container-prose">
+          <h2 className="font-serif text-2xl">{t("topics.recentObservations")}</h2>
+          {data.observations.length === 0 ? (
+            <p className="mt-6 text-sm text-muted-foreground">{t("common.noObservations")}</p>
+          ) : (
+            <ul className="mt-6 divide-y divide-border border-y border-border">
+              {data.observations.map((o: any) => (
+                <li key={o.id} className="py-4">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    {o.object ? (
+                      <Link
+                        to="/objects/$id"
+                        params={{ id: o.object.id }}
+                        className="underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        {o.object.name}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                    <span>·</span>
+                    <span>
+                      {t("common.evidence")} {o.evidence_level ?? "—"}
+                    </span>
+                    <span>·</span>
+                    <span>{formatDateForLanguage(o.created_at, language)}</span>
+                    {o.case_code && (
+                      <>
+                        <span>·</span>
+                        <Link
+                          to="/archive/$caseCode"
+                          params={{ caseCode: o.case_code }}
+                          className="font-mono underline-offset-4 hover:text-foreground hover:underline"
+                        >
+                          {o.case_code}
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed">
+                    {o.summary ?? o.cleaned_content ?? o.content ?? t("common.noSummary")}
+                  </p>
+                  {o.scene && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {t("archive.scene")}
+                      {o.scene}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 
@@ -126,38 +176,6 @@ function TopicDetail() {
           </div>
         </section>
       )}
-
-      <section className="py-12">
-        <div className="container-prose">
-          <h2 className="font-serif text-2xl">{t("topics.recentObservations")}</h2>
-          {data.observations.length === 0 ? (
-            <p className="mt-6 text-sm text-muted-foreground">{t("common.noObservations")}</p>
-          ) : (
-            <ul className="mt-6 divide-y divide-border border-t border-border">
-              {data.observations.slice(0, 30).map((o: any) => (
-                <li key={o.id} className="py-4">
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {o.object ? (
-                      <Link
-                        to="/objects/$id"
-                        params={{ id: o.object.id }}
-                        className="underline-offset-4 hover:text-foreground hover:underline"
-                      >
-                        {o.object.name}
-                      </Link>
-                    ) : (
-                      "—"
-                    )}{" "}
-                    · {t("common.evidence")} {o.evidence_level ?? "—"} ·{" "}
-                    {formatDateForLanguage(o.created_at, language)}
-                  </div>
-                  <p className="mt-1 text-sm">{o.summary ?? t("common.noSummary")}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
     </SiteLayout>
   );
 }
