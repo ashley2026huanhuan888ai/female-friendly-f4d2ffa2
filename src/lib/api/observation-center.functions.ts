@@ -81,13 +81,17 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
         .limit(5),
       supabaseAdmin
         .from("observations")
-        .select("id, object_id, summary, evidence_level, created_at")
+        .select(
+          "id, object_id, content, cleaned_content, summary, scene, reference_url, tags, evidence_level, confidence, case_code, created_at",
+        )
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(8),
       supabaseAdmin
         .from("objects")
-        .select("id, name, type, temperature, observation_count, created_at")
+        .select(
+          "id, name, type, temperature, observation_count, ai_summary, top_tags, created_at, updated_at",
+        )
         .eq("status", "published")
         .eq("hidden", false)
         .order("created_at", { ascending: false })
@@ -123,11 +127,25 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
   const { data: objs } = allIds.length
     ? await supabaseAdmin
         .from("objects")
-        .select("id, name, type, temperature")
+        .select(
+          "id, name, type, temperature, observation_count, ai_summary, top_tags, created_at, updated_at",
+        )
         .in("id", allIds)
         .eq("hidden", false)
         .eq("status", "published")
-    : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
+    : {
+        data: [] as Array<{
+          id: string;
+          name: string;
+          type: string;
+          temperature: number;
+          observation_count: number;
+          ai_summary: string | null;
+          top_tags: { tag: string; count: number }[] | null;
+          created_at: string;
+          updated_at: string | null;
+        }>,
+      };
   const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
   const pack = (ids: string[]) =>

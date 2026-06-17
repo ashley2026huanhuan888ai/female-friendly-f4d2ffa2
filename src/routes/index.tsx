@@ -1,18 +1,13 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
-import {
-  ArchiveStamp,
-  DossierPanel,
-  PaperField,
-  PaperSheet,
-  PaperStack,
-  TemperatureVerdict,
-} from "@/components/archive-ui";
+import { ArchiveStamp, PaperSheet, PaperStack } from "@/components/archive-ui";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
+import { bandOf, FEMINIST_TAGS } from "@/lib/temperature";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -30,21 +25,13 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const RECORD_TYPE_OPTIONS = ["brand", "film", "service", "game", "event", "organization"] as const;
-
 function Index() {
-  const { t, objectType, tag: tagLabel, language } = useI18n();
+  const { t, objectType, tag: tagLabel, language, dateLocale } = useI18n();
   usePageMeta("seo.home.title", "seo.home.description");
-  const navigate = useNavigate();
-  const [q, setQ] = useState("");
-  const [recordType, setRecordType] = useState<(typeof RECORD_TYPE_OPTIONS)[number]>("brand");
   const [summary, setSummary] = useState<any>(null);
   const fetchSummary = useServerFn(getHomeSummary);
-  const sentenceGap = language === "en" ? " " : "";
   const archiveCopy = getArchiveHomeCopy(language);
-  const topicWall = (summary?.trending_tags ?? []).slice(0, 12);
   const archiveRows = (summary?.newest_objects ?? []).slice(0, 5);
-  const heatValue = archiveRows.find((item: any) => (item.observation_count ?? 0) > 0)?.temperature;
 
   useEffect(() => {
     fetchSummary()
@@ -63,195 +50,335 @@ function Index() {
       );
   }, [fetchSummary]);
 
+  const latestObservations = (summary?.latest_observations ?? []) as any[];
+  const newestObjects = (summary?.newest_objects ?? []) as any[];
+  const featuredObservation =
+    latestObservations.find((item) => item.object) ?? latestObservations[0] ?? null;
+  const featuredObject =
+    featuredObservation?.object ??
+    newestObjects.find((item) => (item.observation_count ?? 0) > 0) ??
+    newestObjects[0] ??
+    null;
+  const featuredTemperature =
+    typeof featuredObject?.temperature === "number" ? Number(featuredObject.temperature) : null;
+  const featuredEvidence = featuredObservation?.evidence_level ?? null;
+  const featuredCaseCode =
+    featuredObservation?.case_code ??
+    archiveCode(featuredObject?.id ?? featuredObservation?.id ?? "", 0);
+  const featuredTags = getFeaturedTags(featuredObject, featuredObservation, summary);
+  const extraTag = featuredTags.find((item) => !FEMINIST_TAGS.includes(item));
+  const featuredDate =
+    featuredObservation?.created_at ??
+    featuredObject?.updated_at ??
+    featuredObject?.created_at ??
+    null;
+  const observationCount = Number(featuredObject?.observation_count ?? 0);
+  const sourceStatus = featuredObservation?.reference_url ? "已提供来源链接" : "待补充来源";
+  const sourceValue = featuredObservation?.reference_url
+    ? formatUrl(featuredObservation.reference_url)
+    : sourceStatus;
+  const verdict = getTemperatureVerdict(featuredTemperature);
+  const axisPosition = getAxisPosition(featuredTemperature, featuredEvidence);
+  const axisStyle = {
+    "--case-temp-x": `${axisPosition.x}%`,
+    "--case-evidence-y": `${axisPosition.y}%`,
+  } as CSSProperties;
+  const credibility = getCredibility(featuredEvidence, Boolean(featuredObservation?.reference_url));
+  const summaryText =
+    featuredObject?.ai_summary ??
+    featuredObservation?.summary ??
+    featuredObservation?.cleaned_content ??
+    "暂无足够观察生成总结。";
+  const evidenceRows = buildHomeEvidenceRows({
+    object: featuredObject,
+    observation: featuredObservation,
+    tags: featuredTags,
+    evidenceLevel: featuredEvidence,
+    dateLocale,
+  });
+  const timelineRows = buildHomeTimelineRows(latestObservations, dateLocale);
+
   return (
     <SiteLayout variant="desk">
-      <section className="home-desk-hero border-b border-black/60">
-        <div className="home-desk-stage mx-auto max-w-[1500px] px-4 pb-14 pt-24 md:px-8 md:pb-20 md:pt-28">
-          <div className="home-desk-composition">
-            <div className="home-file-ribbon archive-paper">
-              <div>
-                <div className="font-serif text-2xl font-semibold md:text-3xl">{t("app.name")}</div>
-                <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Female-Friendly Experience Archive
-                </div>
-              </div>
-              <div className="hidden h-12 w-px bg-foreground/40 md:block" />
-              <div className="font-mono text-sm">
-                {language === "en" ? "Archive No.: " : "档案编号："}
-                <span className="archive-highlight">FF-2026-HOME</span>
-              </div>
-              <ArchiveStamp className="archive-stamp-soft home-file-stamp rotate-[-6deg]">
-                {archiveCopy.table.recorded}
-              </ArchiveStamp>
-              <div className="ml-auto hidden text-right font-mono text-[11px] leading-5 text-muted-foreground lg:block">
-                <div>{language === "en" ? "Updated: 2026-06-17" : "归档时间：2026-06-17"}</div>
+      <section className="home-desk-hero home-case-hero border-b border-black/20">
+        <div className="home-case-stage mx-auto max-w-[1540px] px-4 pb-10 pt-24 md:px-8 md:pb-14">
+          <div className="home-case-board" aria-label="首页第一屏档案视觉">
+            <aside className="case-paper case-paper-left">
+              <div className="case-kicker">对象身份 / OBJECT IDENTITY</div>
+              <div className="case-rule" />
+              <div className="case-label">记录标题</div>
+              <h1 className="case-object-title">{featuredObject?.name ?? "暂无公开档案"}</h1>
+              <div className="case-pink-line" />
+
+              <dl className="case-field-list">
                 <div>
-                  {language === "en" ? "Desk view / public archive" : "首页档案 / 公开记录"}
+                  <dt>类型</dt>
+                  <dd>{featuredObject ? objectType(featuredObject.type) : "待补充"}</dd>
                 </div>
+                <div>
+                  <dt>对象名称</dt>
+                  <dd>{featuredObject?.name ?? "暂无公开对象"}</dd>
+                </div>
+                <div>
+                  <dt>当前温度</dt>
+                  <dd>
+                    {featuredTemperature === null
+                      ? "暂无温度"
+                      : `${featuredTemperature.toFixed(0)}°C`}
+                  </dd>
+                </div>
+                <div>
+                  <dt>观察数量</dt>
+                  <dd>{observationCount > 0 ? `${observationCount} 条` : "暂无已审核观察"}</dd>
+                </div>
+                <div>
+                  <dt>最近记录</dt>
+                  <dd>{formatDateTime(featuredDate, dateLocale)}</dd>
+                </div>
+                <div>
+                  <dt>发生场景</dt>
+                  <dd>{featuredObservation?.scene || "由公开观察记录整理"}</dd>
+                </div>
+                <div>
+                  <dt>来源链接</dt>
+                  <dd>{sourceValue}</dd>
+                </div>
+                <div>
+                  <dt>档案编号</dt>
+                  <dd>{featuredCaseCode}</dd>
+                </div>
+                <div>
+                  <dt>状态</dt>
+                  <dd>
+                    <span className="case-dot" />
+                    {featuredObservation || observationCount > 0 ? "已记录" : "待补充"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>记录者</dt>
+                  <dd>匿名用户 / 公开记录</dd>
+                </div>
+              </dl>
+
+              <section className="case-section">
+                <h2>标签 / TAGS</h2>
+                <div className="case-tags">
+                  {featuredTags.length > 0 ? (
+                    featuredTags
+                      .slice(0, 6)
+                      .map((label) => <span key={label}>{tagLabel(label)}</span>)
+                  ) : (
+                    <span>待补充标签</span>
+                  )}
+                </div>
+              </section>
+
+              <section className="case-section case-evidence-level">
+                <h2>证据等级 / EVIDENCE LEVEL</h2>
+                <div>
+                  <strong>{featuredEvidence ? `${featuredEvidence} 级证据` : "证据待补充"}</strong>
+                  <span className="case-stars">{credibility.stars}</span>
+                </div>
+                <p>{credibility.description}</p>
+              </section>
+              <ArchiveStamp className="archive-stamp-soft case-recorded-stamp rotate-[-7deg]">
+                {featuredObservation || observationCount > 0 ? "已记录" : "待补充"}
+              </ArchiveStamp>
+            </aside>
+
+            <main className="case-paper case-paper-main">
+              <header className="case-main-header">
+                <div>
+                  <div className="case-kicker">
+                    温度 × 证据双轴诊断 / TEMPERATURE × EVIDENCE AXIS
+                  </div>
+                  <div className="case-rule" />
+                </div>
+                <div className="case-file-no">档案编号：{featuredCaseCode}</div>
+              </header>
+
+              <section className="case-diagnosis-grid">
+                <div className="case-axis-card">
+                  <div className="case-axis-y-label">证据强度</div>
+                  <div className="case-axis-chart" style={axisStyle}>
+                    <div className="case-axis-y">
+                      <span>
+                        A级
+                        <br />
+                        强证据
+                      </span>
+                      <span>
+                        B级
+                        <br />
+                        充分证据
+                      </span>
+                      <span>
+                        C级
+                        <br />
+                        一般证据
+                      </span>
+                      <span>
+                        D级
+                        <br />
+                        较弱证据
+                      </span>
+                    </div>
+                    <div className="case-axis-x">
+                      <span>
+                        0°C
+                        <br />
+                        低温
+                      </span>
+                      <span>
+                        25°C
+                        <br />
+                        偏低
+                      </span>
+                      <span>
+                        50°C
+                        <br />
+                        升温
+                      </span>
+                      <span>
+                        75°C
+                        <br />
+                        高温
+                      </span>
+                      <span>
+                        100°C
+                        <br />
+                        烫伤级避雷
+                      </span>
+                    </div>
+                    <div className="case-axis-cross case-axis-cross-x" />
+                    <div className="case-axis-cross case-axis-cross-y" />
+                    <div className="case-axis-point" />
+                    <div className="case-axis-note">
+                      {verdict.shortLabel} · {featuredEvidence ?? "待补充"} 级证据
+                      <br />
+                      {credibility.status}
+                    </div>
+                  </div>
+                  <div className="case-axis-x-label">女性友好温度</div>
+                </div>
+
+                <div className="case-verdict">
+                  <div>
+                    当前判定：<strong>{verdict.label}</strong>
+                  </div>
+                  <p>
+                    证据状态：{credibility.status}，{sourceStatus}。
+                  </p>
+                  <div className="case-temp-score">
+                    温度得分：
+                    <strong>
+                      {featuredTemperature === null ? "—" : `${featuredTemperature.toFixed(0)}°C`}
+                    </strong>
+                  </div>
+                  <div>证据等级：{featuredEvidence ?? "待补充"}</div>
+                </div>
+              </section>
+
+              <section className="case-section case-ai-summary">
+                <h2>AI 摘要 / AI SUMMARY</h2>
+                <p>{truncateText(summaryText, "暂无足够观察生成总结。", 220)}</p>
+              </section>
+
+              <section className="case-section">
+                <h2>文字证据摘录 / TEXT EVIDENCE</h2>
+                <div className="case-table">
+                  <div className="case-table-head">类型</div>
+                  <div className="case-table-head">内容</div>
+                  <div className="case-table-head">来源链接状态 / 时间</div>
+                  <div className="case-table-head">备注</div>
+                  {evidenceRows.map((row) => (
+                    <HomeEvidenceRow key={row.type} row={row} />
+                  ))}
+                </div>
+              </section>
+
+              <div className="case-bottom-grid">
+                <section className="case-section case-timeline">
+                  <h2>事件时间线 / TIMELINE</h2>
+                  <ul>
+                    {timelineRows.map((row) => (
+                      <li key={`${row.time}-${row.text}`}>
+                        <span>{row.time}</span>
+                        {row.text}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+                <section className="case-review-note">
+                  <h2>审核员备注 / REVIEW NOTES</h2>
+                  <p>{credibility.reviewNote}</p>
+                  <div>系统复核 · {formatDateTime(featuredDate, dateLocale)}</div>
+                </section>
               </div>
-            </div>
+            </main>
 
-            <div className="home-paper-layout">
-              <article className="home-hero-paper archive-paper archive-paper-dossier">
-                <div className="font-mono text-[11px] uppercase tracking-[0.26em] text-muted-foreground">
-                  Female-Friendly Experience Archive · Est. 2026
-                </div>
-                <h1 className="mt-6 max-w-2xl font-serif text-6xl leading-[0.92] text-balance md:text-8xl lg:text-[8.5rem]">
-                  {archiveCopy.hero.before}
-                  <span className="archive-marker">{archiveCopy.hero.accent}</span>
-                  {archiveCopy.hero.after}
-                </h1>
-                <p className="mt-7 max-w-2xl text-lg font-medium leading-relaxed md:text-xl">
-                  {archiveCopy.hero.body}
-                </p>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
-                  {sentenceGap}
-                  {archiveCopy.hero.actions}
-                </p>
+            <aside className="case-paper case-paper-right">
+              <section className="case-section case-credibility">
+                <h2>来源可信度 / SOURCE CREDIBILITY</h2>
+                <div className="case-stars-large">{credibility.stars}</div>
+                <strong>{credibility.label}</strong>
+                <p>综合评估记录内容的具体性、时间、地点与可验证程度。</p>
+                <a>了解可信度等级说明 →</a>
+              </section>
 
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    window.location.href = `/objects?q=${encodeURIComponent(q)}`;
-                  }}
-                  className="home-search-slip mt-8 flex max-w-2xl border-2 border-foreground bg-paper"
-                >
-                  <input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder={t("home.search.placeholder")}
-                    className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
-                  />
-                  <button className="bg-foreground px-5 py-3 text-sm font-medium text-background hover:bg-[var(--archive-pink)]">
-                    {t("home.search.button")}
-                  </button>
-                </form>
-
-                {topicWall.length > 0 && (
-                  <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-2">
-                    <span className="text-xs text-muted-foreground">
-                      {t("home.topicWall.title")}:
+              <section className="case-section">
+                <h2>触发点 / TRIGGER TAXONOMY</h2>
+                <div className="case-checklist">
+                  {FEMINIST_TAGS.slice(0, 8).map((label) => (
+                    <label key={label}>
+                      <input type="checkbox" checked={featuredTags.includes(label)} readOnly />
+                      <span>{tagLabel(label)}</span>
+                    </label>
+                  ))}
+                  <label>
+                    <input type="checkbox" readOnly />
+                    <span>其他</span>
+                    <span className="case-other-input">
+                      {extraTag ? tagLabel(extraTag) : "请描述具体内容"}
                     </span>
-                    {topicWall.slice(0, 6).map((item: any) => {
-                      const label = tagLabel(item.tag);
-                      return (
-                        <Link
-                          key={item.tag}
-                          to="/topics/$tag"
-                          params={{ tag: item.tag }}
-                          aria-label={t("home.topicWall.viewTopic", { tag: label })}
-                          className="paper-tag bg-paper px-2 py-0.5 text-xs text-muted-foreground hover:border-foreground hover:text-foreground"
-                        >
-                          #{label}
-                        </Link>
-                      );
-                    })}
-                  </div>
+                  </label>
+                </div>
+              </section>
+
+              <section className="case-section case-follow">
+                <h2>关注此档案 / FOLLOW</h2>
+                <div>
+                  <span>
+                    {observationCount > 0 ? `${observationCount} 条观察` : "等待第一条观察"}
+                  </span>
+                  <span className="case-switch" />
+                </div>
+              </section>
+
+              <section className="case-section case-actions">
+                <h2>行动 / ACTIONS</h2>
+                {featuredObject ? (
+                  <Link to="/submit/$objectId" params={{ objectId: featuredObject.id }}>
+                    补充我的记录
+                  </Link>
+                ) : (
+                  <Link to="/objects">浏览对象库</Link>
                 )}
-              </article>
-
-              <div className="home-dossier-cluster">
-                <PaperStack className="home-intake-stack">
-                  <DossierPanel
-                    title={archiveCopy.intake.title}
-                    eyebrow="Female-Friendly Experience Archive"
-                    stamp={archiveCopy.table.pending}
-                    meta={archiveCopy.intake.code}
-                    className="home-intake-paper md:p-7"
-                  >
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        navigate({
-                          to: "/objects",
-                          search: { type: recordType },
-                        });
-                      }}
-                    >
-                      <PaperField label={archiveCopy.intake.types}>
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                          {RECORD_TYPE_OPTIONS.map((type) => (
-                            <label
-                              key={type}
-                              className={cn(
-                                "paper-tag flex cursor-pointer items-center gap-2 px-3 py-2 text-foreground hover:border-foreground/60",
-                                recordType === type && "paper-tag-active",
-                              )}
-                            >
-                              <input
-                                type="radio"
-                                name="archive-record-type"
-                                value={type}
-                                checked={recordType === type}
-                                onChange={() => setRecordType(type)}
-                                className="accent-[var(--archive-pink)]"
-                              />
-                              <span>{objectType(type)}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </PaperField>
-
-                      <label className="mt-5 block">
-                        <span className="text-sm font-medium">{archiveCopy.intake.feeling}</span>
-                        <textarea
-                          rows={5}
-                          maxLength={500}
-                          placeholder={archiveCopy.intake.bodyPlaceholder}
-                          className="paper-textarea mt-3 min-h-[132px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--archive-pink)]"
-                        />
-                      </label>
-
-                      <label className="mt-5 block">
-                        <span className="text-xs text-muted-foreground">
-                          {archiveCopy.intake.source}
-                        </span>
-                        <input
-                          type="url"
-                          placeholder={archiveCopy.intake.sourcePlaceholder}
-                          className="paper-input mt-1 text-sm placeholder:text-muted-foreground"
-                        />
-                      </label>
-
-                      <div className="paper-divider mt-6 flex flex-wrap items-center justify-end gap-3 pt-4">
-                        <Link
-                          to="/about"
-                          className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                        >
-                          {archiveCopy.intake.rules}
-                        </Link>
-                        <button
-                          type="submit"
-                          className="paper-action px-5 py-2.5 text-sm font-medium"
-                        >
-                          {archiveCopy.intake.submit}
-                        </button>
-                      </div>
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        {archiveCopy.intake.helper}
-                      </p>
-                    </form>
-                  </DossierPanel>
-                </PaperStack>
-
-                <PaperSheet tone="slip" className="home-temperature-ticket p-4">
-                  <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                    <ArchiveStamp className="archive-stamp-soft rotate-[-3deg]">
-                      {archiveCopy.heat.title}
-                    </ArchiveStamp>
-                    <Link
-                      to="/about"
-                      className="text-xs uppercase tracking-wider underline-offset-4 hover:text-[var(--archive-pink)] hover:underline"
-                    >
-                      {archiveCopy.heat.link}
-                    </Link>
-                  </div>
-                  <TemperatureVerdict value={heatValue ?? null} compact className="p-3" />
-                </PaperSheet>
-              </div>
-            </div>
+                {featuredObject ? (
+                  <Link to="/objects/$id" params={{ id: featuredObject.id }}>
+                    查看档案详情
+                  </Link>
+                ) : (
+                  <Link to="/objects">查看全部档案</Link>
+                )}
+                <Link to="/feedback">举报此记录</Link>
+              </section>
+              <ArchiveStamp className="archive-stamp-soft case-source-stamp rotate-[-9deg]">
+                {sourceStatus}
+              </ArchiveStamp>
+            </aside>
           </div>
+          <p className="case-footer-note">每一条反馈，都是女性经验的一次存档。</p>
         </div>
       </section>
 
@@ -392,6 +519,193 @@ function Index() {
       </section>
     </SiteLayout>
   );
+}
+
+type HomeEvidenceRowModel = {
+  type: string;
+  content: string;
+  source: string;
+  note: string;
+};
+
+function HomeEvidenceRow({ row }: { row: HomeEvidenceRowModel }) {
+  return (
+    <>
+      <div>{row.type}</div>
+      <div>{row.content}</div>
+      <div>{row.source}</div>
+      <div>{row.note}</div>
+    </>
+  );
+}
+
+function getFeaturedTags(object: any, observation: any, summary: any): string[] {
+  const fromObject = Array.isArray(object?.top_tags)
+    ? object.top_tags
+        .map((item: any) => (typeof item === "string" ? item : item?.tag))
+        .filter(Boolean)
+    : [];
+  const fromObservation = Array.isArray(observation?.tags) ? observation.tags.filter(Boolean) : [];
+  const fromTrending = Array.isArray(summary?.trending_tags)
+    ? summary.trending_tags.map((item: any) => item?.tag).filter(Boolean)
+    : [];
+
+  return [...new Set([...fromObservation, ...fromObject, ...fromTrending])].slice(0, 8);
+}
+
+function formatDateTime(value: string | null | undefined, locale = "zh-CN") {
+  if (!value) return "暂无时间";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "暂无时间";
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+function formatUrl(value: string) {
+  try {
+    return new URL(value).hostname.replace(/^www\./, "");
+  } catch {
+    return value.length > 34 ? `${value.slice(0, 34)}...` : value;
+  }
+}
+
+function truncateText(value: string | null | undefined, fallback: string, length = 80) {
+  const text = value?.trim() || fallback;
+  return text.length > length ? `${text.slice(0, length)}...` : text;
+}
+
+function getTemperatureVerdict(value: number | null) {
+  if (value === null) {
+    return { label: "温度待补充", shortLabel: "暂无温度" };
+  }
+
+  const band = bandOf(value);
+  const copy: Record<string, { label: string; shortLabel: string }> = {
+    comfort: { label: "低温观察", shortLabel: "低温" },
+    minor: { label: "轻微升温", shortLabel: "偏低" },
+    notable: { label: "明显升温", shortLabel: "升温" },
+    high: { label: "高温警告", shortLabel: "高温" },
+    critical: { label: "烫伤级避雷", shortLabel: "烫伤级避雷" },
+  };
+  return copy[band.band] ?? { label: band.label, shortLabel: band.label };
+}
+
+function getAxisPosition(temperature: number | null, evidenceLevel: string | null) {
+  const x = temperature === null ? 18 : Math.max(4, Math.min(96, temperature));
+  const evidenceY: Record<string, number> = {
+    A: 14,
+    B: 39,
+    C: 63,
+    D: 84,
+  };
+  return {
+    x,
+    y: evidenceY[evidenceLevel ?? ""] ?? 70,
+  };
+}
+
+function getCredibility(evidenceLevel: string | null, hasSource: boolean) {
+  const starsByLevel: Record<string, string> = {
+    A: "★★★★★",
+    B: "★★★★☆",
+    C: "★★★☆☆",
+    D: "★★☆☆☆",
+  };
+  const labelByLevel: Record<string, string> = {
+    A: "很高",
+    B: "较高",
+    C: "中等",
+    D: "较低",
+  };
+  const statusByLevel: Record<string, string> = {
+    A: "多源证据充分",
+    B: "文字记录充分",
+    C: "记录仍需补强",
+    D: "证据较弱",
+  };
+  const level = evidenceLevel ?? "";
+  const status = statusByLevel[level] ?? "证据待补充";
+  const sourceCopy = hasSource ? "已包含可追溯来源。" : "公开来源仍可继续补充。";
+
+  return {
+    stars: starsByLevel[level] ?? "☆☆☆☆☆",
+    label: labelByLevel[level] ?? "待评估",
+    status,
+    description: `${status}，${sourceCopy}`,
+    reviewNote: `${status}。建议继续补充原始链接、截图文字或更多观察记录，以提高档案可信度。`,
+  };
+}
+
+function buildHomeEvidenceRows({
+  object,
+  observation,
+  tags,
+  evidenceLevel,
+  dateLocale,
+}: {
+  object: any;
+  observation: any;
+  tags: string[];
+  evidenceLevel: string | null;
+  dateLocale: string;
+}): HomeEvidenceRowModel[] {
+  return [
+    {
+      type: "用户记录",
+      content: truncateText(
+        observation?.cleaned_content ?? observation?.content ?? observation?.summary,
+        "暂无公开观察原文，等待补充记录。",
+        72,
+      ),
+      source: formatDateTime(observation?.created_at, dateLocale),
+      note: observation?.scene || "公开观察记录",
+    },
+    {
+      type: "对象档案",
+      content: object?.name
+        ? `${object.name} 当前累计 ${object.observation_count ?? 0} 条观察。`
+        : "暂无对象档案。",
+      source: object?.type ? "对象库已收录" : "对象待补充",
+      note: object?.temperature
+        ? `当前温度 ${Number(object.temperature).toFixed(0)}°C`
+        : "暂无温度",
+    },
+    {
+      type: "触发标签",
+      content: tags.length > 0 ? tags.slice(0, 5).join("、") : "暂无标签",
+      source: tags.length > 0 ? "观察标签汇总" : "等待观察",
+      note: evidenceLevel ? `${evidenceLevel} 级证据` : "证据待补充",
+    },
+    {
+      type: "来源状态",
+      content: observation?.reference_url
+        ? formatUrl(observation.reference_url)
+        : "暂无公开来源链接。",
+      source: observation?.reference_url ? "已提供来源" : "待补充来源",
+      note: observation?.reference_url ? "可继续补充多源材料" : "建议补充来源链接",
+    },
+  ];
+}
+
+function buildHomeTimelineRows(observations: any[], dateLocale: string) {
+  if (!observations.length) {
+    return [{ time: "暂无", text: "等待第一条已审核观察进入档案。" }];
+  }
+
+  return observations.slice(0, 4).map((observation) => ({
+    time: formatDateTime(observation.created_at, dateLocale),
+    text: truncateText(
+      observation.summary ?? observation.cleaned_content ?? observation.content,
+      "新增一条已审核观察。",
+      52,
+    ),
+  }));
 }
 
 function LatestArchiveTable({ rows }: { rows: any[] }) {

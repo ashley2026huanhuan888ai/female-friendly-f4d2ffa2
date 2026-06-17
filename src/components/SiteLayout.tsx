@@ -26,6 +26,13 @@ const SECONDARY_NAV = [
   { to: "/about", labelKey: "nav.about" },
 ] as const;
 
+const DESK_NAV = [
+  { to: "/objects", label: "对象库" },
+  { to: "/feed", label: "观察动态" },
+  { to: "/knowledge", label: "知识库" },
+  { to: "/archive/evidence", label: "提交记录" },
+] as const;
+
 function createPresenceVisitorId() {
   const rawId =
     globalThis.crypto?.randomUUID?.() ??
@@ -147,29 +154,49 @@ export function SiteLayout({
       >
         <div className="container-prose flex h-16 items-center justify-between gap-3">
           <Link to="/" className="flex min-w-0 items-baseline gap-3 lg:min-w-fit">
-            <span className="block truncate font-serif text-xl tracking-tight">{t("app.name")}</span>
+            <span className="block truncate font-serif text-xl tracking-tight">
+              {isDeskVariant ? "女性友好体验监测站" : t("app.name")}
+            </span>
             <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground lg:inline">
-              {t("app.brand.en")}
+              {isDeskVariant ? "Female-Friendly Experience Archive" : t("app.brand.en")}
             </span>
           </Link>
 
           {/* 桌面端主导航 */}
           <nav className="hidden items-center gap-5 text-sm lg:flex">
-            {PRIMARY_NAV.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className="whitespace-pre-line text-muted-foreground hover:text-foreground"
-              >
-                {t(l.labelKey)}
-              </Link>
-            ))}
-            <span className="h-4 w-px bg-border" aria-hidden />
-            {SECONDARY_NAV.map((l) => (
-              <Link key={l.to} to={l.to} className="text-muted-foreground hover:text-foreground">
-                {t(l.labelKey)}
-              </Link>
-            ))}
+            {isDeskVariant ? (
+              DESK_NAV.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className="text-foreground hover:text-[var(--archive-pink)]"
+                >
+                  {l.label}
+                </Link>
+              ))
+            ) : (
+              <>
+                {PRIMARY_NAV.map((l) => (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className="whitespace-pre-line text-muted-foreground hover:text-foreground"
+                  >
+                    {t(l.labelKey)}
+                  </Link>
+                ))}
+                <span className="h-4 w-px bg-border" aria-hidden />
+                {SECONDARY_NAV.map((l) => (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {t(l.labelKey)}
+                  </Link>
+                ))}
+              </>
+            )}
           </nav>
 
           {/* 右侧账号区（桌面） */}
