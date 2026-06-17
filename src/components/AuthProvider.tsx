@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { hasPublicSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { AuthContext, type AuthContextValue } from "@/components/auth-context";
 import {
   clearRemember,
@@ -10,6 +10,7 @@ import {
 
 async function enforceExpiry(): Promise<boolean> {
   // returns true if signed out due to expiry / no-remember
+  if (!hasPublicSupabaseConfig()) return false;
   try {
     const { data } = await supabase.auth.getSession();
     if (!data.session) return false;
@@ -39,6 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [unread, setUnread] = useState(0);
 
   const refresh = useCallback(async () => {
+    if (!hasPublicSupabaseConfig()) {
+      setUser(null);
+      setReady(true);
+      setIsAdmin(false);
+      setUnread(0);
+      return;
+    }
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const sessionUser = sessionData.session?.user ?? null;
@@ -70,6 +78,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    if (!hasPublicSupabaseConfig()) {
+      setUser(null);
+      setReady(true);
+      setIsAdmin(false);
+      setUnread(0);
+      return () => {
+        cancelled = true;
+      };
+    }
     (async () => {
       try {
         const expired = await enforceExpiry();
@@ -114,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     clearRemember();
+    if (!hasPublicSupabaseConfig()) return;
     try {
       await supabase.auth.signOut();
     } catch {

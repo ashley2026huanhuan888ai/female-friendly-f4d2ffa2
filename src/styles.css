@@ -276,8 +276,8 @@
   }
   .home-dossier-cluster {
     position: relative;
-    min-height: 42rem;
-    padding: 1rem 0 5.5rem;
+    min-height: 38rem;
+    padding: 1rem 0 4.25rem;
   }
   .home-intake-stack {
     position: relative;
@@ -285,14 +285,15 @@
     transform: rotate(1.8deg);
   }
   .home-intake-paper {
-    min-height: 33rem;
+    min-height: 29rem;
   }
   .home-temperature-ticket {
     position: absolute;
     z-index: 4;
-    left: -2.2rem;
-    right: 2.5rem;
-    bottom: 0;
+    left: -4rem;
+    right: auto;
+    bottom: 13rem;
+    width: min(34rem, calc(100% - 9rem));
     border-color: oklch(0.2 0.01 60 / 62%);
     --paper-rotate: -2.2deg;
     box-shadow:
@@ -514,6 +515,7 @@
       left: auto;
       right: auto;
       bottom: auto;
+      width: auto;
       margin-top: 1.25rem;
     }
   }

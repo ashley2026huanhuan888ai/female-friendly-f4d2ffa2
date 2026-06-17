@@ -193,10 +193,10 @@ function Index() {
                     <label className="mt-5 block">
                       <span className="text-sm font-medium">{archiveCopy.intake.feeling}</span>
                       <textarea
-                        rows={7}
+                        rows={5}
                         maxLength={500}
                         placeholder={archiveCopy.intake.bodyPlaceholder}
-                        className="paper-textarea mt-3 min-h-[190px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--archive-pink)]"
+                        className="paper-textarea mt-3 min-h-[132px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--archive-pink)]"
                       />
                     </label>
 
@@ -244,10 +244,7 @@ function Index() {
                     {archiveCopy.heat.link}
                   </Link>
                 </div>
-                <TemperatureVerdict value={heatValue ?? null} compact />
-                <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                  {archiveCopy.heat.body}
-                </p>
+                <TemperatureVerdict value={heatValue ?? null} compact className="p-3" />
               </PaperSheet>
             </div>
           </div>

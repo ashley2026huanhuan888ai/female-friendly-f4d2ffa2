@@ -20,12 +20,8 @@ function readEnv(name: string): string | undefined {
 }
 
 function readPublicSupabase(): SupabaseRuntimeConfig {
-  const runtime =
-    typeof window !== "undefined" ? window.__FF_SUPABASE_CONFIG__ : undefined;
-  const url =
-    runtime?.url ||
-    readEnv("VITE_SUPABASE_URL") ||
-    readEnv("SUPABASE_URL");
+  const runtime = typeof window !== "undefined" ? window.__FF_SUPABASE_CONFIG__ : undefined;
+  const url = runtime?.url || readEnv("VITE_SUPABASE_URL") || readEnv("SUPABASE_URL");
   const anonKey =
     runtime?.anonKey ||
     readEnv("VITE_SUPABASE_PUBLISHABLE_KEY") ||
@@ -33,6 +29,11 @@ function readPublicSupabase(): SupabaseRuntimeConfig {
     readEnv("VITE_SUPABASE_ANON_KEY") ||
     readEnv("SUPABASE_ANON_KEY");
   return { url, anonKey };
+}
+
+export function hasPublicSupabaseConfig() {
+  const { url, anonKey } = readPublicSupabase();
+  return Boolean(url && anonKey);
 }
 
 function createSupabaseClient() {

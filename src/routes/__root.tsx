@@ -12,7 +12,7 @@ import appCss from "../styles.css?url";
 import { APP_BUILT_AT, APP_COMMIT } from "@/lib/build-info";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BackToHome } from "@/components/BackToHome";
-import { supabase } from "@/integrations/supabase/client";
+import { hasPublicSupabaseConfig, supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/components/AuthProvider";
 import { LanguageProvider, useI18n } from "@/lib/i18n";
 
@@ -132,6 +132,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useEffect(() => {
+    if (!hasPublicSupabaseConfig()) return;
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
