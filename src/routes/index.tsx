@@ -64,23 +64,44 @@ function Index() {
   }, [fetchSummary]);
 
   return (
-    <SiteLayout>
-      <section className="archive-desk border-b border-border">
-        <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
-          <div className="grid gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-start">
-            <div className="pt-2">
-              <div className="font-mono text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
+    <SiteLayout variant="desk">
+      <section className="home-desk-hero border-b border-black/60">
+        <div className="home-desk-stage mx-auto max-w-[1500px] px-4 pb-14 pt-24 md:px-8 md:pb-20 md:pt-28">
+          <div className="home-file-ribbon archive-paper">
+            <div>
+              <div className="font-serif text-2xl font-semibold md:text-3xl">{t("app.name")}</div>
+              <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Female-Friendly Experience Archive
+              </div>
+            </div>
+            <div className="hidden h-12 w-px bg-foreground/40 md:block" />
+            <div className="font-mono text-sm">
+              {language === "en" ? "Archive No.: " : "档案编号："}
+              <span className="archive-highlight">FF-2026-HOME</span>
+            </div>
+            <ArchiveStamp className="archive-stamp-soft home-file-stamp rotate-[-6deg]">
+              {archiveCopy.table.recorded}
+            </ArchiveStamp>
+            <div className="ml-auto hidden text-right font-mono text-[11px] leading-5 text-muted-foreground lg:block">
+              <div>{language === "en" ? "Updated: 2026-06-17" : "归档时间：2026-06-17"}</div>
+              <div>{language === "en" ? "Desk view / public archive" : "首页档案 / 公开记录"}</div>
+            </div>
+          </div>
+
+          <div className="home-paper-layout">
+            <article className="home-hero-paper archive-paper archive-paper-dossier">
+              <div className="font-mono text-[11px] uppercase tracking-[0.26em] text-muted-foreground">
                 Female-Friendly Experience Archive · Est. 2026
               </div>
-              <h1 className="mt-7 max-w-2xl font-serif text-6xl leading-[0.96] text-balance md:text-8xl">
+              <h1 className="mt-6 max-w-2xl font-serif text-6xl leading-[0.92] text-balance md:text-8xl lg:text-[8.5rem]">
                 {archiveCopy.hero.before}
                 <span className="archive-marker">{archiveCopy.hero.accent}</span>
                 {archiveCopy.hero.after}
               </h1>
-              <p className="mt-7 max-w-xl text-lg font-medium leading-relaxed">
+              <p className="mt-7 max-w-2xl text-lg font-medium leading-relaxed md:text-xl">
                 {archiveCopy.hero.body}
               </p>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
                 <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
                 {sentenceGap}
                 {archiveCopy.hero.actions}
@@ -91,7 +112,7 @@ function Index() {
                   e.preventDefault();
                   window.location.href = `/objects?q=${encodeURIComponent(q)}`;
                 }}
-                className="archive-paper mt-8 flex max-w-xl border-2 border-foreground bg-paper"
+                className="home-search-slip mt-8 flex max-w-2xl border-2 border-foreground bg-paper"
               >
                 <input
                   value={q}
@@ -117,7 +138,7 @@ function Index() {
                         to="/topics/$tag"
                         params={{ tag: item.tag }}
                         aria-label={t("home.topicWall.viewTopic", { tag: label })}
-                        className="border border-border bg-paper px-2 py-0.5 text-xs text-muted-foreground hover:border-foreground hover:text-foreground"
+                        className="paper-tag bg-paper px-2 py-0.5 text-xs text-muted-foreground hover:border-foreground hover:text-foreground"
                       >
                         #{label}
                       </Link>
@@ -125,107 +146,111 @@ function Index() {
                   })}
                 </div>
               )}
-            </div>
+            </article>
 
-            <PaperStack>
-              <DossierPanel
-                title={archiveCopy.intake.title}
-                eyebrow="Female-Friendly Experience Archive"
-                stamp={archiveCopy.table.pending}
-                meta={archiveCopy.intake.code}
-                className="md:p-8"
-              >
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    navigate({
-                      to: "/objects",
-                      search: { type: recordType },
-                    });
-                  }}
+            <div className="home-dossier-cluster">
+              <PaperStack className="home-intake-stack">
+                <DossierPanel
+                  title={archiveCopy.intake.title}
+                  eyebrow="Female-Friendly Experience Archive"
+                  stamp={archiveCopy.table.pending}
+                  meta={archiveCopy.intake.code}
+                  className="home-intake-paper md:p-7"
                 >
-                  <PaperField label={archiveCopy.intake.types}>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      {RECORD_TYPE_OPTIONS.map((type) => (
-                        <label
-                          key={type}
-                          className={cn(
-                            "paper-tag flex cursor-pointer items-center gap-2 px-3 py-2 text-foreground hover:border-foreground/60",
-                            recordType === type && "paper-tag-active",
-                          )}
-                        >
-                          <input
-                            type="radio"
-                            name="archive-record-type"
-                            value={type}
-                            checked={recordType === type}
-                            onChange={() => setRecordType(type)}
-                            className="accent-[var(--archive-pink)]"
-                          />
-                          <span>{objectType(type)}</span>
-                        </label>
-                      ))}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      navigate({
+                        to: "/objects",
+                        search: { type: recordType },
+                      });
+                    }}
+                  >
+                    <PaperField label={archiveCopy.intake.types}>
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        {RECORD_TYPE_OPTIONS.map((type) => (
+                          <label
+                            key={type}
+                            className={cn(
+                              "paper-tag flex cursor-pointer items-center gap-2 px-3 py-2 text-foreground hover:border-foreground/60",
+                              recordType === type && "paper-tag-active",
+                            )}
+                          >
+                            <input
+                              type="radio"
+                              name="archive-record-type"
+                              value={type}
+                              checked={recordType === type}
+                              onChange={() => setRecordType(type)}
+                              className="accent-[var(--archive-pink)]"
+                            />
+                            <span>{objectType(type)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </PaperField>
+
+                    <label className="mt-5 block">
+                      <span className="text-sm font-medium">{archiveCopy.intake.feeling}</span>
+                      <textarea
+                        rows={7}
+                        maxLength={500}
+                        placeholder={archiveCopy.intake.bodyPlaceholder}
+                        className="paper-textarea mt-3 min-h-[190px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--archive-pink)]"
+                      />
+                    </label>
+
+                    <label className="mt-5 block">
+                      <span className="text-xs text-muted-foreground">
+                        {archiveCopy.intake.source}
+                      </span>
+                      <input
+                        type="url"
+                        placeholder={archiveCopy.intake.sourcePlaceholder}
+                        className="paper-input mt-1 text-sm placeholder:text-muted-foreground"
+                      />
+                    </label>
+
+                    <div className="paper-divider mt-6 flex flex-wrap items-center justify-end gap-3 pt-4">
+                      <Link
+                        to="/about"
+                        className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                      >
+                        {archiveCopy.intake.rules}
+                      </Link>
+                      <button
+                        type="submit"
+                        className="paper-action px-5 py-2.5 text-sm font-medium"
+                      >
+                        {archiveCopy.intake.submit}
+                      </button>
                     </div>
-                  </PaperField>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {archiveCopy.intake.helper}
+                    </p>
+                  </form>
+                </DossierPanel>
+              </PaperStack>
 
-                  <label className="mt-5 block">
-                    <span className="text-sm font-medium">{archiveCopy.intake.feeling}</span>
-                    <textarea
-                      rows={7}
-                      maxLength={500}
-                      placeholder={archiveCopy.intake.bodyPlaceholder}
-                      className="paper-textarea mt-3 min-h-[190px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--archive-pink)]"
-                    />
-                  </label>
-
-                  <label className="mt-5 block">
-                    <span className="text-xs text-muted-foreground">
-                      {archiveCopy.intake.source}
-                    </span>
-                    <input
-                      type="url"
-                      placeholder={archiveCopy.intake.sourcePlaceholder}
-                      className="paper-input mt-1 text-sm placeholder:text-muted-foreground"
-                    />
-                  </label>
-
-                  <div className="paper-divider mt-6 flex flex-wrap items-center justify-end gap-3 pt-4">
-                    <Link
-                      to="/about"
-                      className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                    >
-                      {archiveCopy.intake.rules}
-                    </Link>
-                    <button type="submit" className="paper-action px-5 py-2.5 text-sm font-medium">
-                      {archiveCopy.intake.submit}
-                    </button>
-                  </div>
-                  <p className="mt-3 text-xs text-muted-foreground">{archiveCopy.intake.helper}</p>
-                </form>
-              </DossierPanel>
-            </PaperStack>
-          </div>
-
-          <PaperSheet
-            tone="slip"
-            className="mt-10 grid gap-6 p-5 md:grid-cols-[0.82fr_1.18fr] md:items-center"
-          >
-            <div className="flex items-start gap-4">
-              <ArchiveStamp className="archive-stamp-soft rotate-[-3deg]">
-                {archiveCopy.heat.title}
-              </ArchiveStamp>
-              <div>
-                <p className="text-sm leading-6 text-muted-foreground">{archiveCopy.heat.body}</p>
-                <Link
-                  to="/about"
-                  className="mt-2 inline-block text-xs uppercase tracking-wider underline-offset-4 hover:text-[var(--archive-pink)] hover:underline"
-                >
-                  {archiveCopy.heat.link}
-                </Link>
-              </div>
+              <PaperSheet tone="slip" className="home-temperature-ticket p-4">
+                <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                  <ArchiveStamp className="archive-stamp-soft rotate-[-3deg]">
+                    {archiveCopy.heat.title}
+                  </ArchiveStamp>
+                  <Link
+                    to="/about"
+                    className="text-xs uppercase tracking-wider underline-offset-4 hover:text-[var(--archive-pink)] hover:underline"
+                  >
+                    {archiveCopy.heat.link}
+                  </Link>
+                </div>
+                <TemperatureVerdict value={heatValue ?? null} compact />
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  {archiveCopy.heat.body}
+                </p>
+              </PaperSheet>
             </div>
-            <TemperatureVerdict value={heatValue ?? null} compact />
-          </PaperSheet>
+          </div>
         </div>
       </section>
 
@@ -595,7 +620,7 @@ function getArchiveHomeCopy(language: "zh" | "en") {
       types: "记录类型",
       feeling: "我的感受",
       bodyPlaceholder:
-        "可以按这个框架写：\n1. 场景：在哪里、何时看到或经历？\n2. 细节：具体原话、画面、规则或互动是什么？\n3. 影响：让谁受到影响，带来什么感受？\n4. 依据：链接、截图、出处或补充说明。",
+        "可以按这个框架写：\n1. 场景：在哪里、何时看到或经历？\n2. 细节：具体原话、画面、规则或互动是什么？\n3. 影响：让谁受到影响，带来什么感受？\n4. 依据：链接、出处或补充说明。",
       source: "来源链接（可选）",
       sourcePlaceholder: "公开报道、网页、原文链接…",
       rules: "了解记录规范",

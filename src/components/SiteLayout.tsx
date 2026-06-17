@@ -47,7 +47,13 @@ function getPresenceVisitorId() {
   }
 }
 
-export function SiteLayout({ children }: { children: ReactNode }) {
+export function SiteLayout({
+  children,
+  variant = "default",
+}: {
+  children: ReactNode;
+  variant?: "default" | "desk";
+}) {
   const { ready, user, email, isAdmin, unread, signOut: authSignOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [canSeeAdminNav, setCanSeeAdminNav] = useState(false);
@@ -56,6 +62,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const getAccess = useServerFn(getCurrentUserAccess);
 
   const router = useRouter();
+  const isDeskVariant = variant === "desk";
 
   // 路由变化时关闭移动菜单
   useEffect(() => {
@@ -124,8 +131,20 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur">
+    <div
+      className={
+        isDeskVariant
+          ? "min-h-screen bg-[oklch(0.14_0.012_60)] text-foreground"
+          : "min-h-screen bg-background text-foreground"
+      }
+    >
+      <header
+        className={
+          isDeskVariant
+            ? "home-desk-nav absolute left-0 top-0 z-40 w-full border-b border-white/10 bg-black/15 text-paper backdrop-blur-sm"
+            : "sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur"
+        }
+      >
         <div className="container-prose flex h-16 items-center justify-between gap-3">
           <Link to="/" className="flex items-baseline gap-3">
             <span className="font-serif text-xl tracking-tight">{t("app.name")}</span>
@@ -228,7 +247,13 @@ export function SiteLayout({ children }: { children: ReactNode }) {
 
         {/* 移动端展开菜单 */}
         {menuOpen && (
-          <div className="border-t border-border bg-paper md:hidden">
+          <div
+            className={
+              isDeskVariant
+                ? "border-t border-white/10 bg-[oklch(0.16_0.012_60/0.96)] md:hidden"
+                : "border-t border-border bg-paper md:hidden"
+            }
+          >
             <nav className="container-prose flex flex-col py-2 text-sm">
               {PRIMARY_NAV.map((l) => (
                 <Link

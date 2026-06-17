@@ -167,6 +167,141 @@
       linear-gradient(90deg, oklch(0.25 0.018 55 / 18%), transparent 12rem),
       linear-gradient(120deg, oklch(0.25 0.018 55), oklch(0.18 0.012 60));
   }
+  .home-desk-nav {
+    --border: oklch(1 0 0 / 18%);
+  }
+  .home-desk-nav .text-muted-foreground {
+    color: oklch(0.9 0.006 80 / 72%);
+  }
+  .home-desk-nav a,
+  .home-desk-nav button {
+    color: oklch(0.96 0.005 80);
+  }
+  .home-desk-nav a:hover,
+  .home-desk-nav button:hover {
+    color: oklch(0.98 0.004 80);
+  }
+  .home-desk-nav .bg-foreground {
+    background: oklch(0.96 0.005 80);
+    color: oklch(0.16 0.012 60);
+  }
+  .home-desk-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    color: var(--color-foreground);
+    background:
+      radial-gradient(circle at 50% 32%, oklch(0.34 0.018 55 / 58%), transparent 34rem),
+      linear-gradient(180deg, oklch(0.1 0.012 60 / 25%), oklch(0.08 0.012 60 / 72%)),
+      url("./assets/archive-desk-texture.jpg") center / cover no-repeat,
+      linear-gradient(120deg, oklch(0.19 0.018 55), oklch(0.1 0.012 60));
+  }
+  .home-desk-hero::before,
+  .home-desk-hero::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+  }
+  .home-desk-hero::before {
+    inset: 0;
+    opacity: 0.34;
+    background:
+      radial-gradient(circle at 8% 20%, oklch(1 0 0 / 8%) 0 1px, transparent 1px),
+      radial-gradient(circle at 74% 62%, oklch(1 0 0 / 6%) 0 1px, transparent 1px),
+      repeating-linear-gradient(90deg, transparent 0 9px, oklch(0 0 0 / 18%) 9px 10px);
+    background-size:
+      23px 29px,
+      31px 37px,
+      auto;
+    mix-blend-mode: multiply;
+  }
+  .home-desk-hero::after {
+    inset: auto -6rem -8rem -4rem;
+    height: 17rem;
+    background:
+      linear-gradient(6deg, oklch(0.92 0.006 80 / 58%), oklch(0.78 0.006 80 / 24%)),
+      repeating-linear-gradient(0deg, transparent 0 11px, oklch(0.16 0.01 60 / 6%) 11px 12px);
+    border-top: 1px solid oklch(1 0 0 / 20%);
+    box-shadow: 0 -34px 82px -48px oklch(0 0 0 / 76%);
+    transform: rotate(-2deg);
+  }
+  .home-desk-stage {
+    position: relative;
+  }
+  .home-file-ribbon {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    min-height: 6.4rem;
+    padding: 1.1rem 1.5rem;
+    border-color: oklch(0.2 0.01 60 / 62%);
+    box-shadow:
+      0 34px 68px -42px oklch(0 0 0 / 82%),
+      0 8px 0 -5px oklch(0.05 0.01 60 / 70%),
+      12px 14px 0 -7px oklch(0.86 0.006 80 / 45%);
+    transform: rotate(-0.8deg);
+  }
+  .home-file-ribbon::after {
+    opacity: 0.62;
+  }
+  .home-file-stamp {
+    font-size: 0.8rem;
+    padding: 0.42rem 0.7rem;
+  }
+  .home-paper-layout {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 0.86fr) minmax(28rem, 1fr);
+    gap: clamp(1.5rem, 4vw, 4.5rem);
+    align-items: start;
+    margin-top: 2.1rem;
+  }
+  .home-hero-paper {
+    min-height: 33rem;
+    padding: clamp(1.6rem, 3vw, 3.2rem);
+    border-color: oklch(0.2 0.01 60 / 64%);
+    --paper-rotate: -1.45deg;
+    box-shadow:
+      0 48px 86px -48px oklch(0 0 0 / 88%),
+      16px 18px 0 -8px oklch(0.76 0.006 80 / 58%),
+      -14px 24px 0 -14px oklch(0.1 0.01 60 / 42%);
+  }
+  .home-search-slip {
+    position: relative;
+    box-shadow:
+      0 12px 18px -16px oklch(0 0 0 / 70%),
+      7px 8px 0 -5px oklch(0.64 0.006 80 / 34%);
+    transform: rotate(0.35deg);
+  }
+  .home-dossier-cluster {
+    position: relative;
+    min-height: 42rem;
+    padding: 1rem 0 5.5rem;
+  }
+  .home-intake-stack {
+    position: relative;
+    z-index: 2;
+    transform: rotate(1.8deg);
+  }
+  .home-intake-paper {
+    min-height: 33rem;
+  }
+  .home-temperature-ticket {
+    position: absolute;
+    z-index: 4;
+    left: -2.2rem;
+    right: 2.5rem;
+    bottom: 0;
+    border-color: oklch(0.2 0.01 60 / 62%);
+    --paper-rotate: -2.2deg;
+    box-shadow:
+      0 30px 62px -38px oklch(0 0 0 / 86%),
+      11px 13px 0 -8px oklch(0.8 0.006 80 / 48%);
+  }
+  .home-temperature-ticket .archive-paper {
+    box-shadow: none;
+  }
   .archive-paper {
     position: relative;
     overflow: hidden;
@@ -359,6 +494,53 @@
   }
   .paper-action-secondary:hover {
     border-color: var(--color-foreground);
+  }
+  @media (max-width: 1100px) {
+    .home-paper-layout {
+      grid-template-columns: 1fr;
+    }
+    .home-dossier-cluster {
+      min-height: 0;
+      padding-bottom: 0;
+    }
+    .home-intake-stack,
+    .home-temperature-ticket,
+    .home-hero-paper,
+    .home-file-ribbon {
+      transform: rotate(0deg);
+    }
+    .home-temperature-ticket {
+      position: relative;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      margin-top: 1.25rem;
+    }
+  }
+  @media (max-width: 640px) {
+    .home-desk-stage {
+      padding-top: 5.5rem;
+    }
+    .home-file-ribbon {
+      align-items: flex-start;
+      gap: 0.8rem;
+      min-height: 0;
+      padding: 1rem;
+    }
+    .home-file-stamp {
+      margin-left: auto;
+      font-size: 0.68rem;
+    }
+    .home-hero-paper {
+      min-height: 0;
+      padding: 1.25rem;
+    }
+    .home-search-slip {
+      flex-direction: column;
+    }
+    .home-search-slip button {
+      width: 100%;
+    }
   }
 }
 
