@@ -189,6 +189,7 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
+    min-height: 100svh;
     color: var(--color-foreground);
     background:
       radial-gradient(circle at 50% 32%, oklch(0.34 0.018 55 / 58%), transparent 34rem),
@@ -227,6 +228,9 @@
     transform: rotate(-2deg);
   }
   .home-desk-stage {
+    position: relative;
+  }
+  .home-desk-composition {
     position: relative;
   }
   .home-file-ribbon {
@@ -302,6 +306,13 @@
   }
   .home-temperature-ticket .archive-paper {
     box-shadow: none;
+  }
+  @media (min-width: 1101px) {
+    .home-desk-composition {
+      transform: scale(0.8);
+      transform-origin: top center;
+      margin-bottom: -9.5rem;
+    }
   }
   .archive-paper {
     position: relative;
