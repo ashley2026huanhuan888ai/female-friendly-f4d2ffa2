@@ -770,20 +770,6 @@ function EditorialArchiveFirstPage({
             </p>
           </section>
           <EditorialCheckGrid
-            title="记录类型（可多选）"
-            checked={["品牌"]}
-            items={[
-              "品牌",
-              "影视作品",
-              "服务体验",
-              "游戏",
-              "活动 / 组织",
-              "公共事件",
-              "企业组织",
-              "其他",
-            ]}
-          />
-          <EditorialCheckGrid
             title="触发点（可多选）"
             checked={["物化女性", "身材羞辱", "消费女性议题"]}
             items={[
