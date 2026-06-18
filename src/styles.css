@@ -1493,17 +1493,17 @@
     text-decoration: none;
   }
   .archive-editorial-temperature-card {
-    right: 1.2rem;
-    bottom: 0.5rem;
+    left: 50%;
+    bottom: -2.4rem;
     z-index: 7;
     display: grid;
-    width: 39%;
+    width: min(880px, 92%);
     min-height: 8.6rem;
     grid-template-columns: auto auto minmax(13rem, 1fr) minmax(8rem, 0.75fr);
     align-items: center;
     gap: 1rem;
     padding: 1.2rem 1.5rem;
-    transform: rotate(1.3deg);
+    transform: translateX(-50%) rotate(1.3deg);
   }
   .archive-editorial-thermometer {
     display: block;
