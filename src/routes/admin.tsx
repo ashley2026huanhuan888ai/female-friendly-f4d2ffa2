@@ -3,7 +3,11 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useAuth } from "@/components/auth-context";
-import { claimFirstAdmin, getCurrentUserAccess } from "@/lib/api/platform.functions";
+import {
+  claimFirstAdmin,
+  getCurrentUserAccess,
+  getFirstAdminClaimAvailability,
+} from "@/lib/api/platform.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
@@ -15,33 +19,49 @@ function AdminLayout() {
   const router = useRouter();
   const claim = useServerFn(claimFirstAdmin);
   const getAccess = useServerFn(getCurrentUserAccess);
+  const getClaimAvailability = useServerFn(getFirstAdminClaimAvailability);
   const { ready, user, isAdmin } = useAuth();
   const [state, setState] = useState<"loading" | "anon" | "user" | "admin">("loading");
+  const [claimAvailable, setClaimAvailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const check = async () => {
       if (!ready) return;
       if (!user) {
+        setClaimAvailable(false);
         if (!cancelled) setState("anon");
         return;
       }
       if (isAdmin) {
+        setClaimAvailable(false);
         if (!cancelled) setState("admin");
         return;
       }
       try {
         const access = await getAccess({});
-        if (!cancelled) setState(access.isAdmin ? "admin" : "user");
+        if (access.isAdmin) {
+          setClaimAvailable(false);
+          if (!cancelled) setState("admin");
+          return;
+        }
+        const availability = await getClaimAvailability({});
+        if (!cancelled) {
+          setClaimAvailable(availability.available);
+          setState("user");
+        }
       } catch {
-        if (!cancelled) setState("user");
+        if (!cancelled) {
+          setClaimAvailable(false);
+          setState("user");
+        }
       }
     };
     check();
     return () => {
       cancelled = true;
     };
-  }, [ready, user, isAdmin, getAccess]);
+  }, [ready, user, isAdmin, getAccess, getClaimAvailability]);
 
   if (state === "loading")
     return (
@@ -69,24 +89,33 @@ function AdminLayout() {
       <SiteLayout>
         <div className="container-prose max-w-xl py-20">
           <h1 className="font-serif text-3xl">非管理员账户</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            如果你是平台首位用户，可以自助声明为初始管理员（仅在系统尚无管理员时可用）。
-          </p>
-          <button
-            onClick={async () => {
-              try {
-                await claim({});
-                toast.success("已成为管理员");
-                setState("admin");
-                router.invalidate();
-              } catch (e) {
-                toast.error((e as Error).message);
-              }
-            }}
-            className="mt-6 border border-foreground bg-foreground px-5 py-2.5 text-sm text-background hover:bg-accent"
-          >
-            声明为初始管理员
-          </button>
+          {claimAvailable ? (
+            <>
+              <p className="mt-3 text-sm text-muted-foreground">
+                系统尚无管理员，且当前环境允许初始化管理员。完成初始化后应立即关闭该开关。
+              </p>
+              <button
+                onClick={async () => {
+                  try {
+                    await claim({});
+                    toast.success("已成为管理员");
+                    setClaimAvailable(false);
+                    setState("admin");
+                    router.invalidate();
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
+                }}
+                className="mt-6 border border-foreground bg-foreground px-5 py-2.5 text-sm text-background hover:bg-accent"
+              >
+                声明为初始管理员
+              </button>
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">
+              当前账户没有管理员权限。请联系现有管理员开通访问。
+            </p>
+          )}
         </div>
       </SiteLayout>
     );

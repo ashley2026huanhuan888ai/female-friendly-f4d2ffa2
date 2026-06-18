@@ -41,10 +41,7 @@ export const Route = createFileRoute("/sitemap.xml")({
             .select("case_code, created_at")
             .eq("status", "approved")
             .not("case_code", "is", null),
-          supabaseAdmin
-            .from("observations")
-            .select("tags, created_at")
-            .eq("status", "approved"),
+          supabaseAdmin.from("observations").select("tags, created_at").eq("status", "approved"),
         ]);
 
         for (const o of objects ?? []) {

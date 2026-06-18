@@ -17,6 +17,7 @@ import {
 } from "@/components/archive-ui";
 import { toast } from "sonner";
 import { formatTimeForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
+import { pushHomeInteractionEvent } from "@/lib/interaction-tracker";
 
 export const Route = createFileRoute("/submit/$objectId")({
   head: () => ({ meta: [{ title: "提交观察 · 女性友好体验测评" }] }),
@@ -61,6 +62,9 @@ function SubmitPage() {
   const draftKey = `submit-draft:${objectId}`;
   const [draftRestored, setDraftRestored] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+  const [draftMetaReady, setDraftMetaReady] = useState(false);
+  const [hasTrackedSubmitPageView, setHasTrackedSubmitPageView] = useState(false);
+  const [hasTrackedSubmitBlocked, setHasTrackedSubmitBlocked] = useState(false);
 
   // 初次挂载：恢复草稿 + 拉对象/登录态
   useEffect(() => {
@@ -82,6 +86,8 @@ function SubmitPage() {
     } catch {
       /* ignore */
     }
+
+    setDraftMetaReady(true);
   }, [objectId, draftKey]);
 
   // 自动保存草稿（防抖 600ms）
@@ -121,6 +127,34 @@ function SubmitPage() {
     setDraftRestored(false);
   };
 
+  useEffect(() => {
+    if (!ready || !draftMetaReady) return;
+    if (user) {
+      if (hasTrackedSubmitPageView) return;
+      pushHomeInteractionEvent("submit_page_view", {
+        object_id: objectId,
+        has_draft: Boolean(draftRestored),
+        draft_saved: Boolean(draftSavedAt),
+      });
+      setHasTrackedSubmitPageView(true);
+      setHasTrackedSubmitBlocked(false);
+      return;
+    }
+
+    if (hasTrackedSubmitBlocked) return;
+    pushHomeInteractionEvent("submit_blocked_unauth", { object_id: objectId });
+    setHasTrackedSubmitBlocked(true);
+  }, [
+    ready,
+    user,
+    objectId,
+    draftRestored,
+    draftSavedAt,
+    draftMetaReady,
+    hasTrackedSubmitPageView,
+    hasTrackedSubmitBlocked,
+  ]);
+
   if (ready && !user) {
     return (
       <LoginPrompt
@@ -141,6 +175,12 @@ function SubmitPage() {
     );
 
   const runAnalysis = async () => {
+    pushHomeInteractionEvent("submit_analysis_start", {
+      object_id: objectId,
+      has_reference: Boolean(reference_url),
+      content_length: content.trim().length,
+    });
+
     setPhase("analyzing");
     setStepIdx(0);
     setErrorMsg("");
@@ -177,14 +217,28 @@ function SubmitPage() {
       // AI 失败但观察已保存 → 进入 ai_failed 阶段，而非 error
       if ((res as any)?.ai_failed) {
         setErrorMsg((res as any)?.error ?? t("submit.aiFailed"));
+        pushHomeInteractionEvent("submit_ai_failed", {
+          object_id: objectId,
+          status: (res as any)?.status || "unknown",
+          has_legal_penalty: Boolean((res as any)?.has_legal_penalty),
+        });
         setPhase("ai_failed");
       } else {
+        pushHomeInteractionEvent("submit_done", {
+          object_id: objectId,
+          status: (res as any)?.status || "unknown",
+          impact_score: Number((res as any)?.impact_score || 0),
+        });
         setPhase("done");
       }
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
       setErrorMsg(err?.message ?? t("submit.unknownError"));
+      pushHomeInteractionEvent("submit_analysis_error", {
+        object_id: objectId,
+        error: err?.message ? String(err.message).slice(0, 80) : "unknown",
+      });
     }
   };
 
@@ -192,12 +246,26 @@ function SubmitPage() {
     e.preventDefault();
     if (content.trim().length < 10) {
       toast.error(t("submit.minLength"));
+      pushHomeInteractionEvent("submit_validation_failed", {
+        object_id: objectId,
+        reason: "content_too_short",
+        content_length: content.trim().length,
+      });
       return;
     }
+    pushHomeInteractionEvent("submit_form_submit", {
+      object_id: objectId,
+      content_length: content.trim().length,
+      has_reference: Boolean(reference_url),
+    });
     await runAnalysis();
   };
 
   const retryAnalysis = async () => {
+    pushHomeInteractionEvent("submit_retry_click", {
+      object_id: objectId,
+      has_saved_id: Boolean(result?.id),
+    });
     const savedId = result?.ai_failed ? result.id : null;
     if (!savedId) {
       await runAnalysis();
@@ -226,14 +294,28 @@ function SubmitPage() {
 
       if ((res as any)?.ai_failed) {
         setErrorMsg((res as any).error ?? t("submit.aiFailed"));
+        pushHomeInteractionEvent("submit_retry_failed_once", {
+          object_id: objectId,
+          status: (res as any)?.status || "unknown",
+          has_legal_penalty: Boolean((res as any)?.has_legal_penalty),
+        });
         setPhase("ai_failed");
         return;
       }
+      pushHomeInteractionEvent("submit_retry_success", {
+        object_id: objectId,
+        status: (res as any)?.status || "unknown",
+        impact_score: Number((res as any)?.impact_score || 0),
+      });
       setPhase("done");
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
       setErrorMsg(err?.message ?? t("submit.unknownError"));
+      pushHomeInteractionEvent("submit_retry_failed", {
+        object_id: objectId,
+        error: err?.message ? String(err.message).slice(0, 80) : "unknown",
+      });
     }
   };
 
@@ -289,7 +371,7 @@ function SubmitPage() {
 
   // 完成页面
   if (phase === "done" && result) {
-    const delta = result.impact_score ?? 0;
+    const contribution = result.impact_score ?? 0;
     return (
       <SiteLayout>
         <div className="archive-desk py-16">
@@ -337,16 +419,24 @@ function SubmitPage() {
                   </PaperSheet>
                   <PaperSheet tone="slip" className="p-4">
                     <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {t("submit.temperatureContribution")}
+                      {t("submit.observationContribution")}
                     </div>
                     <div
                       className={`mt-2 font-serif text-lg tabular-nums ${
-                        delta > 0 ? "archive-highlight" : delta < 0 ? "text-muted-foreground" : ""
+                        contribution > 0
+                          ? "archive-highlight"
+                          : contribution < 0
+                            ? "text-muted-foreground"
+                            : ""
                       }`}
                     >
-                      {delta > 0 ? "+" : ""}
-                      {delta}°C
+                      {contribution > 0 ? "+" : ""}
+                      {contribution}
+                      {t("submit.contributionUnit")}
                     </div>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                      {t("submit.contributionHint")}
+                    </p>
                   </PaperSheet>
                 </div>
 
@@ -591,6 +681,9 @@ function SubmitPage() {
                           className="paper-input text-sm"
                         />
                       </PaperField>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {t("submit.referenceHint")}
+                      </p>
                     </div>
                   )}
                 </div>

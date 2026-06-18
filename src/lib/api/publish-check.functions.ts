@@ -48,11 +48,7 @@ export const comparePreviewProduction = createServerFn({ method: "GET" }).handle
   return {
     preview,
     production,
-    match:
-      preview.ok &&
-      production.ok &&
-      !!preview.commit &&
-      preview.commit === production.commit,
+    match: preview.ok && production.ok && !!preview.commit && preview.commit === production.commit,
     checkedAt: new Date().toISOString(),
   };
 });

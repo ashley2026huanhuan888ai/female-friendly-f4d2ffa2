@@ -42,6 +42,9 @@ if (!publicOnly && !serviceRoleKey) {
 if (!publicOnly && !aiKey) {
   failures.push("Missing AI key for the configured provider.");
 }
+if (!publicOnly && env.ALLOW_FIRST_ADMIN_CLAIM === "true") {
+  failures.push("ALLOW_FIRST_ADMIN_CLAIM must be disabled for production readiness.");
+}
 
 if (failures.length) {
   console.error("Production readiness check failed before database checks:");

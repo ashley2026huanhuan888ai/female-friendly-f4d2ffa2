@@ -29,6 +29,7 @@ const ENV_KEYS = [
   "VITE_SUPABASE_PUBLISHABLE_KEY",
   "VITE_SUPABASE_ANON_KEY",
   "LOVABLE_API_KEY",
+  "ALLOW_FIRST_ADMIN_CLAIM",
 ] as const;
 
 function syncRuntimeEnv(env: unknown) {
@@ -47,7 +48,8 @@ function syncRuntimeEnv(env: unknown) {
 }
 
 function getPublicSupabaseConfig(): { url?: string; anonKey?: string } {
-  const e = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+  const e =
+    (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
   const url = e.VITE_SUPABASE_URL || e.SUPABASE_URL;
   const anonKey =
     e.VITE_SUPABASE_PUBLISHABLE_KEY ||
@@ -69,7 +71,11 @@ async function injectPublicSupabaseConfig(response: Response): Promise<Response>
     : snippet + html;
   const headers = new Headers(response.headers);
   headers.delete("content-length");
-  return new Response(injected, { status: response.status, statusText: response.statusText, headers });
+  return new Response(injected, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 // h3 swallows in-handler throws into a normal 500 Response with body

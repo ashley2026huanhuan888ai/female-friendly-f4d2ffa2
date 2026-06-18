@@ -229,7 +229,9 @@ export const listRecentObjectComments = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { data: rows, error } = await supabaseAdmin
       .from("object_comments" as never)
-      .select(`${COMMENT_PUBLIC_COLUMNS}, objects!inner(id, name, type, temperature, status, hidden)`)
+      .select(
+        `${COMMENT_PUBLIC_COLUMNS}, objects!inner(id, name, type, temperature, status, hidden)`,
+      )
       .eq("status", "approved")
       .eq("objects.status", "published")
       .eq("objects.hidden", false)

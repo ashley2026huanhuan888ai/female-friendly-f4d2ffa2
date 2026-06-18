@@ -1,14 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import type { CSSProperties } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import type { CSSProperties, FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
+import { FollowButton } from "@/components/FollowButton";
 import { ArchiveStamp, PaperSheet, PaperStack } from "@/components/archive-ui";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
 import { bandOf, FEMINIST_TAGS } from "@/lib/temperature";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/auth-context";
+import { pushHomeInteractionEvent } from "@/lib/interaction-tracker";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -52,6 +55,7 @@ function Index() {
 
   const latestObservations = (summary?.latest_observations ?? []) as any[];
   const newestObjects = (summary?.newest_objects ?? []) as any[];
+  const submitDataReady = summary !== null;
   const featuredObservation =
     latestObservations.find((item) => item.object) ?? latestObservations[0] ?? null;
   const featuredObject =
@@ -59,6 +63,7 @@ function Index() {
     newestObjects.find((item) => (item.observation_count ?? 0) > 0) ??
     newestObjects[0] ??
     null;
+  const submitObjectOptions = buildHomeSubmitOptions(featuredObject, newestObjects);
   const featuredTemperature =
     typeof featuredObject?.temperature === "number" ? Number(featuredObject.temperature) : null;
   const featuredEvidence = featuredObservation?.evidence_level ?? null;
@@ -105,6 +110,18 @@ function Index() {
         featuredTemperature={featuredTemperature}
         totalObjects={summary?.total_objects ?? archiveRows.length}
         verdict={verdict}
+        source="hero"
+        submitObjectOptions={submitObjectOptions}
+        submitDataReady={submitDataReady}
+      />
+
+      <HomeStartPanel
+        featuredObject={featuredObject}
+        latestObservationCount={latestObservations.length}
+        totalObjects={summary?.total_objects ?? archiveRows.length}
+        source="startPanel"
+        submitObjectOptions={submitObjectOptions}
+        submitDataReady={submitDataReady}
       />
 
       <section className="home-desk-hero home-case-hero border-b border-black/20">
@@ -330,7 +347,7 @@ function Index() {
                 <div className="case-stars-large">{credibility.stars}</div>
                 <strong>{credibility.label}</strong>
                 <p>综合评估记录内容的具体性、时间、地点与可验证程度。</p>
-                <a>了解可信度等级说明 →</a>
+                <Link to="/about">了解可信度等级说明 →</Link>
               </section>
 
               <section className="case-section">
@@ -358,7 +375,13 @@ function Index() {
                   <span>
                     {observationCount > 0 ? `${observationCount} 条观察` : "等待第一条观察"}
                   </span>
-                  <span className="case-switch" />
+                  {featuredObject ? (
+                    <FollowButton objectId={featuredObject.id} />
+                  ) : (
+                    <Link to="/request-object" className="case-inline-action">
+                      申请对象
+                    </Link>
+                  )}
                 </div>
               </section>
 
@@ -432,9 +455,17 @@ function Index() {
             </Link>
           </div>
           {!summary?.today_events?.length ? (
-            <p className="archive-paper mt-10 border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-              {t("home.noEvents24h")}
-            </p>
+            <PaperSheet tone="slip" className="mt-10 p-8 text-center">
+              <p className="text-sm text-muted-foreground">{t("home.noEvents24h")}</p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link to="/objects" className="paper-action-secondary px-4 py-2 text-xs">
+                  浏览对象库
+                </Link>
+                <Link to="/request-object" className="paper-action px-4 py-2 text-xs">
+                  申请新对象
+                </Link>
+              </div>
+            </PaperSheet>
           ) : (
             <div className="mt-8 grid gap-3 md:grid-cols-2">
               {summary.today_events.map((e: any, i: number) => (
@@ -472,7 +503,17 @@ function Index() {
               ))}
             </ul>
           ) : (
-            <p className="mt-6 text-sm text-muted-foreground">{t("common.noObservations")}</p>
+            <PaperSheet tone="slip" className="mt-6 p-6">
+              <p className="text-sm text-muted-foreground">{t("common.noObservations")}</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link to="/objects" className="paper-action-secondary px-4 py-2 text-xs">
+                  找到对象并提交
+                </Link>
+                <Link to="/request-object" className="paper-action px-4 py-2 text-xs">
+                  申请新测评对象
+                </Link>
+              </div>
+            </PaperSheet>
           )}
         </div>
       </section>
@@ -528,20 +569,117 @@ function Index() {
   );
 }
 
+function HomeStartPanel({
+  featuredObject,
+  latestObservationCount,
+  totalObjects,
+  submitObjectOptions,
+  submitDataReady,
+  source,
+}: {
+  featuredObject: any;
+  latestObservationCount: number;
+  totalObjects: number;
+  submitObjectOptions: HomeSubmitObjectOption[];
+  submitDataReady: boolean;
+  source: string;
+}) {
+  return (
+    <section className="archive-desk border-b border-border py-10">
+      <div className="container-prose">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Start Here
+            </div>
+            <h2 className="mt-2 font-serif text-3xl">你可以从这里开始</h2>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            当前公开对象 {totalObjects} 个 · 最新观察 {latestObservationCount} 条
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <PaperSheet tone="dossier" className="p-5">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              01 / Find
+            </div>
+            <h3 className="mt-2 font-serif text-2xl">先找测评对象</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              搜索品牌、产品、影视、服务或组织，查看已有温度和公开观察。
+            </p>
+            <Link
+              to="/objects"
+              className="paper-action-secondary mt-5 inline-block px-4 py-2 text-xs"
+            >
+              浏览对象库
+            </Link>
+          </PaperSheet>
+
+          <PaperSheet tone="slip" className="p-5">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              02 / Record
+            </div>
+            <h3 className="mt-2 font-serif text-2xl">提交体验记录</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              补充文字记录和来源链接，AI 会生成标签、证据等级和温度影响。
+            </p>
+            <HomeSubmitQuickAction
+              options={submitObjectOptions}
+              submitDataReady={submitDataReady}
+              compact
+              source={source}
+              buttonLabel="开始提交体验"
+              helperText="选择对象后直接进入提交页，未登录会先去登录。"
+            />
+          </PaperSheet>
+
+          <PaperSheet tone="flat" className="p-5">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              03 / Follow
+            </div>
+            <h3 className="mt-2 font-serif text-2xl">看见变化</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              查看最近升温、降温、审核通过的观察，以及知识库中的参考案例。
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/feed" className="paper-action-secondary px-4 py-2 text-xs">
+                观察动态
+              </Link>
+              <Link to="/knowledge" className="paper-action-secondary px-4 py-2 text-xs">
+                知识库
+              </Link>
+            </div>
+          </PaperSheet>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function EditorialArchiveFirstPage({
   featuredObject,
   featuredTemperature,
   totalObjects,
   verdict,
+  submitObjectOptions,
+  submitDataReady,
+  source,
 }: {
   featuredObject: any;
   featuredTemperature: number | null;
   totalObjects: number;
   verdict: { label: string; shortLabel: string };
+  submitObjectOptions: HomeSubmitObjectOption[];
+  submitDataReady: boolean;
+  source: string;
 }) {
-  const displayTemperature = typeof featuredTemperature === "number" ? featuredTemperature : 78;
-  const temperaturePosition = `${Math.max(4, Math.min(96, displayTemperature))}%`;
-  const statistic = totalObjects > 0 ? totalObjects.toLocaleString("zh-CN") : "12,346";
+  const hasMeasuredObject = typeof featuredTemperature === "number";
+  const displayTemperature = hasMeasuredObject ? featuredTemperature : 0;
+  const temperaturePosition = hasMeasuredObject
+    ? `${Math.max(4, Math.min(96, displayTemperature))}%`
+    : "8%";
+  const statistic = totalObjects > 0 ? totalObjects.toLocaleString("zh-CN") : "0";
 
   return (
     <section className="archive-editorial-first" aria-label="女性友好体验监测站首页首屏">
@@ -582,6 +720,27 @@ function EditorialArchiveFirstPage({
           </h1>
           <span className="archive-editorial-brush" />
           <p>记录每一次被尊重的体验，让改变有据可依。</p>
+          <p className="archive-editorial-purpose-note">
+            这是一个收集女性体验观察的平台。下一步：搜索你关心的对象，或直接提交一条体验记录。
+          </p>
+          {featuredObject ? (
+            <Link
+              to="/submit/$objectId"
+              params={{ objectId: featuredObject.id }}
+              className="archive-editorial-cta"
+            >
+              提交你的体验记录 <span>→</span>
+            </Link>
+          ) : (
+            <Link to="/request-object" className="archive-editorial-cta">
+              申请新测评对象 <span>→</span>
+            </Link>
+          )}
+          <div className="archive-editorial-quick-actions" aria-label="首页快捷入口">
+            <Link to="/objects">浏览对象库</Link>
+            <Link to="/request-object">申请对象</Link>
+            <Link to="/feed">观察动态</Link>
+          </div>
           <ul>
             <li>不做事实认定，也不做道德审判。</li>
             <li>提交文字记录，补充来源链接，持续观察变化。</li>
@@ -594,19 +753,6 @@ function EditorialArchiveFirstPage({
               <small>来自真实女性的体验记录</small>
             </div>
           </div>
-          {featuredObject ? (
-            <Link
-              to="/submit/$objectId"
-              params={{ objectId: featuredObject.id }}
-              className="archive-editorial-cta"
-            >
-              提交你的体验记录 <span>→</span>
-            </Link>
-          ) : (
-            <Link to="/objects" className="archive-editorial-cta">
-              提交你的体验记录 <span>→</span>
-            </Link>
-          )}
         </aside>
 
         <main className="archive-editorial-sheet archive-editorial-record-sheet">
@@ -688,25 +834,21 @@ function EditorialArchiveFirstPage({
             </div>
           </section>
           <div className="archive-editorial-submit-footer">
-            <label>
-              <input type="checkbox" readOnly />
-              匿名提交
-            </label>
-            {featuredObject ? (
-              <Link to="/submit/$objectId" params={{ objectId: featuredObject.id }}>
-                提交记录
-              </Link>
-            ) : (
-              <Link to="/objects">提交记录</Link>
-            )}
+            <HomeSubmitQuickAction
+              options={submitObjectOptions}
+              submitDataReady={submitDataReady}
+              source={source}
+              buttonLabel="提交体验记录"
+              helperText="先选对象，再跳转到对象提交页。"
+            />
           </div>
         </aside>
 
         <section className="archive-editorial-sheet archive-editorial-temperature-card">
           <span className="archive-editorial-thermometer" aria-hidden />
           <div className="archive-editorial-temperature-number">
-            <h3>高温警告</h3>
-            <strong>{displayTemperature.toFixed(0)}°C</strong>
+            <h3>{hasMeasuredObject ? verdict.label : "等待记录"}</h3>
+            <strong>{hasMeasuredObject ? `${displayTemperature.toFixed(0)}°C` : "—°C"}</strong>
             <small>当前温度</small>
           </div>
           <div className="archive-editorial-scale">
@@ -727,8 +869,14 @@ function EditorialArchiveFirstPage({
             </div>
           </div>
           <div className="archive-editorial-warning-copy">
-            <ArchiveStamp className="archive-stamp-soft">高温警告</ArchiveStamp>
-            <p>{verdict.label}，建议谨慎选择或继续补充观察。</p>
+            <ArchiveStamp className="archive-stamp-soft">
+              {hasMeasuredObject ? verdict.shortLabel : "待补充"}
+            </ArchiveStamp>
+            <p>
+              {hasMeasuredObject
+                ? `${verdict.label}，建议谨慎选择或继续补充观察。`
+                : "还没有可展示的公开档案，先申请对象或浏览对象库。"}
+            </p>
           </div>
           <span className="archive-editorial-corner-clip" aria-hidden />
         </section>
@@ -769,6 +917,237 @@ type HomeEvidenceRowModel = {
   source: string;
   note: string;
 };
+
+type HomeSubmitObjectOption = {
+  id: string;
+  name: string;
+};
+
+function buildHomeSubmitOptions(
+  featuredObject: any,
+  newestObjects: any[],
+): HomeSubmitObjectOption[] {
+  const rawOptions = [
+    featuredObject?.id
+      ? {
+          id: String(featuredObject.id),
+          name: String(featuredObject.name || "未命名对象"),
+        }
+      : null,
+    ...(newestObjects ?? []),
+  ].filter(Boolean) as Array<{ id: string; name: string }>;
+
+  const options: HomeSubmitObjectOption[] = [];
+  const used = new Set<string>();
+
+  for (const item of rawOptions) {
+    const id = String(item.id ?? "");
+    if (!id || used.has(id)) continue;
+    options.push({ id, name: String(item.name || "未命名对象") });
+    used.add(id);
+    if (options.length >= 8) break;
+  }
+  return options;
+}
+
+function HomeSubmitQuickAction({
+  options,
+  submitDataReady,
+  compact = false,
+  source,
+  buttonLabel,
+  helperText,
+}: {
+  options: HomeSubmitObjectOption[];
+  compact?: boolean;
+  submitDataReady: boolean;
+  source: string;
+  buttonLabel: string;
+  helperText?: string;
+}) {
+  const navigate = useNavigate();
+  const { ready: authReady, user } = useAuth();
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [selectedObjectId, setSelectedObjectId] = useState(options[0]?.id ?? "");
+  const normalizedKeyword = searchKeyword.trim().toLowerCase();
+  const visibleOptions = normalizedKeyword
+    ? options.filter((option) => option.name.toLowerCase().includes(normalizedKeyword))
+    : options;
+  const targetRedirect = selectedObjectId ? `/submit/${selectedObjectId}` : "/";
+  const componentReady = authReady && Boolean(user);
+  const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
+  const [lastSearchValue, setLastSearchValue] = useState("");
+  const [hasTrackedEmptyOptions, setHasTrackedEmptyOptions] = useState(false);
+
+  useEffect(() => {
+    if (!submitDataReady || hasTrackedImpression) return;
+
+    pushHomeInteractionEvent("home_submit_widget_impression", {
+      source,
+      option_count: options.length,
+      has_featured: Boolean(options.length),
+    });
+    setHasTrackedImpression(true);
+  }, [options.length, source, hasTrackedImpression, submitDataReady]);
+
+  useEffect(() => {
+    if (!submitDataReady || options.length || hasTrackedEmptyOptions) return;
+
+    pushHomeInteractionEvent("home_submit_empty_options", {
+      source,
+      has_featured: false,
+    });
+    setHasTrackedEmptyOptions(true);
+  }, [submitDataReady, options.length, source, hasTrackedEmptyOptions]);
+
+  useEffect(() => {
+    if (!options.length) {
+      setSelectedObjectId("");
+      return;
+    }
+    if (!visibleOptions.length) {
+      setSelectedObjectId("");
+      return;
+    }
+    if (!visibleOptions.some((option) => option.id === selectedObjectId)) {
+      setSelectedObjectId(visibleOptions[0].id);
+    }
+  }, [options, visibleOptions, selectedObjectId]);
+
+  useEffect(() => {
+    if (!submitDataReady) return;
+    if (!visibleOptions.length) return;
+    const keyword = searchKeyword.trim();
+    if (!keyword || keyword === lastSearchValue) return;
+
+    const timer = setTimeout(() => {
+      pushHomeInteractionEvent("home_submit_search", {
+        source,
+        keyword_len: keyword.length,
+        result_count: visibleOptions.length,
+      });
+      setLastSearchValue(keyword);
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [
+    lastSearchValue,
+    normalizedKeyword,
+    source,
+    visibleOptions.length,
+    searchKeyword,
+    submitDataReady,
+  ]);
+
+  if (!submitDataReady) {
+    return (
+      <div className={compact ? "space-y-2" : "mt-4 space-y-2"}>
+        <p className="text-xs text-muted-foreground">正在加载可提交对象...</p>
+      </div>
+    );
+  }
+
+  if (!options.length) {
+    return (
+      <div className={compact ? "space-y-2" : "mt-4 space-y-2"}>
+        <p className="text-xs text-muted-foreground">
+          暂无可直接提交的对象，先去对象库选择或申请。
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/objects" className="paper-action-secondary px-3 py-2 text-xs">
+            浏览对象库
+          </Link>
+          <Link to="/request-object" className="paper-action-secondary px-3 py-2 text-xs">
+            申请对象
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedObjectName = options.find((option) => option.id === selectedObjectId)?.name;
+  const actionText = selectedObjectName ? `${buttonLabel}（${selectedObjectName}）` : buttonLabel;
+
+  const isReadyToSubmit = componentReady && Boolean(selectedObjectId);
+  const hasDraftChoice = Boolean(selectedObjectId);
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedObjectId) return;
+
+    pushHomeInteractionEvent("home_submit_start", {
+      source,
+      object_id: selectedObjectId,
+      has_search_keyword: Boolean(searchKeyword.trim()),
+      visible_count: visibleOptions.length,
+      matched_count: visibleOptions.length,
+      is_logged_in: Boolean(user),
+      from_login_redirect: false,
+    });
+
+    navigate({ to: "/submit/$objectId", params: { objectId: selectedObjectId } });
+  };
+
+  return (
+    <form onSubmit={onSubmit} className={compact ? "mt-4 space-y-2" : "mt-5 space-y-2"}>
+      <input
+        type="text"
+        value={searchKeyword}
+        onChange={(event) => setSearchKeyword(event.target.value)}
+        placeholder="快速搜索对象名称"
+        className="paper-input w-full text-xs"
+      />
+      {!visibleOptions.length ? (
+        <p className="text-xs text-muted-foreground">未找到匹配对象，尝试输入更少关键词。</p>
+      ) : null}
+      <select
+        value={selectedObjectId}
+        onChange={(event) => setSelectedObjectId(event.target.value)}
+        className="paper-input w-full text-sm"
+      >
+        {visibleOptions.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.name}
+          </option>
+        ))}
+      </select>
+      {isReadyToSubmit ? (
+        <button type="submit" className="paper-action inline-block w-full px-4 py-2 text-xs">
+          {actionText}
+        </button>
+      ) : (
+        <Link
+          to="/login"
+          search={{ redirect: targetRedirect }}
+          onClick={() => {
+            if (selectedObjectId) {
+              pushHomeInteractionEvent("home_submit_blocked_login", {
+                source,
+                object_id: selectedObjectId,
+                has_search_keyword: Boolean(searchKeyword.trim()),
+                result_count: visibleOptions.length,
+              });
+            }
+          }}
+          className={`paper-action inline-flex w-full items-center justify-center px-4 py-2 text-xs ${
+            !hasDraftChoice ? "pointer-events-none opacity-50" : ""
+          }`}
+          aria-disabled={!hasDraftChoice}
+        >
+          登录后继续提交
+        </Link>
+      )}
+      {helperText ? (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{helperText}</p>
+      ) : null}
+      {!authReady ? (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">正在读取登录状态…</p>
+      ) : user ? null : (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">未登录将跳转至登录页。</p>
+      )}
+    </form>
+  );
+}
 
 function HomeEvidenceRow({ row }: { row: HomeEvidenceRowModel }) {
   return (

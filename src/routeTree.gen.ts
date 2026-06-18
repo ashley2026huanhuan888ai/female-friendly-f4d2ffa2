@@ -22,12 +22,14 @@ import { Route as DiscussionsRouteImport } from './routes/discussions'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TopicsIndexRouteImport } from './routes/topics.index'
 import { Route as ObjectsIndexRouteImport } from './routes/objects.index'
 import { Route as ArchiveIndexRouteImport } from './routes/archive.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TopicsTagRouteImport } from './routes/topics.$tag'
 import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
 import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
+import { Route as ObjectIdRouteImport } from './routes/object.$id'
 import { Route as ArchiveEvidenceRouteImport } from './routes/archive.evidence'
 import { Route as ArchiveCaseCodeRouteImport } from './routes/archive.$caseCode'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -109,6 +111,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TopicsIndexRoute = TopicsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TopicsRoute,
+} as any)
 const ObjectsIndexRoute = ObjectsIndexRouteImport.update({
   id: '/objects/',
   path: '/objects/',
@@ -137,6 +144,11 @@ const SubmitObjectIdRoute = SubmitObjectIdRouteImport.update({
 const ObjectsIdRoute = ObjectsIdRouteImport.update({
   id: '/objects/$id',
   path: '/objects/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjectIdRoute = ObjectIdRouteImport.update({
+  id: '/object/$id',
+  path: '/object/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArchiveEvidenceRoute = ArchiveEvidenceRouteImport.update({
@@ -243,12 +255,14 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
+  '/object/$id': typeof ObjectIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/topics/$tag': typeof TopicsTagRoute
   '/admin/': typeof AdminIndexRoute
   '/archive/': typeof ArchiveIndexRoute
   '/objects/': typeof ObjectsIndexRoute
+  '/topics/': typeof TopicsIndexRoute
   '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRoutesByTo {
@@ -263,7 +277,6 @@ export interface FileRoutesByTo {
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
@@ -278,12 +291,14 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
+  '/object/$id': typeof ObjectIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/topics/$tag': typeof TopicsTagRoute
   '/admin': typeof AdminIndexRoute
   '/archive': typeof ArchiveIndexRoute
   '/objects': typeof ObjectsIndexRoute
+  '/topics': typeof TopicsIndexRoute
   '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRoutesById {
@@ -315,12 +330,14 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
+  '/object/$id': typeof ObjectIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
   '/topics/$tag': typeof TopicsTagRoute
   '/admin/': typeof AdminIndexRoute
   '/archive/': typeof ArchiveIndexRoute
   '/objects/': typeof ObjectsIndexRoute
+  '/topics/': typeof TopicsIndexRoute
   '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRouteTypes {
@@ -353,12 +370,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
+    | '/object/$id'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/topics/$tag'
     | '/admin/'
     | '/archive/'
     | '/objects/'
+    | '/topics/'
     | '/api/public/version'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -373,7 +392,6 @@ export interface FileRouteTypes {
     | '/request-object'
     | '/reset-password'
     | '/sitemap.xml'
-    | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
     | '/admin/bulk-import'
@@ -388,12 +406,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
+    | '/object/$id'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/topics/$tag'
     | '/admin'
     | '/archive'
     | '/objects'
+    | '/topics'
     | '/api/public/version'
   id:
     | '__root__'
@@ -424,12 +444,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
+    | '/object/$id'
     | '/objects/$id'
     | '/submit/$objectId'
     | '/topics/$tag'
     | '/admin/'
     | '/archive/'
     | '/objects/'
+    | '/topics/'
     | '/api/public/version'
   fileRoutesById: FileRoutesById
 }
@@ -449,6 +471,7 @@ export interface RootRouteChildren {
   TopicsRoute: typeof TopicsRouteWithChildren
   ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
   ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
+  ObjectIdRoute: typeof ObjectIdRoute
   ObjectsIdRoute: typeof ObjectsIdRoute
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
   ArchiveIndexRoute: typeof ArchiveIndexRoute
@@ -549,6 +572,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/topics/': {
+      id: '/topics/'
+      path: '/'
+      fullPath: '/topics/'
+      preLoaderRoute: typeof TopicsIndexRouteImport
+      parentRoute: typeof TopicsRoute
+    }
     '/objects/': {
       id: '/objects/'
       path: '/objects'
@@ -589,6 +619,13 @@ declare module '@tanstack/react-router' {
       path: '/objects/$id'
       fullPath: '/objects/$id'
       preLoaderRoute: typeof ObjectsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/object/$id': {
+      id: '/object/$id'
+      path: '/object/$id'
+      fullPath: '/object/$id'
+      preLoaderRoute: typeof ObjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/archive/evidence': {
@@ -735,10 +772,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface TopicsRouteChildren {
   TopicsTagRoute: typeof TopicsTagRoute
+  TopicsIndexRoute: typeof TopicsIndexRoute
 }
 
 const TopicsRouteChildren: TopicsRouteChildren = {
   TopicsTagRoute: TopicsTagRoute,
+  TopicsIndexRoute: TopicsIndexRoute,
 }
 
 const TopicsRouteWithChildren =
@@ -760,6 +799,7 @@ const rootRouteChildren: RootRouteChildren = {
   TopicsRoute: TopicsRouteWithChildren,
   ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
   ArchiveEvidenceRoute: ArchiveEvidenceRoute,
+  ObjectIdRoute: ObjectIdRoute,
   ObjectsIdRoute: ObjectsIdRoute,
   SubmitObjectIdRoute: SubmitObjectIdRoute,
   ArchiveIndexRoute: ArchiveIndexRoute,

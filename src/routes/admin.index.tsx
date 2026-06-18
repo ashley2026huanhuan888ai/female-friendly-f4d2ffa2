@@ -35,10 +35,7 @@ function Overview() {
   });
 
   const stale =
-    versionCheck &&
-    versionCheck.preview.ok &&
-    versionCheck.production.ok &&
-    !versionCheck.match;
+    versionCheck && versionCheck.preview.ok && versionCheck.production.ok && !versionCheck.match;
 
   return (
     <div className="container-prose py-12">
@@ -48,7 +45,9 @@ function Overview() {
           className="mb-6 flex items-center justify-between gap-4 border border-[var(--archive-pink)] bg-[var(--archive-pink)]/10 px-4 py-3 text-sm hover:bg-[var(--archive-pink)]/20"
         >
           <span>
-            ⚠ 预览有未发布到生产的更改（预览 <code>{versionCheck!.preview.commit?.slice(0, 7)}</code> / 生产 <code>{versionCheck!.production.commit?.slice(0, 7)}</code>）
+            ⚠ 预览有未发布到生产的更改（预览{" "}
+            <code>{versionCheck!.preview.commit?.slice(0, 7)}</code> / 生产{" "}
+            <code>{versionCheck!.production.commit?.slice(0, 7)}</code>）
           </span>
           <span className="text-xs underline">前往发布校验 →</span>
         </Link>

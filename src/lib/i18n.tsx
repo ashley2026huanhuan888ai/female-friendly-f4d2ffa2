@@ -461,6 +461,9 @@ const COPY = {
     "submit.detectedTags": "识别标签",
     "submit.evidenceLevel": "证据等级",
     "submit.temperatureContribution": "温度贡献",
+    "submit.observationContribution": "观察贡献分",
+    "submit.contributionUnit": " 分",
+    "submit.contributionHint": "用于表示这条观察对评估的权重，不等同于对象温度直接变化。",
     "submit.currentTemperature": "当前对象温度",
     "submit.needsReview": "此条提交需管理员复核后才会计入对象温度。可在「我的」页查看进度。",
     "submit.backObject": "返回对象页",
@@ -495,10 +498,12 @@ const COPY = {
     "submit.autoTemperature": "✓ 更新女性体验温度",
     "submit.limits": "至少 10 字 · 24 小时内最多 50 条 · 同一对象最多 10 条",
     "submit.draftSavedAt": "草稿已自动保存 · {time}",
-    "submit.optionalOpen": "▾ 可选附件（截图 / 参考链接）",
-    "submit.optionalClosed": "▸ 可选附件（截图 / 参考链接）",
+    "submit.optionalOpen": "▾ 可选证据链接（当前只收链接）",
+    "submit.optionalClosed": "▸ 可选证据链接（当前只收链接）",
     "submit.screenshotUrl": "截图链接",
-    "submit.referenceUrl": "参考链接",
+    "submit.referenceUrl": "证据 / 来源链接",
+    "submit.referenceHint":
+      "MVP 当前不上传图片文件；如有截图，请先放在可访问链接中，再把链接粘贴到这里。",
 
     "me.loginTitle": "登录后查看个人观察台",
     "me.loginBody": "你可以查看关注对象、提交记录和提醒。",
@@ -1066,6 +1071,10 @@ const COPY = {
     "submit.detectedTags": "Detected tags",
     "submit.evidenceLevel": "Evidence level",
     "submit.temperatureContribution": "Temperature contribution",
+    "submit.observationContribution": "Observation contribution",
+    "submit.contributionUnit": " pts",
+    "submit.contributionHint":
+      "This is the weight of this observation in assessment, not a direct object-temperature change.",
     "submit.currentTemperature": "Current object temperature",
     "submit.needsReview":
       "This submission must be reviewed by an admin before it counts toward object temperature. You can check progress on the Me page.",
@@ -1104,10 +1113,12 @@ const COPY = {
     "submit.limits":
       "Minimum 10 characters · Up to 50 submissions in 24 hours · Up to 10 for the same object",
     "submit.draftSavedAt": "Draft autosaved · {time}",
-    "submit.optionalOpen": "▾ Optional attachments (screenshot / reference link)",
-    "submit.optionalClosed": "▸ Optional attachments (screenshot / reference link)",
+    "submit.optionalOpen": "▾ Optional evidence link (links only in this MVP)",
+    "submit.optionalClosed": "▸ Optional evidence link (links only in this MVP)",
     "submit.screenshotUrl": "Screenshot URL",
-    "submit.referenceUrl": "Reference URL",
+    "submit.referenceUrl": "Evidence / source link",
+    "submit.referenceHint":
+      "This MVP does not upload image files. If you have a screenshot, host it somewhere accessible and paste the link here.",
 
     "me.loginTitle": "Log in to view your observatory",
     "me.loginBody": "You can view followed objects, submitted observations, and notifications.",

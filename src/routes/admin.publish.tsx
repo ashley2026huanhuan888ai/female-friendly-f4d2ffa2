@@ -2,10 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import {
-  checkProductionCommit,
-  comparePreviewProduction,
-} from "@/lib/api/publish-check.functions";
+import { checkProductionCommit, comparePreviewProduction } from "@/lib/api/publish-check.functions";
 import { APP_COMMIT, PREVIEW_ORIGIN, PRODUCTION_ORIGIN } from "@/lib/build-info";
 
 export const Route = createFileRoute("/admin/publish")({
@@ -39,7 +36,8 @@ function PublishCheckPage() {
     <div className="container-prose py-12">
       <h1 className="font-serif text-3xl">发布校验</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        自动比对预览环境与生产环境的实际部署提交号。点击右上角 Publish 后，本页会持续轮询生产环境直到部署完成。
+        自动比对预览环境与生产环境的实际部署提交号。点击右上角 Publish
+        后，本页会持续轮询生产环境直到部署完成。
       </p>
 
       <section className="mt-8 border border-border bg-card p-6">
@@ -59,16 +57,8 @@ function PublishCheckPage() {
         ) : null}
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <EnvCard
-            title="预览环境"
-            origin={PREVIEW_ORIGIN}
-            info={data?.preview}
-          />
-          <EnvCard
-            title="生产环境"
-            origin={PRODUCTION_ORIGIN}
-            info={data?.production}
-          />
+          <EnvCard title="预览环境" origin={PREVIEW_ORIGIN} info={data?.preview} />
+          <EnvCard title="生产环境" origin={PRODUCTION_ORIGIN} info={data?.production} />
         </div>
 
         <div className="mt-6 border-t border-border pt-6">
@@ -87,7 +77,8 @@ function PublishCheckPage() {
                 ✗ 不一致
               </span>
               预览为 <code>{short(data.preview.commit)}</code>，生产为{" "}
-              <code>{short(data.production.commit)}</code>。请点击右上角 <strong>Publish</strong> 发布最新版本。
+              <code>{short(data.production.commit)}</code>。请点击右上角 <strong>Publish</strong>{" "}
+              发布最新版本。
             </p>
           )}
         </div>
@@ -99,7 +90,9 @@ function PublishCheckPage() {
       />
 
       <section className="mt-8 border border-border bg-card p-6 text-xs text-muted-foreground">
-        <div>当前页面运行的提交号：<code>{short(APP_COMMIT)}</code></div>
+        <div>
+          当前页面运行的提交号：<code>{short(APP_COMMIT)}</code>
+        </div>
         <div className="mt-1">
           公共端点：
           <a href="/api/public/version" target="_blank" rel="noreferrer" className="underline">
@@ -107,7 +100,9 @@ function PublishCheckPage() {
           </a>
         </div>
         <div className="mt-3">
-          <Link to="/admin" className="underline">← 返回概览</Link>
+          <Link to="/admin" className="underline">
+            ← 返回概览
+          </Link>
         </div>
       </section>
     </div>
@@ -216,7 +211,8 @@ function PostPublishWatcher({
     <section className="mt-6 border border-border bg-card p-6">
       <h2 className="font-serif text-xl">发布后核对</h2>
       <p className="mt-2 text-xs text-muted-foreground">
-        点击右上角 Publish 后，再点击下方按钮，将每 5 秒轮询一次生产环境，直到生产返回预览的提交号（最长 5 分钟）。
+        点击右上角 Publish 后，再点击下方按钮，将每 5
+        秒轮询一次生产环境，直到生产返回预览的提交号（最长 5 分钟）。
       </p>
 
       <div className="mt-4 flex flex-wrap gap-3">
@@ -242,7 +238,7 @@ function PostPublishWatcher({
           目标提交号：<code>{short(target)}</code>
           {watching ? (
             <span className="ml-3 text-muted-foreground">
-              已等待 {Math.round(((Date.now() - (startedAt ?? Date.now())) / 1000))}s …
+              已等待 {Math.round((Date.now() - (startedAt ?? Date.now())) / 1000)}s …
             </span>
           ) : null}
         </div>
@@ -254,14 +250,16 @@ function PostPublishWatcher({
             <span className="mr-2 inline-block rounded-sm bg-green-600 px-2 py-0.5 text-xs text-white">
               ✓ 已部署
             </span>
-            生产已更新到 <code>{short(result.commit)}</code>，用时 {Math.round(result.elapsedMs / 1000)}s。
+            生产已更新到 <code>{short(result.commit)}</code>，用时{" "}
+            {Math.round(result.elapsedMs / 1000)}s。
           </div>
         ) : (
           <div className="mt-4 text-sm">
             <span className="mr-2 inline-block rounded-sm bg-[var(--archive-pink)] px-2 py-0.5 text-xs text-white">
               ⏱ 超时
             </span>
-            5 分钟内仍未检测到目标提交号（当前生产为 <code>{short(result.commit)}</code>）。请确认是否已点击 Publish。
+            5 分钟内仍未检测到目标提交号（当前生产为 <code>{short(result.commit)}</code>
+            ）。请确认是否已点击 Publish。
           </div>
         )
       ) : null}
