@@ -22,6 +22,7 @@ import { Route as DiscussionsRouteImport } from './routes/discussions'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TopicsIndexRouteImport } from './routes/topics.index'
 import { Route as ObjectsIndexRouteImport } from './routes/objects.index'
 import { Route as ArchiveIndexRouteImport } from './routes/archive.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -108,6 +109,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TopicsIndexRoute = TopicsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TopicsRoute,
 } as any)
 const ObjectsIndexRoute = ObjectsIndexRouteImport.update({
   id: '/objects/',
@@ -249,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/archive/': typeof ArchiveIndexRoute
   '/objects/': typeof ObjectsIndexRoute
+  '/topics/': typeof TopicsIndexRoute
   '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRoutesByTo {
@@ -263,7 +270,6 @@ export interface FileRoutesByTo {
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/topics': typeof TopicsRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
@@ -284,6 +290,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/archive': typeof ArchiveIndexRoute
   '/objects': typeof ObjectsIndexRoute
+  '/topics': typeof TopicsIndexRoute
   '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRoutesById {
@@ -321,6 +328,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/archive/': typeof ArchiveIndexRoute
   '/objects/': typeof ObjectsIndexRoute
+  '/topics/': typeof TopicsIndexRoute
   '/api/public/version': typeof ApiPublicVersionRoute
 }
 export interface FileRouteTypes {
@@ -359,6 +367,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/archive/'
     | '/objects/'
+    | '/topics/'
     | '/api/public/version'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -373,7 +382,6 @@ export interface FileRouteTypes {
     | '/request-object'
     | '/reset-password'
     | '/sitemap.xml'
-    | '/topics'
     | '/admin/analytics'
     | '/admin/audit'
     | '/admin/bulk-import'
@@ -394,6 +402,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/archive'
     | '/objects'
+    | '/topics'
     | '/api/public/version'
   id:
     | '__root__'
@@ -430,6 +439,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/archive/'
     | '/objects/'
+    | '/topics/'
     | '/api/public/version'
   fileRoutesById: FileRoutesById
 }
@@ -548,6 +558,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/topics/': {
+      id: '/topics/'
+      path: '/'
+      fullPath: '/topics/'
+      preLoaderRoute: typeof TopicsIndexRouteImport
+      parentRoute: typeof TopicsRoute
     }
     '/objects/': {
       id: '/objects/'
@@ -735,10 +752,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface TopicsRouteChildren {
   TopicsTagRoute: typeof TopicsTagRoute
+  TopicsIndexRoute: typeof TopicsIndexRoute
 }
 
 const TopicsRouteChildren: TopicsRouteChildren = {
   TopicsTagRoute: TopicsTagRoute,
+  TopicsIndexRoute: TopicsIndexRoute,
 }
 
 const TopicsRouteWithChildren =
