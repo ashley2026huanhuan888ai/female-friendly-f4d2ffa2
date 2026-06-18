@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
+import { FollowButton } from "@/components/FollowButton";
 import { ArchiveStamp, PaperSheet, PaperStack } from "@/components/archive-ui";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
@@ -105,6 +106,12 @@ function Index() {
         featuredTemperature={featuredTemperature}
         totalObjects={summary?.total_objects ?? archiveRows.length}
         verdict={verdict}
+      />
+
+      <HomeStartPanel
+        featuredObject={featuredObject}
+        latestObservationCount={latestObservations.length}
+        totalObjects={summary?.total_objects ?? archiveRows.length}
       />
 
       <section className="home-desk-hero home-case-hero border-b border-black/20">
@@ -330,7 +337,7 @@ function Index() {
                 <div className="case-stars-large">{credibility.stars}</div>
                 <strong>{credibility.label}</strong>
                 <p>综合评估记录内容的具体性、时间、地点与可验证程度。</p>
-                <a>了解可信度等级说明 →</a>
+                <Link to="/about">了解可信度等级说明 →</Link>
               </section>
 
               <section className="case-section">
@@ -358,7 +365,13 @@ function Index() {
                   <span>
                     {observationCount > 0 ? `${observationCount} 条观察` : "等待第一条观察"}
                   </span>
-                  <span className="case-switch" />
+                  {featuredObject ? (
+                    <FollowButton objectId={featuredObject.id} />
+                  ) : (
+                    <Link to="/request-object" className="case-inline-action">
+                      申请对象
+                    </Link>
+                  )}
                 </div>
               </section>
 
@@ -432,9 +445,17 @@ function Index() {
             </Link>
           </div>
           {!summary?.today_events?.length ? (
-            <p className="archive-paper mt-10 border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-              {t("home.noEvents24h")}
-            </p>
+            <PaperSheet tone="slip" className="mt-10 p-8 text-center">
+              <p className="text-sm text-muted-foreground">{t("home.noEvents24h")}</p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link to="/objects" className="paper-action-secondary px-4 py-2 text-xs">
+                  浏览对象库
+                </Link>
+                <Link to="/request-object" className="paper-action px-4 py-2 text-xs">
+                  申请新对象
+                </Link>
+              </div>
+            </PaperSheet>
           ) : (
             <div className="mt-8 grid gap-3 md:grid-cols-2">
               {summary.today_events.map((e: any, i: number) => (
@@ -472,7 +493,17 @@ function Index() {
               ))}
             </ul>
           ) : (
-            <p className="mt-6 text-sm text-muted-foreground">{t("common.noObservations")}</p>
+            <PaperSheet tone="slip" className="mt-6 p-6">
+              <p className="text-sm text-muted-foreground">{t("common.noObservations")}</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link to="/objects" className="paper-action-secondary px-4 py-2 text-xs">
+                  找到对象并提交
+                </Link>
+                <Link to="/request-object" className="paper-action px-4 py-2 text-xs">
+                  申请新测评对象
+                </Link>
+              </div>
+            </PaperSheet>
           )}
         </div>
       </section>
@@ -528,6 +559,96 @@ function Index() {
   );
 }
 
+function HomeStartPanel({
+  featuredObject,
+  latestObservationCount,
+  totalObjects,
+}: {
+  featuredObject: any;
+  latestObservationCount: number;
+  totalObjects: number;
+}) {
+  return (
+    <section className="archive-desk border-b border-border py-10">
+      <div className="container-prose">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Start Here
+            </div>
+            <h2 className="mt-2 font-serif text-3xl">你可以从这里开始</h2>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            当前公开对象 {totalObjects} 个 · 最新观察 {latestObservationCount} 条
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <PaperSheet tone="dossier" className="p-5">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              01 / Find
+            </div>
+            <h3 className="mt-2 font-serif text-2xl">先找测评对象</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              搜索品牌、产品、影视、服务或组织，查看已有温度和公开观察。
+            </p>
+            <Link
+              to="/objects"
+              className="paper-action-secondary mt-5 inline-block px-4 py-2 text-xs"
+            >
+              浏览对象库
+            </Link>
+          </PaperSheet>
+
+          <PaperSheet tone="slip" className="p-5">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              02 / Record
+            </div>
+            <h3 className="mt-2 font-serif text-2xl">提交体验记录</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              补充文字记录和来源链接，AI 会生成标签、证据等级和温度影响。
+            </p>
+            {featuredObject ? (
+              <Link
+                to="/submit/$objectId"
+                params={{ objectId: featuredObject.id }}
+                className="paper-action mt-5 inline-block px-4 py-2 text-xs"
+              >
+                记录 {featuredObject.name}
+              </Link>
+            ) : (
+              <Link
+                to="/request-object"
+                className="paper-action mt-5 inline-block px-4 py-2 text-xs"
+              >
+                申请新测评对象
+              </Link>
+            )}
+          </PaperSheet>
+
+          <PaperSheet tone="flat" className="p-5">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              03 / Follow
+            </div>
+            <h3 className="mt-2 font-serif text-2xl">看见变化</h3>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              查看最近升温、降温、审核通过的观察，以及知识库中的参考案例。
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/feed" className="paper-action-secondary px-4 py-2 text-xs">
+                观察动态
+              </Link>
+              <Link to="/knowledge" className="paper-action-secondary px-4 py-2 text-xs">
+                知识库
+              </Link>
+            </div>
+          </PaperSheet>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function EditorialArchiveFirstPage({
   featuredObject,
   featuredTemperature,
@@ -539,9 +660,12 @@ function EditorialArchiveFirstPage({
   totalObjects: number;
   verdict: { label: string; shortLabel: string };
 }) {
-  const displayTemperature = typeof featuredTemperature === "number" ? featuredTemperature : 78;
-  const temperaturePosition = `${Math.max(4, Math.min(96, displayTemperature))}%`;
-  const statistic = totalObjects > 0 ? totalObjects.toLocaleString("zh-CN") : "12,346";
+  const hasMeasuredObject = typeof featuredTemperature === "number";
+  const displayTemperature = hasMeasuredObject ? featuredTemperature : 0;
+  const temperaturePosition = hasMeasuredObject
+    ? `${Math.max(4, Math.min(96, displayTemperature))}%`
+    : "8%";
+  const statistic = totalObjects > 0 ? totalObjects.toLocaleString("zh-CN") : "0";
 
   return (
     <section className="archive-editorial-first" aria-label="女性友好体验监测站首页首屏">
@@ -582,6 +706,24 @@ function EditorialArchiveFirstPage({
           </h1>
           <span className="archive-editorial-brush" />
           <p>记录每一次被尊重的体验，让改变有据可依。</p>
+          {featuredObject ? (
+            <Link
+              to="/submit/$objectId"
+              params={{ objectId: featuredObject.id }}
+              className="archive-editorial-cta"
+            >
+              提交你的体验记录 <span>→</span>
+            </Link>
+          ) : (
+            <Link to="/request-object" className="archive-editorial-cta">
+              申请新测评对象 <span>→</span>
+            </Link>
+          )}
+          <div className="archive-editorial-quick-actions" aria-label="首页快捷入口">
+            <Link to="/objects">浏览对象库</Link>
+            <Link to="/request-object">申请对象</Link>
+            <Link to="/feed">观察动态</Link>
+          </div>
           <ul>
             <li>不做事实认定，也不做道德审判。</li>
             <li>提交文字记录，补充来源链接，持续观察变化。</li>
@@ -594,19 +736,6 @@ function EditorialArchiveFirstPage({
               <small>来自真实女性的体验记录</small>
             </div>
           </div>
-          {featuredObject ? (
-            <Link
-              to="/submit/$objectId"
-              params={{ objectId: featuredObject.id }}
-              className="archive-editorial-cta"
-            >
-              提交你的体验记录 <span>→</span>
-            </Link>
-          ) : (
-            <Link to="/objects" className="archive-editorial-cta">
-              提交你的体验记录 <span>→</span>
-            </Link>
-          )}
         </aside>
 
         <main className="archive-editorial-sheet archive-editorial-record-sheet">
@@ -697,7 +826,7 @@ function EditorialArchiveFirstPage({
                 提交记录
               </Link>
             ) : (
-              <Link to="/objects">提交记录</Link>
+              <Link to="/request-object">申请对象</Link>
             )}
           </div>
         </aside>
@@ -705,8 +834,8 @@ function EditorialArchiveFirstPage({
         <section className="archive-editorial-sheet archive-editorial-temperature-card">
           <span className="archive-editorial-thermometer" aria-hidden />
           <div className="archive-editorial-temperature-number">
-            <h3>高温警告</h3>
-            <strong>{displayTemperature.toFixed(0)}°C</strong>
+            <h3>{hasMeasuredObject ? verdict.label : "等待记录"}</h3>
+            <strong>{hasMeasuredObject ? `${displayTemperature.toFixed(0)}°C` : "—°C"}</strong>
             <small>当前温度</small>
           </div>
           <div className="archive-editorial-scale">
@@ -727,8 +856,14 @@ function EditorialArchiveFirstPage({
             </div>
           </div>
           <div className="archive-editorial-warning-copy">
-            <ArchiveStamp className="archive-stamp-soft">高温警告</ArchiveStamp>
-            <p>{verdict.label}，建议谨慎选择或继续补充观察。</p>
+            <ArchiveStamp className="archive-stamp-soft">
+              {hasMeasuredObject ? verdict.shortLabel : "待补充"}
+            </ArchiveStamp>
+            <p>
+              {hasMeasuredObject
+                ? `${verdict.label}，建议谨慎选择或继续补充观察。`
+                : "还没有可展示的公开档案，先申请对象或浏览对象库。"}
+            </p>
           </div>
           <span className="archive-editorial-corner-clip" aria-hidden />
         </section>
