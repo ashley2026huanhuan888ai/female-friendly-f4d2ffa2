@@ -100,6 +100,13 @@ function Index() {
 
   return (
     <SiteLayout variant="desk">
+      <EditorialArchiveFirstPage
+        featuredObject={featuredObject}
+        featuredTemperature={featuredTemperature}
+        totalObjects={summary?.total_objects ?? archiveRows.length}
+        verdict={verdict}
+      />
+
       <section className="home-desk-hero home-case-hero border-b border-black/20">
         <div className="home-case-stage mx-auto max-w-[1540px] px-4 pb-10 pt-24 md:px-8 md:pb-14">
           <div className="home-case-board" aria-label="首页第一屏档案视觉">
@@ -518,6 +525,241 @@ function Index() {
         </div>
       </section>
     </SiteLayout>
+  );
+}
+
+function EditorialArchiveFirstPage({
+  featuredObject,
+  featuredTemperature,
+  totalObjects,
+  verdict,
+}: {
+  featuredObject: any;
+  featuredTemperature: number | null;
+  totalObjects: number;
+  verdict: { label: string; shortLabel: string };
+}) {
+  const displayTemperature = typeof featuredTemperature === "number" ? featuredTemperature : 78;
+  const temperaturePosition = `${Math.max(4, Math.min(96, displayTemperature))}%`;
+  const statistic = totalObjects > 0 ? totalObjects.toLocaleString("zh-CN") : "12,346";
+
+  return (
+    <section className="archive-editorial-first" aria-label="女性友好体验监测站首页首屏">
+      <div className="archive-editorial-scene">
+        <div className="archive-editorial-underlay archive-editorial-underlay-a" />
+        <div className="archive-editorial-underlay archive-editorial-underlay-b" />
+        <div className="archive-editorial-underlay archive-editorial-grid-paper" />
+
+        <header className="archive-editorial-sheet archive-editorial-top-strip">
+          <span className="archive-editorial-paperclip" aria-hidden />
+          <Link to="/" className="archive-editorial-brand">
+            <strong>女性友好体验监测站</strong>
+            <span>Female-Friendly Experience Archive</span>
+          </Link>
+          <nav aria-label="主页导航">
+            <Link to="/" className="is-active">
+              首页
+            </Link>
+            <Link to="/archive/evidence">体验记录</Link>
+            <Link to="/feed">观察动态</Link>
+            <Link to="/knowledge">知识库</Link>
+            <Link to="/about">关于我们</Link>
+          </nav>
+          <span className="archive-editorial-file-number">档案编号：FF-2026-____</span>
+          <ArchiveStamp className="archive-stamp-soft archive-editorial-top-stamp rotate-[6deg]">
+            已归档
+          </ArchiveStamp>
+          <Link to="/login" className="archive-editorial-login">
+            登录
+          </Link>
+        </header>
+
+        <aside className="archive-editorial-sheet archive-editorial-hero-sheet">
+          <h1>
+            不舒服，
+            <br />
+            就记录。
+          </h1>
+          <span className="archive-editorial-brush" />
+          <p>记录每一次被尊重的体验，让改变有据可依。</p>
+          <ul>
+            <li>不做事实认定，也不做道德审判。</li>
+            <li>提交文字记录，补充来源链接，持续观察变化。</li>
+          </ul>
+          <div className="archive-editorial-stat-card">
+            <span aria-hidden>▤</span>
+            <div>
+              <strong>最新档案</strong>
+              <b>{statistic}</b>
+              <small>来自真实女性的体验记录</small>
+            </div>
+          </div>
+          {featuredObject ? (
+            <Link
+              to="/submit/$objectId"
+              params={{ objectId: featuredObject.id }}
+              className="archive-editorial-cta"
+            >
+              提交你的体验记录 <span>→</span>
+            </Link>
+          ) : (
+            <Link to="/objects" className="archive-editorial-cta">
+              提交你的体验记录 <span>→</span>
+            </Link>
+          )}
+        </aside>
+
+        <main className="archive-editorial-sheet archive-editorial-record-sheet">
+          <header>
+            <div>
+              <h2>女性友好体验监测站</h2>
+              <p>Female-Friendly Experience Archive</p>
+            </div>
+            <span>档案编号：FF-2026-____</span>
+          </header>
+          <section>
+            <h3>档案简介</h3>
+            <p>
+              本档案用于收集、记录和观察在品牌、影视、服务、产品、空间等场景中，影响女性体验的细节与感受，作为推动改变的长期依据。
+            </p>
+          </section>
+          <EditorialCheckGrid
+            title="记录类型（可多选）"
+            checked={["品牌"]}
+            items={[
+              "品牌",
+              "影视作品",
+              "服务体验",
+              "游戏",
+              "活动 / 组织",
+              "公共事件",
+              "企业组织",
+              "其他",
+            ]}
+          />
+          <EditorialCheckGrid
+            title="触发点（可多选）"
+            checked={["物化女性", "身材羞辱", "消费女性议题"]}
+            items={[
+              "物化女性",
+              "身材羞辱",
+              "消费女性议题",
+              "性别刻板印象",
+              "服务冒犯",
+              "辱段子 / 低俗内容",
+              "年龄羞辱",
+              "其他",
+            ]}
+            columns
+          />
+          <ArchiveStamp className="archive-stamp-soft archive-editorial-record-stamp rotate-[-8deg]">
+            已归档
+          </ArchiveStamp>
+          <footer>每一条反馈，都是女性经验的一次存档。</footer>
+        </main>
+
+        <aside className="archive-editorial-sheet archive-editorial-submit-sheet">
+          <header>
+            <h2>提交你的体验记录</h2>
+            <span>档案编号：FF-2026-____</span>
+          </header>
+          <EditorialCheckGrid
+            title="记录类型（可多选）"
+            checked={[]}
+            items={[
+              "品牌",
+              "影视作品",
+              "服务体验",
+              "游戏",
+              "活动 / 组织",
+              "公共事件",
+              "企业组织",
+              "其他",
+            ]}
+          />
+          <section>
+            <h3>你的体验记录</h3>
+            <div className="archive-editorial-writing-area">
+              <p>可以按这个框架写：</p>
+              <p>1. 场景：在哪里、何时看到或经历？</p>
+              <p>2. 细节：具体对话、画面、规则或互动是什么？</p>
+              <p>3. 影响：让谁受到影响，带来什么感受？</p>
+              <p>4. 依据：链接、截图、出处或补充说明。</p>
+            </div>
+          </section>
+          <div className="archive-editorial-submit-footer">
+            <label>
+              <input type="checkbox" readOnly />
+              匿名提交
+            </label>
+            {featuredObject ? (
+              <Link to="/submit/$objectId" params={{ objectId: featuredObject.id }}>
+                提交记录
+              </Link>
+            ) : (
+              <Link to="/objects">提交记录</Link>
+            )}
+          </div>
+        </aside>
+
+        <section className="archive-editorial-sheet archive-editorial-temperature-card">
+          <span className="archive-editorial-thermometer" aria-hidden />
+          <div className="archive-editorial-temperature-number">
+            <h3>高温警告</h3>
+            <strong>{displayTemperature.toFixed(0)}°C</strong>
+            <small>当前温度</small>
+          </div>
+          <div className="archive-editorial-scale">
+            <div className="archive-editorial-scale-labels">
+              <span>低温</span>
+              <span>升温</span>
+              <span>高温</span>
+              <span>烫伤级避雷</span>
+            </div>
+            <div className="archive-editorial-scale-bar">
+              <i style={{ left: temperaturePosition }} />
+            </div>
+            <div className="archive-editorial-scale-ranges">
+              <span>0°C-35°C</span>
+              <span>36°C-60°C</span>
+              <span>61°C-80°C</span>
+              <span>81°C-100°C</span>
+            </div>
+          </div>
+          <div className="archive-editorial-warning-copy">
+            <ArchiveStamp className="archive-stamp-soft">高温警告</ArchiveStamp>
+            <p>{verdict.label}，建议谨慎选择或继续补充观察。</p>
+          </div>
+          <span className="archive-editorial-corner-clip" aria-hidden />
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function EditorialCheckGrid({
+  title,
+  items,
+  checked,
+  columns,
+}: {
+  title: string;
+  items: string[];
+  checked: string[];
+  columns?: boolean;
+}) {
+  return (
+    <section>
+      <h3>{title}</h3>
+      <div className={cn("archive-editorial-check-grid", columns && "is-two-column")}>
+        {items.map((item) => (
+          <label key={item}>
+            <input type="checkbox" checked={checked.includes(item)} readOnly />
+            <span>{item}</span>
+          </label>
+        ))}
+      </div>
+    </section>
   );
 }
 
