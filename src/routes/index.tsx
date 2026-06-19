@@ -796,7 +796,7 @@ function EditorialArchiveFirstPage({
             <span>档案编号：FF-2026-____</span>
           </header>
           <EditorialCheckGrid
-            title="记录类型（可多选）"
+            title="记录类型"
             checked={[]}
             items={[
               "品牌",
