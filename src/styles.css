@@ -1494,7 +1494,7 @@
   }
   .archive-editorial-temperature-card {
     left: 50%;
-    bottom: -2.4rem;
+    bottom: 4.5rem;
     z-index: 7;
     display: grid;
     width: min(880px, 92%);
