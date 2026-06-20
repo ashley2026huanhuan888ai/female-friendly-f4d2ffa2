@@ -1907,10 +1907,11 @@
   }
   @media (max-width: 640px) {
     .archive-editorial-first {
-      padding: 0;
+      padding: 6rem 0 0;
       background: var(--color-background);
       border-bottom: none;
     }
+
     .archive-editorial-first::before {
       display: none;
     }
