@@ -1906,6 +1906,9 @@
     .archive-editorial-first {
       padding: 5.5rem 1rem 2rem;
     }
+    .archive-editorial-quick-actions {
+      display: none;
+    }
     .archive-editorial-scene {
       width: 100%;
       max-width: 100%;
