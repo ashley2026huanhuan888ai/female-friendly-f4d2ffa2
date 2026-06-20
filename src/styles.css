@@ -1907,16 +1907,24 @@
   }
   @media (max-width: 640px) {
     .archive-editorial-first {
-      padding: 4rem 0 0;
+      padding: 0;
+      background: var(--color-background);
+      border-bottom: none;
+    }
+    .archive-editorial-first::before {
+      display: none;
     }
     .archive-editorial-mobile-hero {
       display: block;
       width: 100%;
+      max-width: 100%;
       height: auto;
+      object-fit: contain;
     }
     .archive-editorial-scene {
       display: none;
     }
+
     .archive-editorial-quick-actions {
       display: none;
     }
