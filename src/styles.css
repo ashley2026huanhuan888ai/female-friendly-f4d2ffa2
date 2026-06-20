@@ -1002,6 +1002,11 @@
   .home-temperature-ticket .archive-paper {
     box-shadow: none;
   }
+  @media (min-width: 641px) {
+    .archive-editorial-first {
+      display: none;
+    }
+  }
   .archive-editorial-first {
     position: relative;
     overflow: hidden;
