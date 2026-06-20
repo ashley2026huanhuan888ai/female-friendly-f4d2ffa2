@@ -939,7 +939,7 @@ function HomeSubmitQuickAction({
   const visibleOptions = normalizedKeyword
     ? options.filter((option) => option.name.toLowerCase().includes(normalizedKeyword))
     : options;
-  void authReady;
+  
 
   const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
   const [lastSearchValue, setLastSearchValue] = useState("");
