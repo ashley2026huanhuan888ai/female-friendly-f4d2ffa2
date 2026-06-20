@@ -231,116 +231,56 @@ export function SiteLayout({
             )}
           </div>
 
-          {/* 手机/平板：语言 + 登录/我的 + 汉堡 */}
-          <div className="flex shrink-0 items-center justify-end gap-2 lg:hidden">
-            <MobileLanguageButton language={language} setLanguage={setLanguage} />
-            {!email && (
+          {/* 手机/平板：平铺所有导航 + 账号 */}
+          <div className="-mx-4 flex items-center gap-3 overflow-x-auto whitespace-nowrap px-4 text-xs lg:hidden">
+            {(isDeskVariant
+              ? DESK_NAV.map((l) => ({ to: l.to, label: l.label }))
+              : [...PRIMARY_NAV, ...SECONDARY_NAV].map((l) => ({ to: l.to, label: t(l.labelKey) }))
+            ).map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className="shrink-0 text-foreground hover:text-[var(--archive-pink)]"
+              >
+                {l.label}
+              </Link>
+            ))}
+            {canSeeAdminNav && (
+              <Link to="/admin" className="shrink-0 text-accent">
+                {t("nav.admin")}
+              </Link>
+            )}
+            <span className="h-4 w-px shrink-0 bg-border" aria-hidden />
+            <div className="shrink-0">
+              <MobileLanguageButton language={language} setLanguage={setLanguage} />
+            </div>
+            {email ? (
+              <>
+                <Link to="/me" className="relative shrink-0 text-muted-foreground">
+                  {t("nav.me")}
+                  {unread > 0 && (
+                    <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
+                </Link>
+                <button
+                  onClick={signOut}
+                  className="shrink-0 text-muted-foreground"
+                >
+                  {t("nav.signOut")}
+                </button>
+              </>
+            ) : (
               <Link
                 to="/login"
-                className="border border-foreground/80 px-2.5 py-1 text-xs text-foreground"
+                className="shrink-0 border border-foreground/80 px-2.5 py-1 text-foreground"
               >
                 {t("nav.loginRegister")}
               </Link>
             )}
-            {email && (
-              <Link to="/me" className="relative text-xs text-muted-foreground">
-                {t("nav.me")}
-                {unread > 0 && (
-                  <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
-                    {unread > 99 ? "99+" : unread}
-                  </span>
-                )}
-              </Link>
-            )}
-            <button
-              aria-label={t("nav.menu")}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center border border-border text-foreground"
-            >
-              <span className="relative block h-3 w-4">
-                <span
-                  className={`absolute left-0 top-0 h-0.5 w-4 bg-current transition ${menuOpen ? "translate-y-1.5 rotate-45" : ""}`}
-                />
-                <span
-                  className={`absolute left-0 top-1.5 h-0.5 w-4 bg-current transition ${menuOpen ? "opacity-0" : ""}`}
-                />
-                <span
-                  className={`absolute left-0 top-3 h-0.5 w-4 bg-current transition ${menuOpen ? "-translate-y-1.5 -rotate-45" : ""}`}
-                />
-              </span>
-            </button>
           </div>
         </div>
-
-        {/* 移动端展开菜单 */}
-        {menuOpen && (
-          <div
-            className={
-              isDeskVariant
-                ? "border-t border-white/10 bg-[oklch(0.16_0.012_60/0.96)] lg:hidden"
-                : "border-t border-border bg-paper lg:hidden"
-            }
-          >
-            <nav className="container-prose flex flex-col py-2 text-sm">
-              {PRIMARY_NAV.map((l) => (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  className="whitespace-pre-line border-b border-border/50 py-3 text-foreground"
-                >
-                  {t(l.labelKey)}
-                </Link>
-              ))}
-              <div className="border-b border-border/50 py-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                {t("nav.more")}
-              </div>
-              {SECONDARY_NAV.map((l) => (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  className="border-b border-border/50 py-3 pl-3 text-sm text-muted-foreground"
-                >
-                  {t(l.labelKey)}
-                </Link>
-              ))}
-              {canSeeAdminNav && (
-                <>
-                  <Link to="/admin" className="border-b border-border/50 py-3 text-accent">
-                    {t("nav.admin")}
-                  </Link>
-                  <Link
-                    to="/admin/observations"
-                    className="border-b border-border/50 py-3 pl-4 text-sm text-muted-foreground"
-                  >
-                    {t("nav.adminObservations")}
-                  </Link>
-                  <Link
-                    to="/admin/requests"
-                    className="border-b border-border/50 py-3 pl-4 text-sm text-muted-foreground"
-                  >
-                    {t("nav.adminRequests")}
-                  </Link>
-                </>
-              )}
-              {email ? (
-                <>
-                  <Link to="/me" className="border-b border-border/50 py-3 text-foreground">
-                    {t("nav.me")}
-                    {unread > 0 ? ` (${unread > 99 ? "99+" : unread})` : ""}
-                  </Link>
-                  <button onClick={signOut} className="py-3 text-left text-muted-foreground">
-                    {t("nav.signOut")} ({email})
-                  </button>
-                </>
-              ) : (
-                <Link to="/login" className="py-3 text-foreground">
-                  {t("nav.loginRegister")}
-                </Link>
-              )}
-            </nav>
-          </div>
-        )}
       </header>
 
       <main>{children}</main>
