@@ -232,7 +232,7 @@ export function SiteLayout({
           </div>
 
           {/* 手机/平板：语言 + 登录/我的 + 汉堡 */}
-          <div className="flex shrink-0 items-center gap-2 lg:hidden">
+          <div className="flex shrink-0 items-center justify-end gap-2 lg:hidden">
             <MobileLanguageButton language={language} setLanguage={setLanguage} />
             {!email && (
               <Link
