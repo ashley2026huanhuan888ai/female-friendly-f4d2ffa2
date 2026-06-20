@@ -825,7 +825,9 @@
     .home-case-board::after {
       display: none;
     }
-    .case-paper-left {
+    .case-paper-left,
+    .case-paper-main,
+    .case-paper-right {
       display: none;
     }
     .case-paper {
