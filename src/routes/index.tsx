@@ -30,6 +30,9 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "女性友好体验测评" },
       { property: "og:description", content: "观察 · 分析 · 不审判。" },
     ],
+    links: [
+      { rel: "preload", as: "image", href: mobileHeroUrl, fetchpriority: "high" } as any,
+    ],
   }),
   component: Index,
 });
