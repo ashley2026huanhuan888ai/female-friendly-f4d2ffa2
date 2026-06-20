@@ -1,27 +1,23 @@
-## 手机端第一屏替换为上传图片
+## 问题
 
-### 目标
-移动端（`max-width: 640px`）第一屏直接显示用户上传的海报图片，桌面端和 Pad 端保持现有 UI 不变。
+手机首屏图片（1280×1923 竖图）目前虽然以 `width: 100%; height: auto` 渲染，但所在的 `.archive-editorial-first` 容器仍保留了：
+- `padding: 4rem 0 0`（顶部 4rem 木纹背景露出）
+- 深色木纹 + 网格线背景
+- `::before` 一层带 `mix-blend-mode: soft-light` 的纹理叠层
 
-### 实现步骤
+这些会让图片顶部被 header 区遮挡，并让纹理覆盖在图片上，造成"内容被裁切/盖住"的视觉效果。
 
-1. **图片资产处理**
-   - 使用 `lovable-assets create` 将上传的图片转为 CDN asset
-   - 生成 asset JSON 指针文件供代码引用
+## 改动（仅 `src/styles.css` 的 `@media (max-width: 640px)` 内）
 
-2. **组件层改动**
-   - 在 `archive-editorial-first` 内部增加一个移动端专用的 `<img>` 元素（默认隐藏）
-   - 图片使用 `width: 100%` 自适应移动端容器
+1. `.archive-editorial-first`：
+   - `padding: 0`
+   - `background: var(--color-background)`（去掉深色木纹）
+   - `border-bottom: none`
+2. 新增 `.archive-editorial-first::before { display: none; }`，去掉纹理叠层
+3. `.archive-editorial-mobile-hero`：
+   - 保持 `display: block; width: 100%; height: auto`
+   - 追加 `max-width: 100%; object-fit: contain`，确保不会被任何父级裁切
 
-3. **CSS 层改动**
-   - 在 `@media (max-width: 640px)` 下：
-     - 隐藏 `.archive-editorial-scene`（原有的档案纸面、表单、温度计等复杂布局）
-     - 显示移动端图片，保持自然的宽高比
-   - 桌面端（`> 640px`）继续隐藏该图片元素，不影响现有布局
+桌面 / 平板（>640px）样式不动，保持原有第一屏档案场景。
 
-4. **保留后续内容**
-   - 仅替换第一屏，用户下滑后仍然看到现有的 `HomeStartPanel`、档案表格、动态等后续区块
-
-### 预期结果
-- 手机打开首页：第一屏完整展示上传的海报图（“不舒服，就记录” 表单设计图）
-- 桌面 / Pad 打开首页：第一屏保持现有的可交互档案档案纸 UI，无任何变化
+不动 `src/routes/index.tsx`，不动其他组件、不动业务逻辑。
