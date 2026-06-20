@@ -703,10 +703,6 @@ function EditorialArchiveFirstPage({
             <Link to="/knowledge">知识库</Link>
             <Link to="/about">关于我们</Link>
           </nav>
-          <span className="archive-editorial-file-number">档案编号：FF-2026-____</span>
-          <ArchiveStamp className="archive-stamp-soft archive-editorial-top-stamp rotate-[6deg]">
-            已归档
-          </ArchiveStamp>
           <Link to="/login" className="archive-editorial-login">
             登录
           </Link>
