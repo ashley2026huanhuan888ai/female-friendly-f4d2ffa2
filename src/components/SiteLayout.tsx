@@ -149,14 +149,47 @@ export function SiteLayout({
         }
       >
         <div className="container-prose flex h-auto flex-col items-stretch gap-2 py-2 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:py-0">
-          <Link to="/" className="flex min-w-0 items-baseline gap-3 lg:min-w-fit">
-            <span className="block whitespace-nowrap font-serif text-xl tracking-tight lg:truncate">
-              {isDeskVariant ? "女性友好体验监测站" : t("app.name")}
-            </span>
-            <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground lg:inline">
-              {isDeskVariant ? "Female-Friendly Experience Archive" : t("app.brand.en")}
-            </span>
-          </Link>
+          <div className="flex items-center justify-between gap-3">
+            <Link to="/" className="flex min-w-0 items-baseline gap-3 lg:min-w-fit">
+              <span className="block whitespace-nowrap font-serif text-xl tracking-tight lg:truncate">
+                {isDeskVariant ? "女性友好体验监测站" : t("app.name")}
+              </span>
+              <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground lg:inline">
+                {isDeskVariant ? "Female-Friendly Experience Archive" : t("app.brand.en")}
+              </span>
+            </Link>
+
+            {/* 移动端账号区（放第一排） */}
+            <div className="flex items-center gap-2 lg:hidden">
+              {canSeeAdminNav && (
+                <Link to="/admin" className="text-xs text-accent">
+                  {t("nav.admin")}
+                </Link>
+              )}
+              {email ? (
+                <>
+                  <Link to="/me" className="relative text-xs text-muted-foreground">
+                    {t("nav.me")}
+                    {unread > 0 && (
+                      <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
+                        {unread > 99 ? "99+" : unread}
+                      </span>
+                    )}
+                  </Link>
+                  <button onClick={signOut} className="text-xs text-muted-foreground">
+                    {t("nav.signOut")}
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="border border-foreground/80 px-2.5 py-1 text-xs text-foreground"
+                >
+                  {t("nav.loginRegister")}
+                </Link>
+              )}
+            </div>
+          </div>
 
           {/* 桌面端主导航 */}
           <nav className="hidden items-center gap-5 text-sm lg:flex">
@@ -227,7 +260,7 @@ export function SiteLayout({
             )}
           </div>
 
-          {/* 手机/平板：平铺所有导航 + 账号 */}
+          {/* 手机/平板：平铺所有导航 */}
           <div className="-mx-4 flex items-center gap-3 overflow-x-auto whitespace-nowrap px-4 text-xs lg:hidden">
             {(isDeskVariant
               ? DESK_NAV.map((l) => ({ to: l.to, label: l.label }))
@@ -241,40 +274,10 @@ export function SiteLayout({
                 {l.label}
               </Link>
             ))}
-            {canSeeAdminNav && (
-              <Link to="/admin" className="shrink-0 text-accent">
-                {t("nav.admin")}
-              </Link>
-            )}
             <span className="h-4 w-px shrink-0 bg-border" aria-hidden />
             <div className="shrink-0">
               <MobileLanguageButton language={language} setLanguage={setLanguage} />
             </div>
-            {email ? (
-              <>
-                <Link to="/me" className="relative shrink-0 text-muted-foreground">
-                  {t("nav.me")}
-                  {unread > 0 && (
-                    <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
-                      {unread > 99 ? "99+" : unread}
-                    </span>
-                  )}
-                </Link>
-                <button
-                  onClick={signOut}
-                  className="shrink-0 text-muted-foreground"
-                >
-                  {t("nav.signOut")}
-                </button>
-              </>
-            ) : (
-              <Link
-                to="/login"
-                className="shrink-0 border border-foreground/80 px-2.5 py-1 text-foreground"
-              >
-                {t("nav.loginRegister")}
-              </Link>
-            )}
           </div>
         </div>
       </header>
