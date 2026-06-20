@@ -1,16 +1,14 @@
 ## 目标
-手机端顶部导航空间不足，品牌名 "女性友好体验监测站" 被截成 "女性友好体…"。改为两行布局，让品牌名完整显示。
+手机端 Hero 横向溢出（"搜索" 被切成 "搜"，右侧档案纸超出视口）。让场景在 ≤640px 视口内严格贴合宽度，不再左右溢出。高度可滚动，不强制塞进一屏。
 
-## 改动范围
-仅 `src/components/SiteLayout.tsx` 的 `<header>` 内的容器，桌面 (`lg:`) 保持单行不变。
+## 根因
+`.archive-editorial-scene` 在 ≤1100px 用 `width: 1760px` + `transform: scale()` 缩放。transform 不改变布局盒子尺寸：1760px 盒子仍按 1760px 占位，`margin-inline: auto` 在 390px 容器里会让它向左右各溢出 ~685px。当前 `overflow-x: hidden` 只剪掉视觉，但 scale 的 `transform-origin: top center` 是相对 1760px 盒子中心，未必正好回到视口中心，导致右侧仍可见溢出。
 
-## 具体改动
-1. 把 `container-prose flex h-16 items-center justify-between gap-3` 改为：手机端 `flex-col items-stretch gap-2 py-2 h-auto`，`lg:` 还原为 `lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:py-0`。
-2. 品牌 `<Link>` 行：手机端单独一行，去掉 `truncate`，允许 `whitespace-nowrap` 完整显示；保留 `lg:min-w-fit`。
-3. 右侧操作组 `<div className="flex shrink-0 items-center gap-2 lg:hidden">`：改为 `justify-end` 占满第二行宽度。
-4. 验证：Playwright 在 390×745 视口截图 `/` 顶栏，确认品牌名完整、第二行操作按钮齐全、无横向溢出。
+## 改动（只改 `src/styles.css`）
+1. `.archive-editorial-scene` 在 ≤1100px 媒体查询里改用 `transform-origin: top left`，并把水平居中改为 `margin-inline: 0`；同时给容器加 `margin-left: calc((100% - 1760px * var(--scene-scale)) / 2)` 让缩放后的视觉宽度水平居中。
+2. 在 ≤640px 媒体查询中，`--scene-scale` 公式由 `calc((100vw - 1.4rem) / 1760)` 调整为 `calc((100vw - 1.6rem) / 1760)`，留出 0.8rem 安全边以避免子元素阴影/旋转造成的次像素溢出。
+3. `.archive-editorial-first` 已有 `overflow-x: hidden`，保留作为兜底。
+4. 验证：Playwright 在 390×745 视口加载 `/`，截图首屏，确认场景四张纸完整位于视口内、右侧不再被切、横向滚动条不出现（`document.documentElement.scrollWidth === clientWidth`）。
 
-## 不动的部分
-- 桌面端布局
-- Hero scene 缩放逻辑（之前已基于视口宽度自适应）
-- 其它路由与样式
+## 不动
+- TSX 结构、桌面端样式、其它 section、字体与颜色 token。

@@ -1875,8 +1875,9 @@
       width: 1760px;
       max-width: none;
       transform: scale(var(--scene-scale));
-      transform-origin: top center;
-      margin-inline: auto;
+      transform-origin: top left;
+      margin-inline: 0;
+      margin-left: calc((100% - 1760px * var(--scene-scale)) / 2);
       margin-bottom: calc((1 - var(--scene-scale)) * -43rem);
     }
     .home-paper-layout {
