@@ -1015,7 +1015,7 @@
         oklch(0.12 0.018 48) 1.6rem 1.75rem,
         oklch(0.2 0.026 48) 1.75rem 3.6rem
       );
-    padding: 5.6rem clamp(0.8rem, 2vw, 2rem) 2rem;
+    padding: 4rem clamp(0.8rem, 2vw, 2rem) 2rem;
   }
   .archive-editorial-first::before {
     content: "";
@@ -1066,7 +1066,7 @@
     box-shadow: 0 26px 60px -38px oklch(0 0 0 / 90%);
   }
   .archive-editorial-underlay-a {
-    inset: 1.4rem 3.2rem 1.2rem 1.7rem;
+    inset: 0.6rem 3.2rem 1.2rem 1.7rem;
     transform: rotate(-1.1deg);
   }
   .archive-editorial-underlay-b {
@@ -1075,7 +1075,7 @@
     transform: rotate(0.9deg);
   }
   .archive-editorial-grid-paper {
-    inset: 6.8rem 0.7rem 0.6rem 58%;
+    inset: 1.2rem 0.7rem 0.6rem 58%;
     opacity: 0.8;
     transform: rotate(2deg);
   }
@@ -1231,7 +1231,7 @@
   }
   .archive-editorial-hero-sheet {
     left: 2.8rem;
-    top: 7rem;
+    top: 1rem;
     bottom: 1.2rem;
     z-index: 3;
     width: 25.5%;
@@ -1368,7 +1368,7 @@
   }
   .archive-editorial-record-sheet {
     left: 30%;
-    top: 9rem;
+    top: 3rem;
     z-index: 4;
     width: 35.8%;
     min-height: 38rem;
@@ -1377,7 +1377,7 @@
   }
   .archive-editorial-submit-sheet {
     right: 1.6rem;
-    top: 10rem;
+    top: 4rem;
     z-index: 5;
     width: 34%;
     min-height: 31rem;
@@ -1494,7 +1494,7 @@
   }
   .archive-editorial-temperature-card {
     left: 50%;
-    bottom: 4.5rem;
+    bottom: 5.5rem;
     z-index: 7;
     display: grid;
     width: min(880px, 92%);
