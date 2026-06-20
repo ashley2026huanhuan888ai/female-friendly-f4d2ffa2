@@ -1902,9 +1902,21 @@
       margin-top: 1.25rem;
     }
   }
+  .mobile-temperature-card {
+    display: none;
+  }
   @media (max-width: 640px) {
     .archive-editorial-first {
       padding: 5.5rem 1rem 2rem;
+    }
+    .archive-editorial-quick-actions {
+      display: none;
+    }
+    .archive-editorial-scene > .archive-editorial-temperature-card:not(.mobile-temperature-card) {
+      display: none;
+    }
+    .mobile-temperature-card {
+      display: grid;
     }
     .archive-editorial-scene {
       width: 100%;

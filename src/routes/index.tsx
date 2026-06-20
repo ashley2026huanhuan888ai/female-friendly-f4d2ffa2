@@ -717,6 +717,44 @@ function EditorialArchiveFirstPage({
             <Link to="/request-object">申请对象</Link>
             <Link to="/feed">观察动态</Link>
           </div>
+
+          <section className="archive-editorial-sheet archive-editorial-temperature-card mobile-temperature-card">
+            <span className="archive-editorial-thermometer" aria-hidden />
+            <div className="archive-editorial-temperature-number">
+              <h3>{hasMeasuredObject ? verdict.label : "等待记录"}</h3>
+              <strong>{hasMeasuredObject ? `${displayTemperature.toFixed(0)}°C` : "—°C"}</strong>
+              <small>当前温度</small>
+            </div>
+            <div className="archive-editorial-scale">
+              <div className="archive-editorial-scale-labels">
+                <span>低温</span>
+                <span>升温</span>
+                <span>高温</span>
+                <span>烫伤级避雷</span>
+              </div>
+              <div className="archive-editorial-scale-bar">
+                <i style={{ left: temperaturePosition }} />
+              </div>
+              <div className="archive-editorial-scale-ranges">
+                <span>0°C-35°C</span>
+                <span>36°C-60°C</span>
+                <span>61°C-80°C</span>
+                <span>81°C-100°C</span>
+              </div>
+            </div>
+            <div className="archive-editorial-warning-copy">
+              <ArchiveStamp className="archive-stamp-soft">
+                {hasMeasuredObject ? verdict.shortLabel : "待补充"}
+              </ArchiveStamp>
+              <p>
+                {hasMeasuredObject
+                  ? `${verdict.label}，建议谨慎选择或继续补充观察。`
+                  : "还没有可展示的公开档案，先申请对象或浏览对象库。"}
+              </p>
+            </div>
+            <span className="archive-editorial-corner-clip" aria-hidden />
+          </section>
+
           <ul>
             <li>不做事实认定，也不做道德审判。</li>
             <li>提交文字记录，补充来源链接，持续观察变化。</li>
