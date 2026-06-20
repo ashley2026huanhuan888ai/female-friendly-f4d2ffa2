@@ -1005,34 +1005,6 @@ function HomeSubmitQuickAction({
     submitDataReady,
   ]);
 
-  if (!submitDataReady) {
-    return (
-      <div className={compact ? "space-y-2" : "mt-4 space-y-2"}>
-        <p className="text-xs text-muted-foreground">正在加载可提交对象...</p>
-      </div>
-    );
-  }
-
-  if (!options.length) {
-    return (
-      <div className={compact ? "space-y-2" : "mt-4 space-y-2"}>
-        <p className="text-xs text-muted-foreground">
-          暂无可直接提交的对象，先去对象库选择或申请。
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Link to="/objects" className="paper-action-secondary px-3 py-2 text-xs">
-            浏览对象库
-          </Link>
-          <Link to="/request-object" className="paper-action-secondary px-3 py-2 text-xs">
-            申请对象
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const selectedObjectName = options.find((option) => option.id === selectedObjectId)?.name;
-
   const [content, setContent] = useState("");
   const [referenceUrl, setReferenceUrl] = useState("");
   const [phase, setPhase] = useState<"idle" | "submitting" | "done">("idle");
@@ -1041,6 +1013,7 @@ function HomeSubmitQuickAction({
 
   // Restore draft once options are ready
   const [draftRestored, setDraftRestored] = useState(false);
+
   useEffect(() => {
     if (draftRestored || !options.length) return;
     try {
@@ -1157,7 +1130,36 @@ function HomeSubmitQuickAction({
     }
   };
 
+  if (!submitDataReady) {
+    return (
+      <div className={compact ? "space-y-2" : "mt-4 space-y-2"}>
+        <p className="text-xs text-muted-foreground">正在加载可提交对象...</p>
+      </div>
+    );
+  }
+
+  if (!options.length) {
+    return (
+      <div className={compact ? "space-y-2" : "mt-4 space-y-2"}>
+        <p className="text-xs text-muted-foreground">
+          暂无可直接提交的对象，先去对象库选择或申请。
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/objects" className="paper-action-secondary px-3 py-2 text-xs">
+            浏览对象库
+          </Link>
+          <Link to="/request-object" className="paper-action-secondary px-3 py-2 text-xs">
+            申请对象
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedObjectName = options.find((option) => option.id === selectedObjectId)?.name;
+
   if (phase === "done" && successObjectId) {
+
     return (
       <div className={compact ? "mt-4 space-y-2" : "mt-5 space-y-2"}>
         <p className="text-xs text-muted-foreground">
