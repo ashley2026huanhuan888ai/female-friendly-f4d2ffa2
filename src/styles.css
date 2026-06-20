@@ -1904,6 +1904,7 @@
   @media (max-width: 640px) {
     .archive-editorial-first {
       padding-inline: 0.7rem;
+      --scene-scale: 0.32;
     }
     .archive-editorial-brand strong {
       font-size: 1.2rem;
@@ -1911,29 +1912,6 @@
     .archive-editorial-brand span,
     .archive-editorial-login {
       font-size: 0.62rem;
-    }
-    .archive-editorial-check-grid,
-    .archive-editorial-check-grid.is-two-column {
-      grid-template-columns: 1fr 1fr;
-    }
-    .archive-editorial-record-sheet header,
-    .archive-editorial-submit-sheet header,
-    .archive-editorial-submit-footer {
-      display: grid;
-      justify-content: stretch;
-    }
-    .archive-editorial-submit-footer a {
-      text-align: center;
-    }
-    .archive-editorial-quick-actions {
-      grid-template-columns: 1fr;
-    }
-    .archive-editorial-temperature-card {
-      grid-template-columns: 1fr;
-    }
-    .archive-editorial-thermometer,
-    .archive-editorial-corner-clip {
-      display: none;
     }
     .home-desk-stage {
       padding-top: 5.5rem;
