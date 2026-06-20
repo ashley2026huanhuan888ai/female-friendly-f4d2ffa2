@@ -14,7 +14,8 @@ import { useAuth } from "@/components/auth-context";
 import { pushHomeInteractionEvent } from "@/lib/interaction-tracker";
 import { submitObservation } from "@/lib/api/platform.functions";
 import { toast } from "sonner";
-import mobileHeroUrl from "@/assets/mobile-hero-clean.png";
+import mobileHeroAsset from "@/assets/mobile-hero-clean.webp.asset.json";
+const mobileHeroUrl = mobileHeroAsset.url;
 
 const HOME_DRAFT_KEY = "home-submit-draft";
 
