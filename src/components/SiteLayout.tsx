@@ -183,7 +183,7 @@ export function SiteLayout({
               ) : (
                 <Link
                   to="/login"
-                  className="border border-foreground/80 px-2.5 py-1 text-xs text-foreground"
+                  className="px-2.5 py-1 text-xs text-foreground"
                 >
                   {t("nav.loginRegister")}
                 </Link>
@@ -360,7 +360,7 @@ function MobileLanguageButton({
       aria-label={actionLabel}
       title={actionLabel}
       onClick={() => setLanguage(nextLanguage)}
-      className="flex h-9 min-w-12 items-center justify-center border border-border px-2 text-[11px] font-medium uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background"
+      className="flex h-9 min-w-12 items-center justify-center px-2 text-[11px] font-medium uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background"
     >
       {label}
     </button>
