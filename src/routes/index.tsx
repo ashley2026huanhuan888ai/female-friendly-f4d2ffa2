@@ -688,11 +688,13 @@ function EditorialArchiveFirstPage({
 
   return (
     <section className="archive-editorial-first" aria-label="女性友好体验监测站首页首屏">
-      <img
-        src={mobileHeroUrl}
-        alt="不舒服，就记录 - 女性友好体验监测站"
-        className="archive-editorial-mobile-hero"
-      />
+      <Link to="/request-object" className="block">
+        <img
+          src={mobileHeroUrl}
+          alt="不舒服，就记录 - 女性友好体验监测站"
+          className="archive-editorial-mobile-hero"
+        />
+      </Link>
       <div className="archive-editorial-scene">
         <div className="archive-editorial-underlay archive-editorial-underlay-a" />
         <div className="archive-editorial-underlay archive-editorial-underlay-b" />
