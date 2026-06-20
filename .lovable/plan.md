@@ -1,5 +1,14 @@
-## 问题
-手机端固定顶部导航遮住了第一张卡片的"不舒服，"标题。
+## 调整内容
 
-## 调整
-在 `src/styles.css` 的 `@media (max-width: 640px)` 中，将 `.archive-editorial-first` 的 `padding-top` 从 `1.5rem` 增加到约 `5.5rem`，为顶部固定导航留出空间，让 Hero 卡片完整可见。
+1. **移动文字位置**
+   - 在 `src/routes/index.tsx` 中，将当前位于 `<ul>` 中的两段说明文字（"不做事实认定，也不做道德审判。" / "提交文字记录，补充来源链接，持续观察变化。"）移入 `.archive-editorial-stat-card` 内部，放在 `<small>来自真实女性的体验记录</small>` 之后。
+
+2. **统一字体**
+   - 使用与 `<small>` 相同的标签/样式，使新增文字与"来自真实女性的体验记录"字体保持一致。
+
+3. **移除原 `<ul>` 并上移内容**
+   - 删除原来位于 quick-actions 与 stat-card 之间的 `<ul>` 列表。
+   - 由于该列表占据的空间被释放，stat-card 及上方元素会自动上移，实现"空出来的部分顺势上移"的效果。
+
+4. **如有需要，微调 CSS**
+   - 若 `.archive-editorial-stat-card` 内部新增文字后出现布局拥挤，会适当调整 `gap` 或 `padding`，保持卡片整体协调。

@@ -717,16 +717,14 @@ function EditorialArchiveFirstPage({
             <Link to="/request-object">申请对象</Link>
             <Link to="/feed">观察动态</Link>
           </div>
-          <ul>
-            <li>不做事实认定，也不做道德审判。</li>
-            <li>提交文字记录，补充来源链接，持续观察变化。</li>
-          </ul>
           <div className="archive-editorial-stat-card">
             <span aria-hidden>▤</span>
             <div>
               <strong>最新档案</strong>
               <b>{statistic}</b>
               <small>来自真实女性的体验记录</small>
+              <small>不做事实认定，也不做道德审判。</small>
+              <small>提交文字记录，补充来源链接，持续观察变化。</small>
             </div>
           </div>
         </aside>
