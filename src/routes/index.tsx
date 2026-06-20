@@ -12,6 +12,7 @@ import { bandOf, FEMINIST_TAGS } from "@/lib/temperature";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth-context";
 import { pushHomeInteractionEvent } from "@/lib/interaction-tracker";
+import mobileHeroAsset from "@/assets/mobile-hero.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -683,6 +684,11 @@ function EditorialArchiveFirstPage({
 
   return (
     <section className="archive-editorial-first" aria-label="女性友好体验监测站首页首屏">
+      <img
+        src={mobileHeroAsset.url}
+        alt="不舒服，就记录 - 女性友好体验监测站"
+        className="archive-editorial-mobile-hero"
+      />
       <div className="archive-editorial-scene">
         <div className="archive-editorial-underlay archive-editorial-underlay-a" />
         <div className="archive-editorial-underlay archive-editorial-underlay-b" />

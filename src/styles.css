@@ -1902,14 +1902,25 @@
       margin-top: 1.25rem;
     }
   }
+  .archive-editorial-mobile-hero {
+    display: none;
+  }
   @media (max-width: 640px) {
     .archive-editorial-first {
-      padding: 5.5rem 1rem 2rem;
+      padding: 4rem 0 0;
+    }
+    .archive-editorial-mobile-hero {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .archive-editorial-scene {
+      display: none;
     }
     .archive-editorial-quick-actions {
       display: none;
     }
-    .archive-editorial-scene {
+    .archive-editorial-scene-disabled-original {
       width: 100%;
       max-width: 100%;
       aspect-ratio: auto;
