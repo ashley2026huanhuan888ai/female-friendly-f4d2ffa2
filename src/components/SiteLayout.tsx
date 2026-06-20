@@ -71,10 +71,6 @@ export function SiteLayout({
   const router = useRouter();
   const isDeskVariant = variant === "desk";
 
-  // 路由变化时关闭移动菜单
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [router.state.location.pathname]);
 
   useEffect(() => {
     const visitorId = getPresenceVisitorId();
