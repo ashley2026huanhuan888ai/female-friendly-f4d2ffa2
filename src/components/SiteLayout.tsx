@@ -62,7 +62,7 @@ export function SiteLayout({
   variant?: "default" | "desk";
 }) {
   const { ready, user, email, isAdmin, unread, signOut: authSignOut } = useAuth();
-  const [canSeeAdminNav_unused, _] = [false, null]; void _;
+  
   const [canSeeAdminNav, setCanSeeAdminNav] = useState(false);
   const { language, setLanguage, t } = useI18n();
   const recordPresenceFn = useServerFn(recordPresence);
