@@ -12,7 +12,11 @@ import { bandOf, FEMINIST_TAGS } from "@/lib/temperature";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth-context";
 import { pushHomeInteractionEvent } from "@/lib/interaction-tracker";
+import { submitObservation } from "@/lib/api/platform.functions";
+import { toast } from "sonner";
 import mobileHeroUrl from "@/assets/mobile-hero-clean.png";
+
+const HOME_DRAFT_KEY = "home-submit-draft";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -935,8 +939,8 @@ function HomeSubmitQuickAction({
   const visibleOptions = normalizedKeyword
     ? options.filter((option) => option.name.toLowerCase().includes(normalizedKeyword))
     : options;
-  const targetRedirect = selectedObjectId ? `/submit/${selectedObjectId}` : "/";
-  const componentReady = authReady && Boolean(user);
+  
+
   const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
   const [lastSearchValue, setLastSearchValue] = useState("");
   const [hasTrackedEmptyOptions, setHasTrackedEmptyOptions] = useState(false);
@@ -1028,14 +1032,85 @@ function HomeSubmitQuickAction({
   }
 
   const selectedObjectName = options.find((option) => option.id === selectedObjectId)?.name;
-  const actionText = selectedObjectName ? `${buttonLabel}（${selectedObjectName}）` : buttonLabel;
 
-  const isReadyToSubmit = componentReady && Boolean(selectedObjectId);
-  const hasDraftChoice = Boolean(selectedObjectId);
+  const [content, setContent] = useState("");
+  const [referenceUrl, setReferenceUrl] = useState("");
+  const [phase, setPhase] = useState<"idle" | "submitting" | "done">("idle");
+  const [successObjectId, setSuccessObjectId] = useState<string>("");
+  const submitFn = useServerFn(submitObservation);
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  // Restore draft once options are ready
+  const [draftRestored, setDraftRestored] = useState(false);
+  useEffect(() => {
+    if (draftRestored || !options.length) return;
+    try {
+      const raw = localStorage.getItem(HOME_DRAFT_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d?.content) setContent(String(d.content));
+        if (d?.reference_url) setReferenceUrl(String(d.reference_url));
+        if (d?.object_id && options.some((o) => o.id === d.object_id)) {
+          setSelectedObjectId(d.object_id);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    setDraftRestored(true);
+  }, [options, draftRestored]);
+
+  // Auto-save draft (debounced)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        if (content || referenceUrl || selectedObjectId) {
+          localStorage.setItem(
+            HOME_DRAFT_KEY,
+            JSON.stringify({
+              object_id: selectedObjectId,
+              content,
+              reference_url: referenceUrl,
+            }),
+          );
+        }
+      } catch {
+        /* ignore */
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [content, referenceUrl, selectedObjectId]);
+
+  const trimmedContent = content.trim();
+  const contentLenOk = trimmedContent.length >= 10 && trimmedContent.length <= 2000;
+  const urlOk =
+    !referenceUrl.trim() ||
+    (() => {
+      try {
+        new URL(referenceUrl.trim());
+        return referenceUrl.trim().length <= 500;
+      } catch {
+        return false;
+      }
+    })();
+  const canSubmit =
+    Boolean(selectedObjectId) && contentLenOk && urlOk && phase === "idle";
+
+  const targetRedirect = "/";
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedObjectId) return;
+    if (!selectedObjectId || !contentLenOk || !urlOk) return;
+
+    if (!user) {
+      pushHomeInteractionEvent("home_submit_blocked_login", {
+        source,
+        object_id: selectedObjectId,
+        has_search_keyword: Boolean(searchKeyword.trim()),
+        result_count: visibleOptions.length,
+      });
+      navigate({ to: "/login", search: { redirect: targetRedirect } });
+      return;
+    }
 
     pushHomeInteractionEvent("home_submit_start", {
       source,
@@ -1043,12 +1118,73 @@ function HomeSubmitQuickAction({
       has_search_keyword: Boolean(searchKeyword.trim()),
       visible_count: visibleOptions.length,
       matched_count: visibleOptions.length,
-      is_logged_in: Boolean(user),
+      is_logged_in: true,
       from_login_redirect: false,
     });
 
-    navigate({ to: "/submit/$objectId", params: { objectId: selectedObjectId } });
+    setPhase("submitting");
+    try {
+      await submitFn({
+        data: {
+          object_id: selectedObjectId,
+          content: trimmedContent,
+          scene: null,
+          reference_url: referenceUrl.trim() || null,
+        },
+      });
+      pushHomeInteractionEvent("home_submit_success", {
+        source,
+        object_id: selectedObjectId,
+      });
+      try {
+        localStorage.removeItem(HOME_DRAFT_KEY);
+      } catch {
+        /* ignore */
+      }
+      setSuccessObjectId(selectedObjectId);
+      setContent("");
+      setReferenceUrl("");
+      setPhase("done");
+      toast.success("已记录你的观察，AI 正在分析");
+    } catch (err: any) {
+      pushHomeInteractionEvent("home_submit_error", {
+        source,
+        object_id: selectedObjectId,
+        message: String(err?.message ?? err).slice(0, 200),
+      });
+      toast.error(String(err?.message ?? "提交失败，请稍后重试"));
+      setPhase("idle");
+    }
   };
+
+  if (phase === "done" && successObjectId) {
+    return (
+      <div className={compact ? "mt-4 space-y-2" : "mt-5 space-y-2"}>
+        <p className="text-xs text-muted-foreground">
+          ✓ 已提交体验记录，AI 正在分析对象温度变化。
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to="/objects/$id"
+            params={{ id: successObjectId }}
+            className="paper-action-secondary px-3 py-2 text-xs"
+          >
+            查看对象页
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setPhase("idle");
+              setSuccessObjectId("");
+            }}
+            className="paper-action-secondary px-3 py-2 text-xs"
+          >
+            再写一条
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={onSubmit} className={compact ? "mt-4 space-y-2" : "mt-5 space-y-2"}>
@@ -1073,39 +1209,60 @@ function HomeSubmitQuickAction({
           </option>
         ))}
       </select>
-      {isReadyToSubmit ? (
-        <button type="submit" className="paper-action inline-block w-full px-4 py-2 text-xs">
-          {actionText}
-        </button>
-      ) : (
-        <Link
-          to="/login"
-          search={{ redirect: targetRedirect }}
-          onClick={() => {
-            if (selectedObjectId) {
-              pushHomeInteractionEvent("home_submit_blocked_login", {
-                source,
-                object_id: selectedObjectId,
-                has_search_keyword: Boolean(searchKeyword.trim()),
-                result_count: visibleOptions.length,
-              });
-            }
-          }}
-          className={`paper-action inline-flex w-full items-center justify-center px-4 py-2 text-xs ${
-            !hasDraftChoice ? "pointer-events-none opacity-50" : ""
-          }`}
-          aria-disabled={!hasDraftChoice}
-        >
-          登录后继续提交
-        </Link>
-      )}
+      <textarea
+        value={content}
+        onChange={(event) => setContent(event.target.value)}
+        placeholder={
+          selectedObjectName
+            ? `写下你对「${selectedObjectName}」的体验（10–2000 字）`
+            : "写下你的体验观察（10–2000 字）"
+        }
+        rows={4}
+        maxLength={2000}
+        className="paper-input w-full text-sm leading-relaxed"
+      />
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>
+          {trimmedContent.length}/2000
+          {trimmedContent.length > 0 && trimmedContent.length < 10
+            ? " · 至少 10 字"
+            : ""}
+        </span>
+      </div>
+      <input
+        type="url"
+        value={referenceUrl}
+        onChange={(event) => setReferenceUrl(event.target.value)}
+        placeholder="来源链接（可选，如新闻报道、官方公告）"
+        className="paper-input w-full text-xs"
+      />
+      {!urlOk ? (
+        <p className="text-[11px] text-destructive">来源链接格式不正确</p>
+      ) : null}
+      <button
+        type="submit"
+        disabled={!canSubmit && Boolean(user)}
+        className={`paper-action inline-flex w-full items-center justify-center px-4 py-2 text-xs ${
+          !canSubmit && user ? "pointer-events-none opacity-50" : ""
+        }`}
+      >
+        {phase === "submitting"
+          ? "分析中…"
+          : !user
+            ? "登录后继续提交"
+            : selectedObjectName
+              ? `${buttonLabel}（${selectedObjectName}）`
+              : buttonLabel}
+      </button>
       {helperText ? (
         <p className="text-[11px] leading-relaxed text-muted-foreground">{helperText}</p>
       ) : null}
       {!authReady ? (
         <p className="text-[11px] leading-relaxed text-muted-foreground">正在读取登录状态…</p>
       ) : user ? null : (
-        <p className="text-[11px] leading-relaxed text-muted-foreground">未登录将跳转至登录页。</p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          未登录将跳转至登录页，草稿会自动保留。
+        </p>
       )}
     </form>
   );
