@@ -825,6 +825,9 @@
     .home-case-board::after {
       display: none;
     }
+    .case-paper-left {
+      display: none;
+    }
     .case-paper {
       flex-basis: 92vw;
       min-height: 40rem;
