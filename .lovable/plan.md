@@ -1,18 +1,31 @@
 ## 目标
-手机端顶栏第二行直接平铺展开导航项，去掉汉堡菜单按钮。
+删除首页顶部导航条（.archive-editorial-top-strip）后，将场景内三张主体卡片整体向上平移，消除顶部空白，恢复视觉平衡。
 
-## 改动（仅 `src/components/SiteLayout.tsx`）
+## 调整范围
+- 首页首屏（.archive-editorial-first 及 .archive-editorial-scene）
+- 仅针对桌面端布局（移动端通过 scale 适配，不受影响）
 
-1. **第二行结构改为横向滚动条**：将现有 `<div className="flex shrink-0 items-center justify-end gap-2 lg:hidden">` 改为占满整行的 `flex items-center gap-3 overflow-x-auto whitespace-nowrap text-xs lg:hidden`，启用横向触屏滑动以容纳所有项。
-2. **平铺导航项**：在第二行依次渲染
-   - `DESK_NAV`（desk 变体）或 `PRIMARY_NAV + SECONDARY_NAV`（默认变体）的所有链接，文字 `text-xs whitespace-nowrap`
-   - 一个垂直分隔 `h-4 w-px bg-border`
-   - 语言切换 `MobileLanguageButton`
-   - 未登录显示 `登录/注册`；已登录显示 `我的`（带未读徽标）+ `退出`
-   - 管理员显示 `管理` 链接
-3. **删除汉堡按钮**：移除 `<button aria-label={t("nav.menu")} ...>` 及下方 `{menuOpen && (...)}` 移动展开抽屉块；同时移除 `menuOpen`/`setMenuOpen` state 与 useEffect 中的 setMenuOpen 调用。
-4. 验证：Playwright 在 390×745 视口截图首页与桌面 1280 视口，确认手机端第二行所有导航可见（必要时可横滑），无横向溢出页面整体；桌面端布局保留 lg:flex 单行不变。
+## 具体调整
+1. **三张主体卡片上移**
+   - `.archive-editorial-hero-sheet`：`top` 从 `7rem` 减至 `1rem`
+   - `.archive-editorial-record-sheet`：`top` 从 `9rem` 减至 `3rem`
+   - `.archive-editorial-submit-sheet`：`top` 从 `10rem` 减至 `4rem`
+   三张卡片保持原有的相对间距（约 2rem / 1rem 的层级差）与旋转角度不变。
 
-## 不动
-- 桌面端 `lg:` 显示的主导航与右侧账号区
-- Hero 缩放逻辑、其它路由与样式
+2. **背景底衬同步上移**
+   - `.archive-editorial-underlay-a`：顶部内边距从 `1.4rem` 减至 `0.6rem`
+   - `.archive-editorial-grid-paper`：顶部内边距从 `6.8rem` 减至 `1.2rem`
+   确保背景网格与卡片的新位置对齐，不出现断层。
+
+3. **温度卡片底部留白微调**
+   - `.archive-editorial-temperature-card`：`bottom` 从 `4.5rem` 增至 `5.5rem`
+   卡片整体高度略微压缩，底部温度条稍向下避让，保持画面重心居中。
+
+4. **外容器 padding 微调**
+   - `.archive-editorial-first`：`padding-top` 从 `5.6rem` 减至 `4rem`
+   减少场景顶部的外部空白，使首屏内容更紧凑。
+
+## 验证方式
+- 本地预览检查首屏顶部无大面积空白
+- 确认三张卡片的上下边缘均不与场景边界重叠
+- 确认温度卡片的刻度条与三张卡片底部保持协调间距
