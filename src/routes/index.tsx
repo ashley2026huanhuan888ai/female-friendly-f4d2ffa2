@@ -12,7 +12,11 @@ import { bandOf, FEMINIST_TAGS } from "@/lib/temperature";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth-context";
 import { pushHomeInteractionEvent } from "@/lib/interaction-tracker";
+import { submitObservation } from "@/lib/api/platform.functions";
+import { toast } from "sonner";
 import mobileHeroUrl from "@/assets/mobile-hero-clean.png";
+
+const HOME_DRAFT_KEY = "home-submit-draft";
 
 export const Route = createFileRoute("/")({
   head: () => ({
