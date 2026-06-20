@@ -1909,11 +1909,49 @@
   }
   @media (max-width: 640px) {
     .archive-editorial-first {
-      padding-inline: 0;
-      --scene-scale: calc((100vw - 1.6rem) / 1760);
+      padding: 1.5rem 1rem 2rem;
     }
     .archive-editorial-scene {
-      margin-bottom: calc((1 - var(--scene-scale)) * -43rem);
+      width: 100%;
+      max-width: 100%;
+      aspect-ratio: auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transform: none;
+      margin: 0;
+    }
+    .archive-editorial-underlay {
+      display: none;
+    }
+    .archive-editorial-sheet {
+      position: relative;
+      inset: auto;
+      left: auto;
+      right: auto;
+      top: auto;
+      bottom: auto;
+      width: 100%;
+      min-height: 0;
+      transform: none;
+      padding: 1.25rem 1.1rem;
+    }
+    .archive-editorial-hero-sheet h1 {
+      font-size: 2.6rem;
+    }
+    .archive-editorial-temperature-card {
+      grid-template-columns: auto 1fr;
+      gap: 0.9rem 1rem;
+    }
+    .archive-editorial-temperature-card .archive-editorial-scale,
+    .archive-editorial-temperature-card .archive-editorial-warning-copy {
+      grid-column: 1 / -1;
+    }
+    .archive-editorial-record-stamp,
+    .archive-editorial-record-sheet footer,
+    .archive-editorial-corner-clip {
+      position: static;
     }
     .archive-editorial-brand strong {
       font-size: 1.2rem;
@@ -1922,6 +1960,7 @@
     .archive-editorial-login {
       font-size: 0.62rem;
     }
+
     .home-desk-stage {
       padding-top: 5.5rem;
     }
