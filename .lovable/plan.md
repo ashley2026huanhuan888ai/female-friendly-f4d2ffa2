@@ -1,22 +1,16 @@
 ## 目标
-手机预览下，首页第一屏 `EditorialArchiveFirstPage`（`.archive-editorial-first` / `.archive-editorial-scene`）目前在 ≤1100px 时被改为竖向堆叠的 grid 布局，每张档案纸都被拉成全宽方块、丢失旋转和层叠。你希望它保持桌面版那种"档案展开铺在桌面上"的视觉，而不是收敛成手机长列表。
+手机端顶部导航空间不足，品牌名 "女性友好体验监测站" 被截成 "女性友好体…"。改为两行布局，让品牌名完整显示。
 
-## 方案
-在 `src/styles.css` 调整 `.archive-editorial-scene` 在窄屏下的响应式规则，让它继续以原始的 16:9 绝对定位舞台呈现，并通过横向缩放适配手机宽度。
+## 改动范围
+仅 `src/components/SiteLayout.tsx` 的 `<header>` 内的容器，桌面 (`lg:`) 保持单行不变。
 
-### 具体改动（只动 CSS，不动结构 / 业务逻辑）
-1. `@media (max-width: 1100px)` 内：
-   - 删除把 `.archive-editorial-scene` 改成 `display: grid` 的规则
-   - 删除把 `.archive-editorial-sheet` 改成 `position: relative` + 去旋转的规则
-   - 保留顶部导航条 (`.archive-editorial-top-strip`) 自身的可滚动调整，避免溢出
-2. 给 `.archive-editorial-scene` 增加 `transform: scale(var(--scene-scale))` + `transform-origin: top center`，在 ≤1100 / ≤640 两档分别设 `--scene-scale: 0.7 / 0.46`，并用 `--scene-w` 让其宽度仍按桌面 1760px 渲染。
-3. 外层 `.archive-editorial-first` 在窄屏改为 `overflow-x: hidden` 并通过 `min-height` 容纳缩放后的高度，保证不出现横向滚动条。
-4. `@media (max-width: 640px)` 中只保留与温度卡、品牌字号相关、和 hero 展开不冲突的样式；不再强制 `.archive-editorial-temperature-card` 变单列。
+## 具体改动
+1. 把 `container-prose flex h-16 items-center justify-between gap-3` 改为：手机端 `flex-col items-stretch gap-2 py-2 h-auto`，`lg:` 还原为 `lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:py-0`。
+2. 品牌 `<Link>` 行：手机端单独一行，去掉 `truncate`，允许 `whitespace-nowrap` 完整显示；保留 `lg:min-w-fit`。
+3. 右侧操作组 `<div className="flex shrink-0 items-center gap-2 lg:hidden">`：改为 `justify-end` 占满第二行宽度。
+4. 验证：Playwright 在 390×745 视口截图 `/` 顶栏，确认品牌名完整、第二行操作按钮齐全、无横向溢出。
 
-### 不改的
-- TSX 结构、文案、组件、数据逻辑
-- 桌面端（>1100px）样式
-- 其他 section（`home-case-board`、archive-desk 等）
-
-## 验证
-改完用 Playwright 在 375×812 viewport 截图 `/`，确认四张档案纸仍按原始相对位置铺开、整体在视口内可见。
+## 不动的部分
+- 桌面端布局
+- Hero scene 缩放逻辑（之前已基于视口宽度自适应）
+- 其它路由与样式

@@ -152,9 +152,9 @@ export function SiteLayout({
             : "sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur"
         }
       >
-        <div className="container-prose flex h-16 items-center justify-between gap-3">
+        <div className="container-prose flex h-auto flex-col items-stretch gap-2 py-2 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:gap-3 lg:py-0">
           <Link to="/" className="flex min-w-0 items-baseline gap-3 lg:min-w-fit">
-            <span className="block truncate font-serif text-xl tracking-tight">
+            <span className="block whitespace-nowrap font-serif text-xl tracking-tight lg:truncate">
               {isDeskVariant ? "女性友好体验监测站" : t("app.name")}
             </span>
             <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground lg:inline">
