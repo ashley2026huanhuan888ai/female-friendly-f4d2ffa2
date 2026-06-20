@@ -14,7 +14,8 @@ import { useAuth } from "@/components/auth-context";
 import { pushHomeInteractionEvent } from "@/lib/interaction-tracker";
 import { submitObservation } from "@/lib/api/platform.functions";
 import { toast } from "sonner";
-import mobileHeroUrl from "@/assets/mobile-hero-clean.png";
+import mobileHeroAsset from "@/assets/mobile-hero-clean.webp.asset.json";
+const mobileHeroUrl = mobileHeroAsset.url;
 
 const HOME_DRAFT_KEY = "home-submit-draft";
 
@@ -28,6 +29,9 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:title", content: "女性友好体验测评" },
       { property: "og:description", content: "观察 · 分析 · 不审判。" },
+    ],
+    links: [
+      { rel: "preload", as: "image", href: mobileHeroUrl, fetchpriority: "high" } as any,
     ],
   }),
   component: Index,
@@ -693,7 +697,11 @@ function EditorialArchiveFirstPage({
           src={mobileHeroUrl}
           alt="不舒服，就记录 - 女性友好体验监测站"
           className="archive-editorial-mobile-hero"
+          fetchPriority="high"
+          decoding="async"
+          width={780}
         />
+
       </Link>
       <div className="archive-editorial-scene">
         <div className="archive-editorial-underlay archive-editorial-underlay-a" />
