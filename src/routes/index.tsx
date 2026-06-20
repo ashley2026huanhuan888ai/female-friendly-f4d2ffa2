@@ -694,7 +694,11 @@ function EditorialArchiveFirstPage({
           src={mobileHeroUrl}
           alt="不舒服，就记录 - 女性友好体验监测站"
           className="archive-editorial-mobile-hero"
+          fetchPriority="high"
+          decoding="async"
+          width={780}
         />
+
       </Link>
       <div className="archive-editorial-scene">
         <div className="archive-editorial-underlay archive-editorial-underlay-a" />
