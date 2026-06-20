@@ -1903,8 +1903,11 @@
   }
   @media (max-width: 640px) {
     .archive-editorial-first {
-      padding-inline: 0.7rem;
-      --scene-scale: 0.32;
+      padding-inline: 0;
+      --scene-scale: calc((100vw - 1.4rem) / 1760);
+    }
+    .archive-editorial-scene {
+      margin-bottom: calc((1 - var(--scene-scale)) * -43rem);
     }
     .archive-editorial-brand strong {
       font-size: 1.2rem;
