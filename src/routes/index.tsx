@@ -688,26 +688,6 @@ function EditorialArchiveFirstPage({
         <div className="archive-editorial-underlay archive-editorial-underlay-b" />
         <div className="archive-editorial-underlay archive-editorial-grid-paper" />
 
-        <header className="archive-editorial-sheet archive-editorial-top-strip">
-          <span className="archive-editorial-paperclip" aria-hidden />
-          <Link to="/" className="archive-editorial-brand">
-            <strong>女性友好体验监测站</strong>
-            <span>Female-Friendly Experience Archive</span>
-          </Link>
-          <nav aria-label="主页导航">
-            <Link to="/" className="is-active">
-              首页
-            </Link>
-            <Link to="/archive/evidence">体验记录</Link>
-            <Link to="/feed">观察动态</Link>
-            <Link to="/knowledge">知识库</Link>
-            <Link to="/about">关于我们</Link>
-          </nav>
-          <Link to="/login" className="archive-editorial-login">
-            登录
-          </Link>
-        </header>
-
         <aside className="archive-editorial-sheet archive-editorial-hero-sheet">
           <h1>
             不舒服，
