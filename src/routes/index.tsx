@@ -757,7 +757,6 @@ function EditorialArchiveFirstPage({
               <h2>女性友好体验监测站</h2>
               <p>Female-Friendly Experience Archive</p>
             </div>
-            <span>档案编号：FF-2026-____</span>
           </header>
           <section>
             <h3>档案简介</h3>
@@ -780,16 +779,13 @@ function EditorialArchiveFirstPage({
             ]}
             columns
           />
-          <ArchiveStamp className="archive-stamp-soft archive-editorial-record-stamp rotate-[-8deg]">
-            已归档
-          </ArchiveStamp>
           <footer>每一条反馈，都是女性经验的一次存档。</footer>
         </main>
 
         <aside className="archive-editorial-sheet archive-editorial-submit-sheet">
           <header>
             <h2>提交你的体验记录</h2>
-            <span>档案编号：FF-2026-____</span>
+            
           </header>
           <EditorialCheckGrid
             title="记录类型"
