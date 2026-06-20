@@ -1905,7 +1905,7 @@
   @media (max-width: 640px) {
     .archive-editorial-first {
       padding-inline: 0;
-      --scene-scale: calc((100vw - 1.4rem) / 1760);
+      --scene-scale: calc((100vw - 1.6rem) / 1760);
     }
     .archive-editorial-scene {
       margin-bottom: calc((1 - var(--scene-scale)) * -43rem);
