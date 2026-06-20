@@ -939,8 +939,8 @@ function HomeSubmitQuickAction({
   const visibleOptions = normalizedKeyword
     ? options.filter((option) => option.name.toLowerCase().includes(normalizedKeyword))
     : options;
-  const targetRedirect = selectedObjectId ? `/submit/${selectedObjectId}` : "/";
-  const componentReady = authReady && Boolean(user);
+  void authReady;
+
   const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
   const [lastSearchValue, setLastSearchValue] = useState("");
   const [hasTrackedEmptyOptions, setHasTrackedEmptyOptions] = useState(false);
