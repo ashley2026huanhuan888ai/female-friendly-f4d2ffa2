@@ -590,27 +590,6 @@ export type Database = {
           },
         ]
       }
-      presence_sessions: {
-        Row: {
-          created_at: string
-          last_seen_at: string
-          last_seen_date: string
-          visitor_id: string
-        }
-        Insert: {
-          created_at?: string
-          last_seen_at?: string
-          last_seen_date?: string
-          visitor_id: string
-        }
-        Update: {
-          created_at?: string
-          last_seen_at?: string
-          last_seen_date?: string
-          visitor_id?: string
-        }
-        Relationships: []
-      }
       principles: {
         Row: {
           active: boolean

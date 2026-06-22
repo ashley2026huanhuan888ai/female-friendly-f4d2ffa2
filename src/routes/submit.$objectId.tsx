@@ -7,17 +7,10 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { retryObservationAnalysis, submitObservation } from "@/lib/api/platform.functions";
-import {
-  ArchiveStamp,
-  DossierPanel,
-  PaperField,
-  PaperSheet,
-  PaperStack,
-  TemperatureVerdict,
-} from "@/components/archive-ui";
+import { Thermometer } from "@/components/Thermometer";
+import { bandOf } from "@/lib/temperature";
 import { toast } from "sonner";
 import { formatTimeForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
-import { pushHomeInteractionEvent } from "@/lib/interaction-tracker";
 
 export const Route = createFileRoute("/submit/$objectId")({
   head: () => ({ meta: [{ title: "提交观察 · 女性友好体验测评" }] }),
@@ -35,7 +28,7 @@ const STEP_KEYS = [
 ] as const;
 
 function SubmitPage() {
-  const { language, t, evidence, tag } = useI18n();
+  const { language, t, evidence, band: bandLabel, tag } = useI18n();
   usePageMeta("seo.submit.title");
   const { objectId } = Route.useParams();
   const navigate = useNavigate();
@@ -50,6 +43,7 @@ function SubmitPage() {
   } | null>(null);
   const [content, setContent] = useState("");
   const [showOptional, setShowOptional] = useState(false);
+  const [screenshot_url, setScreenshotUrl] = useState("");
   const [reference_url, setReferenceUrl] = useState("");
 
   type Phase = "idle" | "analyzing" | "done" | "ai_failed" | "error";
@@ -62,9 +56,6 @@ function SubmitPage() {
   const draftKey = `submit-draft:${objectId}`;
   const [draftRestored, setDraftRestored] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
-  const [draftMetaReady, setDraftMetaReady] = useState(false);
-  const [hasTrackedSubmitPageView, setHasTrackedSubmitPageView] = useState(false);
-  const [hasTrackedSubmitBlocked, setHasTrackedSubmitBlocked] = useState(false);
 
   // 初次挂载：恢复草稿 + 拉对象/登录态
   useEffect(() => {
@@ -79,21 +70,20 @@ function SubmitPage() {
       if (raw) {
         const d = JSON.parse(raw);
         if (d?.content) setContent(d.content);
+        if (d?.screenshot_url) setScreenshotUrl(d.screenshot_url);
         if (d?.reference_url) setReferenceUrl(d.reference_url);
-        if (d?.reference_url) setShowOptional(true);
-        if (d?.content || d?.reference_url) setDraftRestored(true);
+        if (d?.screenshot_url || d?.reference_url) setShowOptional(true);
+        if (d?.content || d?.screenshot_url || d?.reference_url) setDraftRestored(true);
       }
     } catch {
       /* ignore */
     }
-
-    setDraftMetaReady(true);
   }, [objectId, draftKey]);
 
   // 自动保存草稿（防抖 600ms）
   useEffect(() => {
     if (phase !== "idle") return;
-    const hasAny = content || reference_url;
+    const hasAny = content || screenshot_url || reference_url;
     const t = setTimeout(() => {
       try {
         if (hasAny) {
@@ -101,6 +91,7 @@ function SubmitPage() {
             draftKey,
             JSON.stringify({
               content,
+              screenshot_url,
               reference_url,
               ts: Date.now(),
             }),
@@ -115,7 +106,7 @@ function SubmitPage() {
       }
     }, 600);
     return () => clearTimeout(t);
-  }, [content, reference_url, phase, draftKey]);
+  }, [content, screenshot_url, reference_url, phase, draftKey]);
 
   const clearDraft = () => {
     try {
@@ -126,34 +117,6 @@ function SubmitPage() {
     setDraftSavedAt(null);
     setDraftRestored(false);
   };
-
-  useEffect(() => {
-    if (!ready || !draftMetaReady) return;
-    if (user) {
-      if (hasTrackedSubmitPageView) return;
-      pushHomeInteractionEvent("submit_page_view", {
-        object_id: objectId,
-        has_draft: Boolean(draftRestored),
-        draft_saved: Boolean(draftSavedAt),
-      });
-      setHasTrackedSubmitPageView(true);
-      setHasTrackedSubmitBlocked(false);
-      return;
-    }
-
-    if (hasTrackedSubmitBlocked) return;
-    pushHomeInteractionEvent("submit_blocked_unauth", { object_id: objectId });
-    setHasTrackedSubmitBlocked(true);
-  }, [
-    ready,
-    user,
-    objectId,
-    draftRestored,
-    draftSavedAt,
-    draftMetaReady,
-    hasTrackedSubmitPageView,
-    hasTrackedSubmitBlocked,
-  ]);
 
   if (ready && !user) {
     return (
@@ -175,12 +138,6 @@ function SubmitPage() {
     );
 
   const runAnalysis = async () => {
-    pushHomeInteractionEvent("submit_analysis_start", {
-      object_id: objectId,
-      has_reference: Boolean(reference_url),
-      content_length: content.trim().length,
-    });
-
     setPhase("analyzing");
     setStepIdx(0);
     setErrorMsg("");
@@ -197,6 +154,7 @@ function SubmitPage() {
             object_id: objectId,
             content,
             scene: null,
+            screenshot_url: screenshot_url || null,
             reference_url: reference_url || null,
           },
         }),
@@ -217,28 +175,14 @@ function SubmitPage() {
       // AI 失败但观察已保存 → 进入 ai_failed 阶段，而非 error
       if ((res as any)?.ai_failed) {
         setErrorMsg((res as any)?.error ?? t("submit.aiFailed"));
-        pushHomeInteractionEvent("submit_ai_failed", {
-          object_id: objectId,
-          status: (res as any)?.status || "unknown",
-          has_legal_penalty: Boolean((res as any)?.has_legal_penalty),
-        });
         setPhase("ai_failed");
       } else {
-        pushHomeInteractionEvent("submit_done", {
-          object_id: objectId,
-          status: (res as any)?.status || "unknown",
-          impact_score: Number((res as any)?.impact_score || 0),
-        });
         setPhase("done");
       }
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
       setErrorMsg(err?.message ?? t("submit.unknownError"));
-      pushHomeInteractionEvent("submit_analysis_error", {
-        object_id: objectId,
-        error: err?.message ? String(err.message).slice(0, 80) : "unknown",
-      });
     }
   };
 
@@ -246,26 +190,12 @@ function SubmitPage() {
     e.preventDefault();
     if (content.trim().length < 10) {
       toast.error(t("submit.minLength"));
-      pushHomeInteractionEvent("submit_validation_failed", {
-        object_id: objectId,
-        reason: "content_too_short",
-        content_length: content.trim().length,
-      });
       return;
     }
-    pushHomeInteractionEvent("submit_form_submit", {
-      object_id: objectId,
-      content_length: content.trim().length,
-      has_reference: Boolean(reference_url),
-    });
     await runAnalysis();
   };
 
   const retryAnalysis = async () => {
-    pushHomeInteractionEvent("submit_retry_click", {
-      object_id: objectId,
-      has_saved_id: Boolean(result?.id),
-    });
     const savedId = result?.ai_failed ? result.id : null;
     if (!savedId) {
       await runAnalysis();
@@ -294,28 +224,14 @@ function SubmitPage() {
 
       if ((res as any)?.ai_failed) {
         setErrorMsg((res as any).error ?? t("submit.aiFailed"));
-        pushHomeInteractionEvent("submit_retry_failed_once", {
-          object_id: objectId,
-          status: (res as any)?.status || "unknown",
-          has_legal_penalty: Boolean((res as any)?.has_legal_penalty),
-        });
         setPhase("ai_failed");
         return;
       }
-      pushHomeInteractionEvent("submit_retry_success", {
-        object_id: objectId,
-        status: (res as any)?.status || "unknown",
-        impact_score: Number((res as any)?.impact_score || 0),
-      });
       setPhase("done");
     } catch (err: any) {
       clearInterval(stepTimer);
       setPhase("error");
       setErrorMsg(err?.message ?? t("submit.unknownError"));
-      pushHomeInteractionEvent("submit_retry_failed", {
-        object_id: objectId,
-        error: err?.message ? String(err.message).slice(0, 80) : "unknown",
-      });
     }
   };
 
@@ -323,47 +239,39 @@ function SubmitPage() {
   if (phase === "analyzing") {
     return (
       <SiteLayout>
-        <div className="archive-desk py-20">
-          <div className="container-prose max-w-2xl">
-            <PaperStack>
-              <DossierPanel
-                eyebrow={t("submit.analyzingEyebrow")}
-                title={t("submit.analyzingTitle")}
-                stamp="ANALYZING"
-                meta={t("submit.analyzingBody")}
-              >
-                <div className="mt-3 h-2 w-full overflow-hidden border border-border bg-muted">
-                  <div
-                    className="h-full bg-[var(--archive-pink)] transition-all duration-300"
-                    style={{ width: `${((stepIdx + 1) / STEP_KEYS.length) * 100}%` }}
-                  />
-                </div>
-                <ul className="mt-8 space-y-3 text-sm">
-                  {STEP_KEYS.map((s, i) => {
-                    const state = i < stepIdx ? "done" : i === stepIdx ? "active" : "pending";
-                    return (
-                      <li key={s} className="paper-field flex items-center gap-3 py-2">
-                        <span
-                          className={`inline-flex h-5 w-5 items-center justify-center text-xs ${
-                            state === "done"
-                              ? "archive-highlight"
-                              : state === "active"
-                                ? "text-foreground"
-                                : "text-muted-foreground"
-                          }`}
-                        >
-                          {state === "done" ? "✓" : state === "active" ? "●" : "○"}
-                        </span>
-                        <span className={state === "pending" ? "text-muted-foreground" : ""}>
-                          {t(s)}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </DossierPanel>
-            </PaperStack>
+        <div className="container-prose max-w-2xl py-20">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            {t("submit.analyzingEyebrow")}
           </div>
+          <h1 className="mt-3 font-serif text-3xl">{t("submit.analyzingTitle")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("submit.analyzingBody")}</p>
+          <div className="mt-8 h-1 w-full overflow-hidden bg-border">
+            <div
+              className="h-full bg-foreground transition-all duration-300"
+              style={{ width: `${((stepIdx + 1) / STEP_KEYS.length) * 100}%` }}
+            />
+          </div>
+          <ul className="mt-8 space-y-3 text-sm">
+            {STEP_KEYS.map((s, i) => {
+              const state = i < stepIdx ? "done" : i === stepIdx ? "active" : "pending";
+              return (
+                <li key={s} className="flex items-center gap-3">
+                  <span
+                    className={`inline-flex h-5 w-5 items-center justify-center text-xs ${
+                      state === "done"
+                        ? "text-foreground"
+                        : state === "active"
+                          ? "text-accent"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {state === "done" ? "✓" : state === "active" ? "●" : "○"}
+                  </span>
+                  <span className={state === "pending" ? "text-muted-foreground" : ""}>{t(s)}</span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </SiteLayout>
     );
@@ -371,110 +279,116 @@ function SubmitPage() {
 
   // 完成页面
   if (phase === "done" && result) {
-    const contribution = result.impact_score ?? 0;
+    const delta = result.impact_score ?? 0;
+    const band = newTemp != null ? bandOf(newTemp) : null;
     return (
       <SiteLayout>
-        <div className="archive-desk py-16">
-          <div className="container-prose max-w-3xl">
-            <PaperStack>
-              <DossierPanel
-                eyebrow={
-                  result.status === "approved"
-                    ? t("submit.status.autoApproved")
-                    : t("submit.status.pending")
-                }
-                title={t("submit.doneTitle")}
-                stamp="ARCHIVED"
-              >
+        <div className="container-prose max-w-2xl py-16">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            {result.status === "approved"
+              ? t("submit.status.autoApproved")
+              : t("submit.status.pending")}
+          </div>
+          <h1 className="mt-3 font-serif text-3xl">{t("submit.doneTitle")}</h1>
+
+          <div className="mt-8 border border-border bg-card p-6 space-y-5">
+            <div>
+              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                {t("submit.aiSummary")}
+              </div>
+              <p className="mt-2 text-sm leading-relaxed">
+                {result.summary || t("common.noSummary")}
+              </p>
+            </div>
+
+            {!!result.tags?.length && (
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {t("submit.detectedTags")}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {result.tags.map((t: string) => (
+                    <span key={t} className="border border-border px-2 py-1 text-xs">
+                      {tag(t)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {t("submit.evidenceLevel")}
+                </div>
+                <div className="mt-2 font-serif text-lg">{evidence(result.evidence_level)}</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {t("submit.temperatureContribution")}
+                </div>
+                <div
+                  className={`mt-2 font-serif text-lg tabular-nums ${
+                    delta > 0 ? "text-accent" : delta < 0 ? "text-muted-foreground" : ""
+                  }`}
+                >
+                  {delta > 0 ? "+" : ""}
+                  {delta}°C
+                </div>
+              </div>
+            </div>
+
+            {newTemp != null && (
+              <div className="flex items-center gap-4 border-t border-border pt-5">
+                <Thermometer value={newTemp} size="sm" showLabel={false} />
                 <div>
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {t("submit.aiSummary")}
+                    {t("submit.currentTemperature")}
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed">
-                    {result.summary || t("common.noSummary")}
-                  </p>
-                </div>
-
-                {!!result.tags?.length && (
-                  <div className="mt-6">
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {t("submit.detectedTags")}
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {result.tags.map((t: string) => (
-                        <span key={t} className="paper-tag px-2 py-1 text-xs">
-                          {tag(t)}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="mt-1 font-serif text-2xl tabular-nums">
+                    {newTemp}°C
+                    {band && (
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        {bandLabel(band.band, band.label)}
+                      </span>
+                    )}
                   </div>
-                )}
-
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <PaperSheet tone="slip" className="p-4">
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {t("submit.evidenceLevel")}
-                    </div>
-                    <div className="mt-2 font-serif text-lg">{evidence(result.evidence_level)}</div>
-                  </PaperSheet>
-                  <PaperSheet tone="slip" className="p-4">
-                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {t("submit.observationContribution")}
-                    </div>
-                    <div
-                      className={`mt-2 font-serif text-lg tabular-nums ${
-                        contribution > 0
-                          ? "archive-highlight"
-                          : contribution < 0
-                            ? "text-muted-foreground"
-                            : ""
-                      }`}
-                    >
-                      {contribution > 0 ? "+" : ""}
-                      {contribution}
-                      {t("submit.contributionUnit")}
-                    </div>
-                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                      {t("submit.contributionHint")}
-                    </p>
-                  </PaperSheet>
                 </div>
+              </div>
+            )}
 
-                {newTemp != null && <TemperatureVerdict value={newTemp} compact className="mt-6" />}
+            {result.status !== "approved" && (
+              <p className="text-xs text-muted-foreground border-t border-border pt-4">
+                {t("submit.needsReview")}
+              </p>
+            )}
+          </div>
 
-                {result.status !== "approved" && (
-                  <p className="paper-divider mt-5 pt-4 text-xs text-muted-foreground">
-                    {t("submit.needsReview")}
-                  </p>
-                )}
-              </DossierPanel>
-            </PaperStack>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
-                className="paper-action px-4 py-2 text-xs uppercase tracking-wider"
-              >
-                {t("submit.backObject")}
-              </button>
-              <Link
-                to="/feed"
-                className="paper-action-secondary px-4 py-2 text-xs uppercase tracking-wider"
-              >
-                {t("submit.viewFeed")}
-              </Link>
-              <button
-                onClick={() => {
-                  setContent("");
-                  setReferenceUrl("");
-                  setResult(null);
-                  setPhase("idle");
-                }}
-                className="paper-action-secondary px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground"
-              >
-                {t("submit.continue")}
-              </button>
-            </div>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
+            >
+              {t("submit.backObject")}
+            </button>
+            <Link
+              to="/feed"
+              className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+            >
+              {t("submit.viewFeed")}
+            </Link>
+            <button
+              onClick={() => {
+                setContent("");
+                setScreenshotUrl("");
+                setReferenceUrl("");
+                setResult(null);
+                setPhase("idle");
+              }}
+              className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            >
+              {t("submit.continue")}
+            </button>
           </div>
         </div>
       </SiteLayout>
@@ -486,56 +400,53 @@ function SubmitPage() {
     const hasLegal = (result as any)?.has_legal_penalty;
     return (
       <SiteLayout>
-        <div className="archive-desk py-20">
-          <div className="container-prose max-w-2xl">
-            <PaperStack>
-              <DossierPanel
-                eyebrow={t("submit.savedAiRetry")}
-                title={hasLegal ? t("submit.legalSavedTitle") : t("submit.savedPendingTitle")}
-                stamp="SAVED"
-                meta={t("submit.aiFailedBody")}
-              >
-                {hasLegal && <p className="text-sm text-foreground">{t("submit.legalUpdated")}</p>}
-                {errorMsg && (
-                  <details className="mt-4 text-xs text-muted-foreground">
-                    <summary className="cursor-pointer">{t("common.details")}</summary>
-                    <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
-                  </details>
-                )}
-              </DossierPanel>
-            </PaperStack>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={retryAnalysis}
-                className="paper-action-secondary px-4 py-2 text-xs uppercase tracking-wider"
-              >
-                {t("submit.retryAI")}
-              </button>
-              <button
-                onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
-                className="paper-action px-4 py-2 text-xs uppercase tracking-wider"
-              >
-                {t("submit.viewObject")}
-              </button>
-              <Link
-                to="/me"
-                className="paper-action-secondary px-4 py-2 text-xs uppercase tracking-wider"
-              >
-                {t("submit.goMyObservations")}
-              </Link>
-              <button
-                onClick={() => {
-                  setContent("");
-                  setReferenceUrl("");
-                  setResult(null);
-                  setErrorMsg("");
-                  setPhase("idle");
-                }}
-                className="paper-action-secondary px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground"
-              >
-                {t("submit.continue")}
-              </button>
-            </div>
+        <div className="container-prose max-w-2xl py-20">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            {t("submit.savedAiRetry")}
+          </div>
+          <h1 className="mt-3 font-serif text-2xl">
+            {hasLegal ? t("submit.legalSavedTitle") : t("submit.savedPendingTitle")}
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("submit.aiFailedBody")}</p>
+          {hasLegal && <p className="mt-2 text-sm text-foreground">{t("submit.legalUpdated")}</p>}
+          {errorMsg && (
+            <details className="mt-4 text-xs text-muted-foreground">
+              <summary className="cursor-pointer">{t("common.details")}</summary>
+              <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
+            </details>
+          )}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={retryAnalysis}
+              className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+            >
+              {t("submit.retryAI")}
+            </button>
+            <button
+              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
+            >
+              {t("submit.viewObject")}
+            </button>
+            <Link
+              to="/me"
+              className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+            >
+              {t("submit.goMyObservations")}
+            </Link>
+            <button
+              onClick={() => {
+                setContent("");
+                setScreenshotUrl("");
+                setReferenceUrl("");
+                setResult(null);
+                setErrorMsg("");
+                setPhase("idle");
+              }}
+              className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            >
+              {t("submit.continue")}
+            </button>
           </div>
         </div>
       </SiteLayout>
@@ -546,45 +457,39 @@ function SubmitPage() {
   if (phase === "error") {
     return (
       <SiteLayout>
-        <div className="archive-desk py-20">
-          <div className="container-prose max-w-2xl">
-            <PaperStack>
-              <DossierPanel
-                eyebrow={t("submit.notice")}
-                title={t("submit.failedTitle")}
-                stamp="FAILED"
-                meta={t("submit.failedBody")}
-              >
-                {errorMsg && (
-                  <details className="text-xs text-muted-foreground">
-                    <summary className="cursor-pointer">{t("common.details")}</summary>
-                    <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
-                  </details>
-                )}
-              </DossierPanel>
-            </PaperStack>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => runAnalysis()}
-                className="paper-action px-4 py-2 text-xs uppercase tracking-wider"
-              >
-                {t("submit.retrySubmit")}
-              </button>
-              <button
-                onClick={() => setPhase("idle")}
-                className="paper-action-secondary px-4 py-2 text-xs uppercase tracking-wider"
-              >
-                {t("submit.backEdit")}
-              </button>
-              <button
-                onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
-                className="paper-action-secondary px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground"
-              >
-                {t("submit.backObject")}
-              </button>
-            </div>
-            <p className="mt-4 text-[11px] text-muted-foreground">{t("submit.draftSavedNotice")}</p>
+        <div className="container-prose max-w-2xl py-20">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            {t("submit.notice")}
           </div>
+          <h1 className="mt-3 font-serif text-2xl">{t("submit.failedTitle")}</h1>
+          <p className="mt-3 text-sm text-muted-foreground">{t("submit.failedBody")}</p>
+          {errorMsg && (
+            <details className="mt-4 text-xs text-muted-foreground">
+              <summary className="cursor-pointer">{t("common.details")}</summary>
+              <pre className="mt-2 whitespace-pre-wrap break-words">{errorMsg}</pre>
+            </details>
+          )}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => runAnalysis()}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
+            >
+              {t("submit.retrySubmit")}
+            </button>
+            <button
+              onClick={() => setPhase("idle")}
+              className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+            >
+              {t("submit.backEdit")}
+            </button>
+            <button
+              onClick={() => navigate({ to: "/objects/$id", params: { id: objectId } })}
+              className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            >
+              {t("submit.backObject")}
+            </button>
+          </div>
+          <p className="mt-4 text-[11px] text-muted-foreground">{t("submit.draftSavedNotice")}</p>
         </div>
       </SiteLayout>
     );
@@ -593,114 +498,112 @@ function SubmitPage() {
   // 提交表单（极简）
   return (
     <SiteLayout>
-      <div className="archive-desk py-16">
-        <div className="container-prose max-w-3xl">
-          <PaperStack>
-            <DossierPanel
-              eyebrow={t("submit.formEyebrow")}
-              title={obj?.name ?? "—"}
-              stamp={submitArchiveCode(objectId)}
-              meta={t("submit.formBody")}
-            >
-              {draftRestored && (
-                <PaperSheet
-                  tone="slip"
-                  className="mb-6 flex items-center justify-between gap-3 p-3 text-xs"
-                >
-                  <span className="text-muted-foreground">{t("submit.draftRestored")}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setContent("");
-                      setReferenceUrl("");
-                      clearDraft();
-                    }}
-                    className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                  >
-                    {t("submit.clearDraft")}
-                  </button>
-                </PaperSheet>
-              )}
-
-              <form onSubmit={runSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium">{t("submit.question")}</label>
-                  <textarea
-                    required
-                    minLength={10}
-                    maxLength={2000}
-                    rows={9}
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder={t("submit.placeholder")}
-                    className="paper-textarea mt-3 min-h-[260px] w-full resize-none border border-foreground/70 bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground focus:border-[var(--archive-pink)]"
-                  />
-                  <PaperSheet
-                    tone="slip"
-                    className="mt-4 p-4 text-xs leading-relaxed text-muted-foreground"
-                  >
-                    {t("submit.autoWill")}
-                    <div className="mt-1 grid gap-1 sm:grid-cols-2">
-                      <div>{t("submit.autoFacts")}</div>
-                      <div>{t("submit.autoTags")}</div>
-                      <div>{t("submit.autoEvidence")}</div>
-                      <div>{t("submit.autoTemperature")}</div>
-                    </div>
-                  </PaperSheet>
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                    <span>
-                      {t("common.wordCount", { count: content.length })} · {t("submit.limits")}
-                    </span>
-                    {draftSavedAt && (
-                      <span>
-                        {t("submit.draftSavedAt", {
-                          time: formatTimeForLanguage(draftSavedAt, language),
-                        })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setShowOptional((v) => !v)}
-                    className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                  >
-                    {showOptional ? t("submit.optionalOpen") : t("submit.optionalClosed")}
-                  </button>
-                  {showOptional && (
-                    <div className="mt-4 space-y-4 border-l-2 border-border pl-4">
-                      <PaperField label={t("submit.referenceUrl")}>
-                        <input
-                          type="url"
-                          maxLength={500}
-                          value={reference_url}
-                          onChange={(e) => setReferenceUrl(e.target.value)}
-                          placeholder="https://..."
-                          className="paper-input text-sm"
-                        />
-                      </PaperField>
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        {t("submit.referenceHint")}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <button className="paper-action px-6 py-3 text-sm">
-                  {t("objects.submitObservation")}
-                </button>
-              </form>
-            </DossierPanel>
-          </PaperStack>
+      <div className="container-prose max-w-2xl py-16">
+        <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          {t("submit.formEyebrow")}
         </div>
+        <h1 className="mt-3 font-serif text-4xl">{obj?.name ?? "—"}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">{t("submit.formBody")}</p>
+
+        {draftRestored && (
+          <div className="mt-6 flex items-center justify-between gap-3 border border-dashed border-border bg-card/60 p-3 text-xs">
+            <span className="text-muted-foreground">{t("submit.draftRestored")}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setContent("");
+                setScreenshotUrl("");
+                setReferenceUrl("");
+                clearDraft();
+              }}
+              className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              {t("submit.clearDraft")}
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={runSubmit} className="mt-10 space-y-6">
+          <div>
+            <label className="block text-sm font-medium">{t("submit.question")}</label>
+            <textarea
+              required
+              minLength={10}
+              maxLength={2000}
+              rows={8}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={t("submit.placeholder")}
+              className="mt-2 w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
+            />
+            <div className="mt-3 border-l-2 border-border pl-3 text-xs text-muted-foreground leading-relaxed">
+              {t("submit.autoWill")}
+              <div className="mt-1 space-y-0.5">
+                <div>{t("submit.autoFacts")}</div>
+                <div>{t("submit.autoTags")}</div>
+                <div>{t("submit.autoEvidence")}</div>
+                <div>{t("submit.autoTemperature")}</div>
+              </div>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
+              <span>
+                {t("common.wordCount", { count: content.length })} · {t("submit.limits")}
+              </span>
+              {draftSavedAt && (
+                <span>
+                  {t("submit.draftSavedAt", {
+                    time: formatTimeForLanguage(draftSavedAt, language),
+                  })}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowOptional((v) => !v)}
+              className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            >
+              {showOptional ? t("submit.optionalOpen") : t("submit.optionalClosed")}
+            </button>
+            {showOptional && (
+              <div className="mt-4 space-y-4 border-l-2 border-border pl-4">
+                <div>
+                  <label className="block text-xs text-muted-foreground">
+                    {t("submit.screenshotUrl")}
+                  </label>
+                  <input
+                    type="url"
+                    maxLength={500}
+                    value={screenshot_url}
+                    onChange={(e) => setScreenshotUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="mt-1 w-full border border-border bg-card p-2 text-sm outline-none focus:border-foreground"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground">
+                    {t("submit.referenceUrl")}
+                  </label>
+                  <input
+                    type="url"
+                    maxLength={500}
+                    value={reference_url}
+                    onChange={(e) => setReferenceUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="mt-1 w-full border border-border bg-card p-2 text-sm outline-none focus:border-foreground"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button className="border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent hover:border-accent">
+            {t("objects.submitObservation")}
+          </button>
+        </form>
       </div>
     </SiteLayout>
   );
-}
-
-function submitArchiveCode(id: string) {
-  const suffix = id.replace(/-/g, "").slice(0, 4).toUpperCase() || "0000";
-  return `FF-2026-${suffix}`;
 }

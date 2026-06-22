@@ -81,17 +81,13 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
         .limit(5),
       supabaseAdmin
         .from("observations")
-        .select(
-          "id, object_id, content, cleaned_content, summary, scene, reference_url, tags, evidence_level, confidence, case_code, created_at",
-        )
+        .select("id, object_id, summary, evidence_level, created_at")
         .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(8),
       supabaseAdmin
         .from("objects")
-        .select(
-          "id, name, type, temperature, observation_count, ai_summary, top_tags, created_at, updated_at",
-        )
+        .select("id, name, type, temperature, observation_count, created_at")
         .eq("status", "published")
         .eq("hidden", false)
         .order("created_at", { ascending: false })
@@ -127,25 +123,11 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
   const { data: objs } = allIds.length
     ? await supabaseAdmin
         .from("objects")
-        .select(
-          "id, name, type, temperature, observation_count, ai_summary, top_tags, created_at, updated_at",
-        )
+        .select("id, name, type, temperature")
         .in("id", allIds)
         .eq("hidden", false)
         .eq("status", "published")
-    : {
-        data: [] as Array<{
-          id: string;
-          name: string;
-          type: string;
-          temperature: number;
-          observation_count: number;
-          ai_summary: string | null;
-          top_tags: { tag: string; count: number }[] | null;
-          created_at: string;
-          updated_at: string | null;
-        }>,
-      };
+    : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
   const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
   const pack = (ids: string[]) =>
@@ -243,40 +225,14 @@ export const getTrendingTopics = createServerFn({ method: "GET" })
 export const getTopicDetail = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ tag: z.string().min(1).max(60) }).parse(i))
   .handler(async ({ data }) => {
-    const observationSelect = `id, object_id, summary, cleaned_content, content, scene, tags, evidence_level,
-      case_code, reference_url, screenshot_url, created_at,
-      objects!inner (
-        id, name, type, temperature, observation_count, ai_summary, top_tags,
-        heat_sources, cooling_sources, updated_at, hidden, status
-      )`;
-    const loadAllObservations = async () => {
-      const pageSize = 1000;
-      const rows: unknown[] = [];
-      let total: number | null = null;
-
-      for (let offset = 0; ; offset += pageSize) {
-        const page = await supabaseAdmin
-          .from("observations")
-          .select(observationSelect, { count: "exact" })
-          .eq("status", "approved")
-          .eq("objects.hidden", false)
-          .eq("objects.status", "published")
-          .contains("tags", [data.tag])
-          .order("created_at", { ascending: false })
-          .range(offset, offset + pageSize - 1);
-        if (page.error) throw new Error(page.error.message);
-
-        const pageRows = page.data ?? [];
-        rows.push(...pageRows);
-        total = page.count ?? total;
-        if (pageRows.length < pageSize || (total !== null && rows.length >= total)) break;
-      }
-
-      return { rows, total: total ?? rows.length };
-    };
-
     const [obs, cases] = await Promise.all([
-      loadAllObservations(),
+      supabaseAdmin
+        .from("observations")
+        .select("id, object_id, summary, evidence_level, created_at")
+        .eq("status", "approved")
+        .contains("tags", [data.tag])
+        .order("created_at", { ascending: false })
+        .limit(40),
       supabaseAdmin
         .from("knowledge_cases" as never)
         .select("code, title, summary, polarity, created_at")
@@ -285,35 +241,38 @@ export const getTopicDetail = createServerFn({ method: "GET" })
         .order("created_at", { ascending: false })
         .limit(20),
     ]);
-    if (cases.error) throw new Error(cases.error.message);
-
-    const obsRows = obs.rows as Array<{
+    const obsRows = (obs.data ?? []) as Array<{
       id: string;
       object_id: string;
       summary: string | null;
-      cleaned_content: string | null;
-      content: string | null;
-      scene: string | null;
-      tags: string[] | null;
       evidence_level: string | null;
-      case_code: string | null;
-      reference_url: string | null;
-      screenshot_url: string | null;
       created_at: string;
-      objects: {
-        id: string;
-        name: string;
-        type: string;
-        temperature: number;
-        observation_count: number;
-        ai_summary: string | null;
-        top_tags: { tag: string; count: number }[] | null;
-        heat_sources: { label?: string; title?: string }[] | null;
-        cooling_sources: { label?: string; title?: string }[] | null;
-        updated_at: string | null;
-      };
     }>;
-    const objectMap = new Map(obsRows.map((o) => [o.objects.id, o.objects]));
+    const ids = [...new Set(obsRows.map((o) => o.object_id))];
+    const { data: objs } = ids.length
+      ? await supabaseAdmin
+          .from("objects")
+          .select(
+            "id, name, type, temperature, observation_count, ai_summary, top_tags, heat_sources, cooling_sources, updated_at",
+          )
+          .in("id", ids)
+          .eq("hidden", false)
+          .eq("status", "published")
+      : {
+          data: [] as Array<{
+            id: string;
+            name: string;
+            type: string;
+            temperature: number;
+            observation_count: number;
+            ai_summary: string | null;
+            top_tags: { tag: string; count: number }[] | null;
+            heat_sources: { label?: string; title?: string }[] | null;
+            cooling_sources: { label?: string; title?: string }[] | null;
+            updated_at: string | null;
+          }>,
+        };
+    const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
     // 月度趋势
     const monthly = new Map<string, number>();
@@ -325,13 +284,10 @@ export const getTopicDetail = createServerFn({ method: "GET" })
 
     return {
       tag: data.tag,
-      total: obs.total,
+      total: obsRows.length,
       trend,
-      related_objects: [...objectMap.values()].slice(0, 12),
-      observations: obsRows.map((o) => {
-        const { objects, ...observation } = o;
-        return { ...observation, object: objects };
-      }),
+      related_objects: (objs ?? []).slice(0, 12),
+      observations: obsRows.map((o) => ({ ...o, object: oMap.get(o.object_id) ?? null })),
       cases: cases.data ?? [],
     };
   });

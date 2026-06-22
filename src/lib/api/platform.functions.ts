@@ -2209,35 +2209,15 @@ export const requestObjectFromSearch = createServerFn({ method: "POST" })
     return { status: "created" as const, requestId: inserted!.id, name };
   });
 
-function firstAdminClaimEnabled() {
-  return process.env.ALLOW_FIRST_ADMIN_CLAIM === "true";
-}
-
-export const getFirstAdminClaimAvailability = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    if (!firstAdminClaimEnabled()) {
-      return { enabled: false, available: false };
-    }
-    const { count, error } = await supabaseAdmin
-      .from("user_roles")
-      .select("*", { count: "exact", head: true })
-      .eq("role", "admin");
-    if (error) throw new Error(error.message);
-    return { enabled: true, available: (count ?? 0) === 0 };
-  });
-
 // ===== 首位管理员自助声明 =====
 export const claimFirstAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    if (!firstAdminClaimEnabled()) throw new Error("初始管理员自助声明未启用");
     const { userId } = context;
-    const { count, error: countError } = await supabaseAdmin
+    const { count } = await supabaseAdmin
       .from("user_roles")
       .select("*", { count: "exact", head: true })
       .eq("role", "admin");
-    if (countError) throw new Error(countError.message);
     if ((count ?? 0) > 0) throw new Error("已存在管理员，无法自助声明");
     const { error } = await supabaseAdmin
       .from("user_roles")
