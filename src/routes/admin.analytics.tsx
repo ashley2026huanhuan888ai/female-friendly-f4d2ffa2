@@ -115,8 +115,7 @@ function Analytics() {
           <div>
             <h2 className="font-serif text-2xl">全部注册用户</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              共 {userTotal} 位用户
-              {userTotal > users.length ? `，仅显示最近 ${users.length} 位` : ""}
+              共 {userTotal} 位用户{userTotal > users.length ? `，仅显示最近 ${users.length} 位` : ""}
               {userTotal > users.length && (
                 <>
                   ，前往{" "}

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   adminListObjects,
@@ -47,7 +47,7 @@ function ObjectsAdmin() {
   const [manualTemp, setManualTemp] = useState<Record<string, string>>({});
   const [mergeTo, setMergeTo] = useState<Record<string, string>>({});
 
-  const reload = useCallback(async () => {
+  const reload = async () => {
     const result = (await listObjects({})) as {
       items: Obj[];
       merged_groups: number;
@@ -57,10 +57,10 @@ function ObjectsAdmin() {
     if (result.merged_objects > 0) {
       toast.success(`已自动合并 ${result.merged_groups} 组同名对象`);
     }
-  }, [listObjects]);
+  };
   useEffect(() => {
     void reload();
-  }, [reload]);
+  }, [listObjects]);
 
   const wrap = async (id: string, fn: () => Promise<unknown>, ok = "完成") => {
     try {

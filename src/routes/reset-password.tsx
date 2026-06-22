@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { toast } from "sonner";
 import { useI18n, usePageMeta } from "@/lib/i18n";
-import { checkPasswordSafety } from "@/lib/password-security";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "重置密码 · 女性友好体验测评" }] }),
@@ -51,15 +50,6 @@ function ResetPasswordPage() {
     }
     setPending(true);
     try {
-      const safety = await checkPasswordSafety(password);
-      if (!safety.safe) {
-        setError(
-          safety.reason === "pwned"
-            ? t("reset.passwordPwned", { count: safety.breachCount })
-            : t("reset.passwordCheckUnavailable"),
-        );
-        return;
-      }
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       toast.success(t("reset.updated"));
