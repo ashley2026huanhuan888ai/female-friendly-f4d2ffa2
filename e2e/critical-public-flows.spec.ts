@@ -11,7 +11,7 @@ async function openFirstPublishedObject(page: import("@playwright/test").Page) {
   await page.goto("/objects");
   await page.waitForLoadState("networkidle").catch(() => {});
 
-  const firstObjectLink = page.getByRole("link", { name: /查看详情[:：]/ }).first();
+  const firstObjectLink = page.getByRole("link", { name: /查看对象详情：/ }).first();
   test.skip((await firstObjectLink.count()) === 0, "No published objects are available.");
   await expect(firstObjectLink).toBeVisible();
   await firstObjectLink.click();

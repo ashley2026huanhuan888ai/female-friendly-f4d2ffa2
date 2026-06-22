@@ -7,7 +7,6 @@ import { BackToHome } from "@/components/BackToHome";
 
 import { useAuth } from "@/components/auth-context";
 import { recordPresence } from "@/lib/api/presence.functions";
-import { getCurrentUserAccess } from "@/lib/api/platform.functions";
 import { useI18n } from "@/lib/i18n";
 
 const PRESENCE_VISITOR_KEY = "ff_presence_visitor_id";
@@ -21,16 +20,9 @@ const PRIMARY_NAV = [
 
 const SECONDARY_NAV = [
   { to: "/topics", labelKey: "nav.topics" },
-  { to: "/archive/evidence", labelKey: "nav.archive" },
+  { to: "/archive/evidence", labelKey: "nav.evidence" },
   { to: "/knowledge", labelKey: "nav.knowledge" },
   { to: "/about", labelKey: "nav.about" },
-] as const;
-
-const DESK_NAV = [
-  { to: "/objects", label: "对象库" },
-  { to: "/feed", label: "观察动态" },
-  { to: "/knowledge", label: "知识库" },
-  { to: "/archive/evidence", label: "提交记录" },
 ] as const;
 
 function createPresenceVisitorId() {
@@ -54,22 +46,13 @@ function getPresenceVisitorId() {
   }
 }
 
-export function SiteLayout({
-  children,
-  variant = "default",
-}: {
-  children: ReactNode;
-  variant?: "default" | "desk";
-}) {
-  const { ready, user, email, isAdmin, unread, signOut: authSignOut } = useAuth();
+export function SiteLayout({ children }: { children: ReactNode }) {
+  const { email, isAdmin, unread, signOut: authSignOut } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [canSeeAdminNav, setCanSeeAdminNav] = useState(false);
   const { language, setLanguage, t } = useI18n();
   const recordPresenceFn = useServerFn(recordPresence);
-  const getAccess = useServerFn(getCurrentUserAccess);
 
   const router = useRouter();
-  const isDeskVariant = variant === "desk";
 
   // 路由变化时关闭移动菜单
   useEffect(() => {
@@ -106,105 +89,54 @@ export function SiteLayout({
     };
   }, [recordPresenceFn]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const checkAdminAccess = async () => {
-      if (!ready || !user) {
-        setCanSeeAdminNav(false);
-        return;
-      }
-      if (isAdmin) {
-        setCanSeeAdminNav(true);
-        return;
-      }
-      try {
-        const access = await getAccess({});
-        if (!cancelled) setCanSeeAdminNav(access.isAdmin);
-      } catch {
-        if (!cancelled) setCanSeeAdminNav(false);
-      }
-    };
-
-    void checkAdminAccess();
-    return () => {
-      cancelled = true;
-    };
-  }, [ready, user, isAdmin, getAccess]);
-
   const signOut = async () => {
     await authSignOut();
     router.invalidate();
   };
 
   return (
-    <div
-      className={
-        isDeskVariant
-          ? "min-h-screen bg-[oklch(0.14_0.012_60)] text-foreground"
-          : "min-h-screen bg-background text-foreground"
-      }
-    >
-      <header
-        className={
-          isDeskVariant
-            ? "home-desk-nav absolute left-0 top-0 z-40 w-full border-b border-white/10 bg-black/15 text-paper backdrop-blur-sm"
-            : "sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur"
-        }
-      >
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur">
         <div className="container-prose flex h-16 items-center justify-between gap-3">
-          <Link to="/" className="flex min-w-0 items-baseline gap-3 lg:min-w-fit">
-            <span className="block truncate font-serif text-xl tracking-tight">
-              {isDeskVariant ? "女性友好体验监测站" : t("app.name")}
-            </span>
-            <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground lg:inline">
-              {isDeskVariant ? "Female-Friendly Experience Archive" : t("app.brand.en")}
+          <Link to="/" className="flex items-baseline gap-3">
+            <span className="font-serif text-xl tracking-tight">{t("app.name")}</span>
+            <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground md:inline">
+              {t("app.brand.en")}
             </span>
           </Link>
 
           {/* 桌面端主导航 */}
-          <nav className="hidden items-center gap-5 text-sm lg:flex">
-            {isDeskVariant ? (
-              DESK_NAV.map((l) => (
-                <Link
-                  key={l.to}
-                  to={l.to}
-                  className="text-foreground hover:text-[var(--archive-pink)]"
-                >
-                  {l.label}
-                </Link>
-              ))
-            ) : (
-              <>
-                {PRIMARY_NAV.map((l) => (
-                  <Link
-                    key={l.to}
-                    to={l.to}
-                    className="whitespace-pre-line text-muted-foreground hover:text-foreground"
-                  >
-                    {t(l.labelKey)}
-                  </Link>
-                ))}
-                <span className="h-4 w-px bg-border" aria-hidden />
-                {SECONDARY_NAV.map((l) => (
-                  <Link
-                    key={l.to}
-                    to={l.to}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    {t(l.labelKey)}
-                  </Link>
-                ))}
-              </>
-            )}
+          <nav className="hidden items-center gap-5 text-sm md:flex">
+            {PRIMARY_NAV.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className="whitespace-pre-line text-muted-foreground hover:text-foreground"
+              >
+                {t(l.labelKey)}
+              </Link>
+            ))}
+            <span className="h-4 w-px bg-border" aria-hidden />
+            {SECONDARY_NAV.map((l) => (
+              <Link key={l.to} to={l.to} className="text-muted-foreground hover:text-foreground">
+                {t(l.labelKey)}
+              </Link>
+            ))}
           </nav>
 
           {/* 右侧账号区（桌面） */}
-          <div className="hidden items-center gap-3 text-sm lg:flex">
+          <div className="hidden items-center gap-3 text-sm md:flex">
             <LanguageToggle language={language} setLanguage={setLanguage} />
-            {canSeeAdminNav && (
-              <Link to="/admin" className="text-accent hover:text-accent/80">
-                {t("nav.admin")}
+            {email && (
+              <Link
+                to="/admin"
+                className={
+                  isAdmin
+                    ? "text-accent hover:text-accent/80"
+                    : "text-muted-foreground hover:text-foreground"
+                }
+              >
+                {isAdmin ? t("nav.admin") : t("nav.adminEntry")}
               </Link>
             )}
             {email ? (
@@ -231,9 +163,8 @@ export function SiteLayout({
             )}
           </div>
 
-          {/* 手机/平板：语言 + 登录/我的 + 汉堡 */}
-          <div className="flex shrink-0 items-center gap-2 lg:hidden">
-            <MobileLanguageButton language={language} setLanguage={setLanguage} />
+          {/* 移动端：登录/注册 + 汉堡 */}
+          <div className="flex items-center gap-2 md:hidden">
             {!email && (
               <Link
                 to="/login"
@@ -275,13 +206,7 @@ export function SiteLayout({
 
         {/* 移动端展开菜单 */}
         {menuOpen && (
-          <div
-            className={
-              isDeskVariant
-                ? "border-t border-white/10 bg-[oklch(0.16_0.012_60/0.96)] lg:hidden"
-                : "border-t border-border bg-paper lg:hidden"
-            }
-          >
+          <div className="border-t border-border bg-paper md:hidden">
             <nav className="container-prose flex flex-col py-2 text-sm">
               {PRIMARY_NAV.map((l) => (
                 <Link
@@ -304,7 +229,10 @@ export function SiteLayout({
                   {t(l.labelKey)}
                 </Link>
               ))}
-              {canSeeAdminNav && (
+              <div className="border-b border-border/50 py-3">
+                <LanguageToggle language={language} setLanguage={setLanguage} />
+              </div>
+              {isAdmin && (
                 <>
                   <Link to="/admin" className="border-b border-border/50 py-3 text-accent">
                     {t("nav.admin")}
@@ -322,6 +250,11 @@ export function SiteLayout({
                     {t("nav.adminRequests")}
                   </Link>
                 </>
+              )}
+              {email && !isAdmin && (
+                <Link to="/admin" className="border-b border-border/50 py-3 text-muted-foreground">
+                  {t("nav.adminEntry")}
+                </Link>
               )}
               {email ? (
                 <>
@@ -401,29 +334,5 @@ function LanguageToggle({
         EN
       </button>
     </div>
-  );
-}
-
-function MobileLanguageButton({
-  language,
-  setLanguage,
-}: {
-  language: "zh" | "en";
-  setLanguage: (language: "zh" | "en") => void;
-}) {
-  const nextLanguage = language === "zh" ? "en" : "zh";
-  const label = language === "zh" ? "EN" : "中文";
-  const actionLabel = language === "zh" ? "切换到 English" : "Switch to 中文";
-
-  return (
-    <button
-      type="button"
-      aria-label={actionLabel}
-      title={actionLabel}
-      onClick={() => setLanguage(nextLanguage)}
-      className="flex h-9 min-w-12 items-center justify-center border border-border px-2 text-[11px] font-medium uppercase tracking-wider text-foreground hover:bg-foreground hover:text-background"
-    >
-      {label}
-    </button>
   );
 }
