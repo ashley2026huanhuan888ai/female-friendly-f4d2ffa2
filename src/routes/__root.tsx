@@ -9,10 +9,9 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { APP_BUILT_AT, APP_COMMIT } from "@/lib/build-info";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { BackToHome } from "@/components/BackToHome";
-import { hasPublicSupabaseConfig, supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/components/AuthProvider";
 import { LanguageProvider, useI18n } from "@/lib/i18n";
 
@@ -94,8 +93,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       { name: "google-site-verification", content: "L551CW5rBlsTsiBwNEF2UUVMlf1FyA6yNOaXqI_9oeQ" },
-      { name: "app-commit", content: APP_COMMIT },
-      { name: "app-built-at", content: APP_BUILT_AT },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -104,7 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=Noto+Serif+SC:wght@500;700&family=Noto+Sans+SC:wght@400;500&display=swap",
-        fetchPriority: "high",
+        fetchpriority: "high",
       },
     ],
   }),
@@ -132,7 +129,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useEffect(() => {
-    if (!hasPublicSupabaseConfig()) return;
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {

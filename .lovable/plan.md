@@ -1,3 +1,12 @@
-将 `.archive-editorial-temperature-card` 的 `bottom` 值从 `-2.4rem` 上调为合适的正值，使温度卡整体上移进入截图中红色框标示的区域（两张档案表底部附近）。保持 `left: 50%`、`transform: translateX(-50%) rotate(1.3deg)`、`width`、`z-index` 等其他属性不变。
+## 目标
+将「全部对象」页面（`/objects`）的默认排序从「温度从高到低」改为「最近更新」。
 
-由于仅凭截图难以确定精确的像素坐标，实施时会通过预览快速微调 `bottom` 数值，确保卡片完整位于红色框内，随后向您展示效果确认。
+## 改动范围
+- **`src/routes/objects.index.tsx`**
+  - 修改第 42 行 `useState<"temp" | "recent">("temp")` 为 `useState<"temp" | "recent">("recent")`。
+  - 其他逻辑、筛选器、UI 文案均不改动。
+
+## 不改动
+- 不改动 `src/lib/api/platform.functions.ts` 中的 `getPublicObjects` 排序逻辑（该函数已支持 `recent` 参数）。
+- 不改动页面上的下拉选项顺序或标签文案。
+- 不改动任何其他页面或组件。

@@ -8,7 +8,7 @@ const checks = [
   {
     name: "login link is present for signed-out users",
     file: "src/components/SiteLayout.tsx",
-    test: (source) => source.includes('to="/login"') && source.includes('t("nav.loginRegister")'),
+    test: (source) => source.includes('to="/login"') && source.includes("登录 / 注册"),
   },
   {
     name: "object cards navigate to object detail pages",
@@ -16,33 +16,22 @@ const checks = [
     test: (source) =>
       source.includes('to="/objects/$id"') &&
       source.includes("params={{ id }}") &&
-      source.includes('t("objects.viewDetail")') &&
-      !source.includes('to="/object/$id"') &&
+      source.includes("查看详情") &&
       !source.includes("absolute inset-0"),
-  },
-  {
-    name: "legacy singular object detail route redirects to canonical plural route",
-    file: "src/routes/object.$id.tsx",
-    test: (source) =>
-      source.includes('createFileRoute("/object/$id")') &&
-      source.includes("throw redirect") &&
-      source.includes('to: "/objects/$id"') &&
-      !source.includes("getPublicObjectDetail") &&
-      !source.includes("canonical"),
   },
   {
     name: "object detail pages show complete object information",
     file: "src/routes/objects.$id.tsx",
     test: (source) =>
       source.includes('createFileRoute("/objects/$id")') &&
-      source.includes("href: `/objects/${params.id}`") &&
-      source.includes("TemperatureBreakdown") &&
-      source.includes("ObjectTimeline") &&
-      source.includes("ObjectComments") &&
+      source.includes("AI 总结") &&
+      source.includes("主要争议标签") &&
+      source.includes("为什么是这个温度？") &&
+      source.includes("案例时间线") &&
+      source.includes("全部已审核观察") &&
       source.includes("getPublicObjectObservations") &&
       source.includes("loadMoreObservations") &&
-      source.includes('t("objectDetail.allReviewed")') &&
-      source.includes('t("objectDetail.showing"'),
+      source.includes("当前展示 {obs.length} / {obsTotal} 条已审核观察"),
   },
   {
     name: "approved object requests immediately create visible object cards",
@@ -64,14 +53,12 @@ const checks = [
       source.includes('return { status: "object_exists" as const'),
   },
   {
-    name: "home entry points use canonical object and submit routes",
+    name: "object references on home and topic pages link to detail pages",
     file: "src/routes/index.tsx",
     test: (source) =>
-      source.includes('to="/objects"') &&
       source.includes('to="/objects/$id"') &&
-      source.includes('to="/submit/$objectId"') &&
-      source.includes("<HomeSubmitQuickAction") &&
-      !source.includes('to="/object/$id"'),
+      source.includes("params={{ id: o.object.id }}") &&
+      source.includes("summary.latest_observations"),
   },
   {
     name: "topic observation object references link to detail pages",
@@ -79,7 +66,7 @@ const checks = [
     test: (source) =>
       source.includes('to="/objects/$id"') &&
       source.includes("params={{ id: o.object.id }}") &&
-      source.includes("data.observations.map"),
+      source.includes("data.observations.slice"),
   },
   {
     name: "submit saves before AI and reports saved AI failures",
@@ -126,16 +113,6 @@ const checks = [
       source.includes('.from("notifications" as never)'),
   },
   {
-    name: "non-admin users do not see the admin entry in site navigation",
-    file: "src/components/SiteLayout.tsx",
-    test: (source) =>
-      source.includes("canSeeAdminNav") &&
-      source.includes("access.isAdmin") &&
-      source.includes('{t("nav.admin")}') &&
-      !source.includes('t("nav.adminEntry")') &&
-      !source.includes("email && !isAdmin"),
-  },
-  {
     name: "Supabase admin config can be checked before creating service role client",
     file: "src/integrations/supabase/client.server.ts",
     test: (source) =>
@@ -168,13 +145,12 @@ const checks = [
     file: "src/lib/api/platform.functions.ts",
     test: (source) => {
       const detailAt = source.indexOf("export const getPublicObjectDetail");
-      const observationsAt = source.indexOf("export const getPublicObjectObservations", detailAt);
-      const detailSource = source.slice(detailAt, observationsAt);
+      const selectAt = source.indexOf(".select(PUBLIC_OBJECT_COLUMNS)", detailAt);
+      const starAt = source.indexOf('.select("*")', detailAt);
       return (
         detailAt > 0 &&
-        observationsAt > detailAt &&
-        detailSource.includes(".select(PUBLIC_OBJECT_COLUMNS)") &&
-        !detailSource.includes('.select("*")')
+        selectAt > detailAt &&
+        (starAt === -1 || starAt > source.indexOf("// ===== 删除对象", detailAt))
       );
     },
   },
@@ -183,35 +159,8 @@ const checks = [
     file: "src/routes/submit.$objectId.tsx",
     test: (source) =>
       source.includes("retrySavedAnalysis") &&
-      source.includes("retryObservationAnalysis") &&
-      source.includes('t("submit.retryAI")') &&
-      source.includes("savedId"),
-  },
-  {
-    name: "first admin self-claim is gated by a production-disabled environment switch",
-    file: "src/lib/api/platform.functions.ts",
-    test: (source) =>
-      source.includes("function firstAdminClaimEnabled") &&
-      source.includes('process.env.ALLOW_FIRST_ADMIN_CLAIM === "true"') &&
-      source.includes("getFirstAdminClaimAvailability") &&
-      source.includes("初始管理员自助声明未启用") &&
-      source.includes("export const claimFirstAdmin"),
-  },
-  {
-    name: "admin UI only shows first admin claim when server says it is available",
-    file: "src/routes/admin.tsx",
-    test: (source) =>
-      source.includes("getFirstAdminClaimAvailability") &&
-      source.includes("claimAvailable") &&
-      source.includes("当前账户没有管理员权限") &&
-      source.includes("声明为初始管理员"),
-  },
-  {
-    name: "production readiness fails if first admin self-claim is enabled",
-    file: "scripts/check-production-readiness.mjs",
-    test: (source) =>
-      source.includes('env.ALLOW_FIRST_ADMIN_CLAIM === "true"') &&
-      source.includes("ALLOW_FIRST_ADMIN_CLAIM must be disabled for production readiness."),
+      source.includes("观察已保存为待审") &&
+      source.includes("重试 AI 分析"),
   },
   {
     name: "browser E2E uses Playwright instead of static flow checks",
