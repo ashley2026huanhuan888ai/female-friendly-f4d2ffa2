@@ -134,6 +134,9 @@ function Index() {
                 <p className="mt-6 border-t border-border pt-4 text-xs leading-5 text-muted-foreground">
                   {t("home.topicWall.hint")}
                 </p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground/80">
+                  {t("home.topicWall.trust")}
+                </p>
               </>
             ) : (
               <p className="mt-6 text-sm leading-6 text-muted-foreground">
