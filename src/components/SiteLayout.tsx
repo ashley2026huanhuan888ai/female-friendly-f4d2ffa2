@@ -283,8 +283,8 @@ export function SiteLayout({
       </header>
 
       <main>
-        <p className="sr-only">Agent Golden Path public verification 503dcb51f7f6</p>
-        {children}
+        <p className="sr-only">Agent Golden Path public verification c2d48bec3bfe</p>
+{children}
       </main>
 
       {router.state.location.pathname !== "/" && (
