@@ -634,6 +634,7 @@ const COPY = {
       "所有 A 级、可核实的证据条目按对象与时间公开列出，可点击进入原始案例。",
     "howWeJudge.card.evidence.cta": "进入证据库",
     "howWeJudge.feedback": "发现误判或希望补充证据？欢迎反馈：",
+  },
   en: {
     "app.name": "Female-Friendly Experience Assessment",
     "app.tagline": "Observe · Analyze · No judgment",
