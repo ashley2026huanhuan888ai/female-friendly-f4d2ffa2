@@ -65,16 +65,19 @@ function Index() {
             </h1>
             <ol className="mt-8 grid grid-cols-3 gap-2 sm:gap-3">
               {([1, 2, 3] as const).map((n) => (
-                <li
-                  key={n}
-                  className="flex flex-col gap-1 border border-border bg-card p-2 sm:flex-row sm:items-start sm:gap-3 sm:p-4"
-                >
-                  <span className="font-mono text-[10px] tabular-nums text-accent sm:text-xs">
-                    0{n}
-                  </span>
-                  <span className="text-[11px] leading-snug text-foreground sm:text-sm sm:leading-6">
-                    {t(`home.steps.${n}` as never)}
-                  </span>
+                <li key={n}>
+                  <Link
+                    to="/login"
+                    aria-label={t(`home.steps.${n}` as never)}
+                    className="flex h-full flex-col gap-1 border border-border bg-card p-2 transition-colors hover:border-foreground hover:bg-card/80 sm:flex-row sm:items-start sm:gap-3 sm:p-4"
+                  >
+                    <span className="font-mono text-[10px] tabular-nums text-accent sm:text-xs">
+                      0{n}
+                    </span>
+                    <span className="text-[11px] leading-snug text-foreground sm:text-sm sm:leading-6">
+                      {t(`home.steps.${n}` as never)}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ol>
