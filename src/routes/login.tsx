@@ -28,6 +28,10 @@ function LoginPage() {
   const safeRedirect = typeof redirect === "string" && redirect.startsWith("/") ? redirect : "/";
   const { ready, user } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [method, setMethod] = useState<"password" | "otp">("password");
+  const [otpStep, setOtpStep] = useState<"request" | "verify">("request");
+  const [otpCode, setOtpCode] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
@@ -40,6 +44,12 @@ function LoginPage() {
     raw?: string;
     canResend?: boolean;
   }>(null);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [resendCooldown]);
 
   useEffect(() => {
     if (ready && user) navigate({ to: safeRedirect, replace: true });
