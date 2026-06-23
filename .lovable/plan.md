@@ -1,1 +1,1 @@
-将 `src/lib/i18n.tsx` 中文案 `home.heating` 由"近期升温对象"改为"近期性别争议对象"。英文 `home.heating` 同步更新为对应表述（如 "Recent gender-controversy objects"）。其他位置不动。
+在 `src/routes/index.tsx` 中给"近期性别争议对象"列表加客户端过滤：`items={(summary?.heating ?? []).filter((o: any) => (o.temperature ?? 0) >= 40)}`。仅前端筛选，不动后端与数据。
