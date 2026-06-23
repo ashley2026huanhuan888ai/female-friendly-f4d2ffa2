@@ -371,95 +371,203 @@ function LoginPage() {
         <h1 className="mt-3 font-serif text-4xl">
           {mode === "signin" ? t("login.signIn") : t("login.signUp")}
         </h1>
-        <p className="mt-3 text-sm text-muted-foreground">{t("login.description")}</p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("login.intro")}</p>
 
-        <form onSubmit={onSubmit} className="mt-10 space-y-4">
-          {errorDetail && (
-            <div role="alert" className="border border-destructive/40 bg-destructive/5 p-3 text-xs">
-              <div className="font-medium text-destructive">{errorDetail.title}</div>
-              <div className="mt-1 text-muted-foreground">{errorDetail.hint}</div>
-              {errorDetail.canResend && (
+        {/* method tabs */}
+        <div className="mt-8 flex border border-border text-sm">
+          {(["password", "otp"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setMethod(m);
+                setErrorDetail(null);
+                setOtpStep("request");
+                setOtpCode("");
+              }}
+              className={`flex-1 px-4 py-2 ${
+                method === m
+                  ? "bg-foreground text-background"
+                  : "bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t(m === "password" ? "login.tab.password" : "login.tab.otp")}
+            </button>
+          ))}
+        </div>
+
+        {errorDetail && (
+          <div
+            role="alert"
+            className="mt-4 border border-destructive/40 bg-destructive/5 p-3 text-xs"
+          >
+            <div className="font-medium text-destructive">{errorDetail.title}</div>
+            <div className="mt-1 text-muted-foreground">{errorDetail.hint}</div>
+            {errorDetail.canResend && (
+              <button
+                type="button"
+                onClick={resendVerification}
+                className="mt-2 border border-destructive/40 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
+              >
+                {t("login.resend")}
+              </button>
+            )}
+            {(errorDetail.code || errorDetail.status || errorDetail.raw) && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-muted-foreground">
+                  {t("login.errorDetails")}
+                </summary>
+                <div className="mt-1 space-y-0.5 font-mono text-[11px] text-muted-foreground">
+                  {errorDetail.code && <div>error_code: {errorDetail.code}</div>}
+                  {errorDetail.status !== undefined && <div>http_status: {errorDetail.status}</div>}
+                  {errorDetail.raw && <div className="break-all">raw: {errorDetail.raw}</div>}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
+
+        {method === "password" ? (
+          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+            <input
+              type="email"
+              required
+              placeholder={t("login.email")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
+            />
+            <input
+              type="password"
+              required
+              placeholder={t("login.password")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
+            />
+            {mode === "signup" && (
+              <p className="text-xs text-muted-foreground">{t("login.passwordRule")}</p>
+            )}
+            <label className="flex cursor-pointer select-none items-center gap-2 py-1 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRememberState(e.target.checked)}
+                className="h-4 w-4 cursor-pointer accent-foreground"
+              />
+              <span>{t("login.remember")}</span>
+            </label>
+            <button
+              disabled={pending}
+              className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50"
+            >
+              {pending
+                ? t("login.processing")
+                : mode === "signin"
+                  ? t("login.signIn")
+                  : t("login.registerAndSignIn")}
+            </button>
+          </form>
+        ) : (
+          <div className="mt-6 space-y-4">
+            <p className="text-xs text-muted-foreground">{t("login.otp.hint")}</p>
+            <input
+              type="email"
+              required
+              placeholder={t("login.email")}
+              value={email}
+              disabled={otpStep === "verify"}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground disabled:opacity-60"
+            />
+            {otpStep === "verify" && (
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]*"
+                maxLength={6}
+                placeholder={t("login.otp.codeLabel")}
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                className="w-full border border-border bg-card p-3 text-center font-mono text-lg tracking-[0.4em] outline-none focus:border-foreground"
+              />
+            )}
+            <label className="flex cursor-pointer select-none items-center gap-2 py-1 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRememberState(e.target.checked)}
+                className="h-4 w-4 cursor-pointer accent-foreground"
+              />
+              <span>{t("login.remember")}</span>
+            </label>
+            {otpStep === "request" ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={sendOtp}
+                className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50"
+              >
+                {pending ? t("login.processing") : t("login.otp.send")}
+              </button>
+            ) : (
+              <>
                 <button
                   type="button"
-                  onClick={resendVerification}
-                  className="mt-2 border border-destructive/40 px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
+                  disabled={pending}
+                  onClick={verifyOtp}
+                  className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50"
                 >
-                  {t("login.resend")}
+                  {pending ? t("login.processing") : t("login.otp.verify")}
                 </button>
-              )}
-              {(errorDetail.code || errorDetail.status || errorDetail.raw) && (
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-muted-foreground">
-                    {t("login.errorDetails")}
-                  </summary>
-                  <div className="mt-1 space-y-0.5 font-mono text-[11px] text-muted-foreground">
-                    {errorDetail.code && <div>error_code: {errorDetail.code}</div>}
-                    {errorDetail.status !== undefined && (
-                      <div>http_status: {errorDetail.status}</div>
-                    )}
-                    {errorDetail.raw && <div className="break-all">raw: {errorDetail.raw}</div>}
-                  </div>
-                </details>
-              )}
-            </div>
-          )}
-          <input
-            type="email"
-            required
-            placeholder={t("login.email")}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
-          />
-          <input
-            type="password"
-            required
-            placeholder={t("login.password")}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
-          />
-          {mode === "signup" && (
-            <p className="text-xs text-muted-foreground">{t("login.passwordRule")}</p>
-          )}
-          <label className="flex cursor-pointer select-none items-center gap-2 py-1 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRememberState(e.target.checked)}
-              className="h-4 w-4 cursor-pointer accent-foreground"
-            />
-            <span>{t("login.remember")}</span>
-          </label>
-          <button
-            disabled={pending}
-            className="w-full border border-foreground bg-foreground px-6 py-3 text-sm text-background hover:bg-accent disabled:opacity-50"
-          >
-            {pending
-              ? t("login.processing")
-              : mode === "signin"
-                ? t("login.signIn")
-                : t("login.registerAndSignIn")}
-          </button>
-        </form>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpStep("request");
+                      setOtpCode("");
+                      setErrorDetail(null);
+                    }}
+                    className="underline-offset-4 hover:underline"
+                  >
+                    {t("login.otp.changeEmail")}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={resendCooldown > 0 || pending}
+                    onClick={sendOtp}
+                    className="underline-offset-4 hover:underline disabled:opacity-50"
+                  >
+                    {resendCooldown > 0
+                      ? t("login.otp.resendIn", { seconds: resendCooldown })
+                      : t("login.otp.resend")}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
-        <div className="mt-6 flex items-center justify-between gap-3 text-sm">
-          <button
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            className="text-muted-foreground underline-offset-4 hover:underline"
-          >
-            {mode === "signin" ? t("login.toSignUp") : t("login.toSignIn")}
-          </button>
-          {mode === "signin" && (
+        {method === "password" && (
+          <div className="mt-6 flex items-center justify-between gap-3 text-sm">
             <button
-              type="button"
-              onClick={sendPasswordReset}
+              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
               className="text-muted-foreground underline-offset-4 hover:underline"
             >
-              {t("login.forgotPassword")}
+              {mode === "signin" ? t("login.toSignUp") : t("login.toSignIn")}
             </button>
-          )}
-        </div>
+            {mode === "signin" && (
+              <button
+                type="button"
+                onClick={sendPasswordReset}
+                className="text-muted-foreground underline-offset-4 hover:underline"
+              >
+                {t("login.forgotPassword")}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </SiteLayout>
   );
