@@ -183,51 +183,8 @@ function Index() {
         </div>
       </section>
 
-      {/* 新加入测评对象 */}
-      <section className="py-16">
-        <div className="container-prose">
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-serif text-3xl">{t("home.newObjects")}</h2>
-            <Link
-              to="/objects"
-              className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-            >
-              {t("common.viewAll")}
-            </Link>
-          </div>
-          {summary?.newest_objects?.length ? (
-            <ul className="mt-8 grid gap-3 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0">
-              {summary.newest_objects.map((o: any) => (
-                <li key={o.id} className="md:border-b md:border-border">
-                  <Link
-                    to="/objects/$id"
-                    params={{ id: o.id }}
-                    className="flex items-center gap-3 py-3 hover:bg-card/60"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                        {objectType(o.type)}
-                      </div>
-                      <div className="truncate font-serif">{o.name}</div>
-                    </div>
-                    <Thermometer
-                      value={o.temperature}
-                      size="sm"
-                      showLabel={false}
-                      unmeasured={(o.observation_count ?? 0) === 0}
-                    />
-                    <span className="font-mono text-xs tabular-nums text-muted-foreground shrink-0">
-                      {t("common.observationCount", { count: o.observation_count ?? 0 })}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-6 text-sm text-muted-foreground">{t("common.noObjects")}</p>
-          )}
-        </div>
-      </section>
+
+
 
       {/* 近期升温 */}
       <section className="py-16">
