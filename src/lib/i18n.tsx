@@ -297,7 +297,7 @@ const COPY = {
     "objectDetail.topTags": "主要争议标签",
     "objectDetail.submit": "提交观察 →",
     "objectDetail.reviewedCount": "共 {count} 条已审核观察",
-    "objectDetail.why": "为什么是这个温度？",
+    "objectDetail.why": "温度越高，性别争议越大，对女性恶意浓度越高",
     "objectDetail.collapse": "收起",
     "objectDetail.timeline": "温度变化时间线",
     "objectDetail.caseTimeline": "案例时间线",
@@ -558,7 +558,7 @@ const COPY = {
     "follow.loginBody": "登录后可以收藏对象，并查看温度变化提醒。",
 
     "temperatureBreakdown.empty": "尚未生成温度分解。新增观察通过审核后将自动生成。",
-    "temperatureBreakdown.title": "为什么是这个温度？",
+    "temperatureBreakdown.title": "温度越高，性别争议越大，对女性恶意浓度越高",
     "temperatureBreakdown.meta": "基准 {base}° · 多样性 ×{diversity} · 参与观察 {active}/{total}",
     "temperatureBreakdown.knowledge": "标签影响",
     "temperatureBreakdown.knowledgeHint": "负面标签 × 证据 × 置信度",
