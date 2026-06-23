@@ -177,6 +177,8 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
     }
     return best;
   };
+  const topKeys = (m: Map<string, number>, n: number) =>
+    [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => k);
 
   const pack = (ids: string[]) =>
     ids
@@ -193,10 +195,12 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
           temperature_after: Number(o.temperature),
           evidence_7d_count: agg?.count ?? 0,
           top_tag: agg ? topKey(agg.tags) : null,
+          top_tags: agg ? topKeys(agg.tags, 2) : [],
           top_evidence_level: agg ? topKey(agg.levels) : null,
         };
       })
       .filter(Boolean);
+
 
 
   const todayWithObj = (
