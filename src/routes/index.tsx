@@ -121,8 +121,8 @@ function Index() {
                     return (
                       <Link
                         key={item.tag}
-                        to="/topics/$tag"
-                        params={{ tag: item.tag }}
+                        to="/objects"
+                        search={{ tag: item.tag }}
                         aria-label={t("home.topicWall.viewTopic", { tag: label })}
                         className={`${topicWordClass(Number(item.count) || 0, maxTopicCount)} underline-offset-4 hover:text-accent hover:underline`}
                       >

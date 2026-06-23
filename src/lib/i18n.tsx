@@ -155,11 +155,11 @@ const COPY = {
     "home.cta.request": "增加新测评对象",
     "home.stats.title": "观察",
     "home.topicWall.title": "正在被观察",
-    "home.topicWall.hint": "字越大，最近 30 天被提到越多。点击查看相关观察。",
+    "home.topicWall.hint": "字越大，最近 30 天被提到越多。点击查看相关对象。",
     "home.topicWall.empty": "还没有足够的近期议题。我们等第一条观察。",
     "home.topicWall.active": "近期活跃议题",
     "home.topicWall.objects": "观察对象",
-    "home.topicWall.viewTopic": "查看「{tag}」相关观察",
+    "home.topicWall.viewTopic": "查看与「{tag}」相关的对象",
     "home.newObjects": "最新更新的测评对象",
     "home.heating": "近期升温对象",
     "home.heatingHint": "过去 7 天累计升温最多",
@@ -725,7 +725,7 @@ const COPY = {
       "Not enough recent topics yet. We are waiting for the first observation.",
     "home.topicWall.active": "Active topics",
     "home.topicWall.objects": "Observed objects",
-    "home.topicWall.viewTopic": 'View observations related to "{tag}"',
+    "home.topicWall.viewTopic": 'View objects related to "{tag}"',
     "home.newObjects": "Recently updated objects",
     "home.heating": "Recently heating objects",
     "home.heatingHint": "Largest cumulative increase in the past 7 days",
@@ -897,7 +897,7 @@ const COPY = {
 
     "topics.title": "Trending Topics",
     "topics.body":
-      "Female-experience topic tags that have been continuously observed in the past 30 days. Select any tag to view cases, related objects, and trends.",
+      "Female-experience topic tags that have been continuously observed in the past 30 days. Select any tag to view related objects.",
     "topics.empty": "Not enough observations to form trends in the past 30 days.",
     "topics.count": "{count} observations",
     "topics.summary":

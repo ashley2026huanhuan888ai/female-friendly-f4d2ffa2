@@ -58,8 +58,8 @@ function TopicsPage() {
               {items.map((item) => (
                 <li key={item.tag}>
                   <Link
-                    to="/topics/$tag"
-                    params={{ tag: item.tag }}
+                    to="/objects"
+                    search={{ tag: item.tag }}
                     className="flex items-center gap-6 py-4 transition-colors hover:bg-card/60"
                   >
                     <span className="font-serif text-xl text-balance">{tag(item.tag)}</span>

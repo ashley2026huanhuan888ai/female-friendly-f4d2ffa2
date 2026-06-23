@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
@@ -7,6 +7,13 @@ import { getTopicDetail } from "@/lib/api/observation-center.functions";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/topics/$tag")({
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/objects",
+      search: { tag: params.tag },
+      replace: true,
+    });
+  },
   component: TopicDetail,
   errorComponent: ({ error }) => (
     <SiteLayout>
