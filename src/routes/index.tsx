@@ -141,16 +141,22 @@ function Index() {
               </p>
             )}
             <div className="mt-6 grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs">
-              <div>
+              <Link
+                to="/topics"
+                className="block rounded-md transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring"
+              >
                 <div className="font-mono text-lg tabular-nums">{topicWall.length || "—"}</div>
                 <div className="mt-1 text-muted-foreground">{t("home.topicWall.active")}</div>
-              </div>
-              <div>
+              </Link>
+              <Link
+                to="/objects"
+                className="block rounded-md transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring"
+              >
                 <div className="font-mono text-lg tabular-nums">
                   {summary?.total_objects ?? "—"}
                 </div>
                 <div className="mt-1 text-muted-foreground">{t("home.topicWall.objects")}</div>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
