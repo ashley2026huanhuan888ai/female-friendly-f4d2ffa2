@@ -145,6 +145,25 @@ function LoginPage() {
         hint: t("login.error.alreadyExists.hint"),
       };
     }
+    if (rawCode === "otp_expired" || msg.includes("token has expired")) {
+      return {
+        code: "otp_expired",
+        title: t("login.error.otpExpired.title") + tag("otp_expired"),
+        hint: t("login.error.otpExpired.hint"),
+      };
+    }
+    if (
+      rawCode === "otp_invalid" ||
+      rawCode === "invalid_otp" ||
+      msg.includes("invalid otp") ||
+      msg.includes("token is invalid")
+    ) {
+      return {
+        code: "invalid_otp",
+        title: t("login.error.invalidOtp.title") + tag("invalid_otp"),
+        hint: t("login.error.invalidOtp.hint"),
+      };
+    }
     if (rawCode === "weak_password") {
       return {
         code: "weak_password",
