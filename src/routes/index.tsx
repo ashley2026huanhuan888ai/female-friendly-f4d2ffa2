@@ -63,6 +63,19 @@ function Index() {
               <span className="text-accent">{t("home.hero.title.accent")}</span>
               {t("home.hero.title.after")}
             </h1>
+            <ol className="mt-8 grid gap-3 grid-cols-1 sm:grid-cols-3">
+              {([1, 2, 3] as const).map((n) => (
+                <li
+                  key={n}
+                  className="border border-border bg-card p-4 flex items-start gap-3"
+                >
+                  <span className="font-mono text-xs tabular-nums text-accent">0{n}</span>
+                  <span className="text-sm leading-6 text-foreground">
+                    {t(`home.steps.${n}` as never)}
+                  </span>
+                </li>
+              ))}
+            </ol>
             <p className="mt-8 max-w-2xl text-base text-muted-foreground">
               {t("home.hero.body")}
               {sentenceGap}
@@ -107,16 +120,6 @@ function Index() {
                 {t("home.cta.feedback")}
               </Link>
             </div>
-            <ol className="mt-8 grid gap-4 border-t border-border pt-6 sm:grid-cols-3">
-              {([1, 2, 3] as const).map((n) => (
-                <li key={n} className="flex items-start gap-3">
-                  <span className="font-mono text-xs tabular-nums text-accent">0{n}</span>
-                  <span className="text-sm leading-6 text-foreground">
-                    {t(`home.steps.${n}` as never)}
-                  </span>
-                </li>
-              ))}
-            </ol>
           </div>
 
           <div className="border border-border bg-card p-6">
