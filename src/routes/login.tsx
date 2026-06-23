@@ -204,6 +204,69 @@ function LoginPage() {
     else toast.success(t("login.resetSuccess"));
   };
 
+  const sendOtp = async () => {
+    if (!email.trim()) {
+      toast.error(t("login.fillEmail"));
+      return;
+    }
+    setErrorDetail(null);
+    setPending(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: `${window.location.origin}${safeRedirect}`,
+        },
+      });
+      if (error) throw error;
+      setOtpStep("verify");
+      setResendCooldown(60);
+      toast.success(t("login.otp.sent", { email: email.trim() }));
+    } catch (err: any) {
+      const info = explainAuthError(err);
+      setErrorDetail({ title: info.title, hint: info.hint, code: info.code, raw: err?.message });
+      toast.error(info.title);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    if (otpCode.trim().length < 6) {
+      setErrorDetail({
+        title: t("login.error.invalidOtp.title"),
+        hint: t("login.error.invalidOtp.hint"),
+      });
+      return;
+    }
+    setErrorDetail(null);
+    setPending(true);
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otpCode.trim(),
+        type: "email",
+      });
+      if (error) throw error;
+      if (!data.session) throw new Error("No session returned");
+      try {
+        setRemember(remember);
+      } catch {
+        /* ignore */
+      }
+      toast.success(t("login.success"));
+      await navigate({ to: safeRedirect, replace: true });
+    } catch (err: any) {
+      const info = explainAuthError(err);
+      setErrorDetail({ title: info.title, hint: info.hint, code: info.code, raw: err?.message });
+      toast.error(info.title);
+    } finally {
+      setPending(false);
+    }
+  };
+
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorDetail(null);
