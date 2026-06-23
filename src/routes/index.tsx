@@ -27,15 +27,20 @@ function Index() {
   usePageMeta("seo.home.title", "seo.home.description");
   const [q, setQ] = useState("");
   const [summary, setSummary] = useState<any>(null);
+  const [obsStatus, setObsStatus] = useState<"loading" | "ready" | "error">("loading");
   const fetchSummary = useServerFn(getHomeSummary);
   const sentenceGap = language === "en" ? " " : "";
   const topicWall = (summary?.trending_tags ?? []).slice(0, 14);
   const maxTopicCount = Math.max(1, ...topicWall.map((item: any) => Number(item.count) || 0));
 
   useEffect(() => {
+    setObsStatus("loading");
     fetchSummary()
-      .then(setSummary)
-      .catch(() =>
+      .then((data) => {
+        setSummary(data);
+        setObsStatus("ready");
+      })
+      .catch(() => {
         setSummary({
           today_events: [],
           today_events_count: 0,
@@ -45,8 +50,9 @@ function Index() {
           latest_observations: [],
           newest_objects: [],
           trending_tags: [],
-        }),
-      );
+        });
+        setObsStatus("error");
+      });
   }, [fetchSummary]);
 
   return (
