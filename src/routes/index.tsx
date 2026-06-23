@@ -52,7 +52,7 @@ function Index() {
   return (
     <SiteLayout>
       {/* HERO */}
-      <section className="border-b border-border">
+      <section className="">
         <div className="container-prose grid gap-10 pt-6 pb-12 md:grid-cols-[1.5fr_1fr] md:pt-10 md:pb-16">
           <div>
             <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
@@ -184,7 +184,7 @@ function Index() {
       </section>
 
       {/* 新加入测评对象 */}
-      <section className="border-b border-border py-16">
+      <section className="py-16">
         <div className="container-prose">
           <div className="flex items-baseline justify-between">
             <h2 className="font-serif text-3xl">{t("home.newObjects")}</h2>
@@ -230,7 +230,7 @@ function Index() {
       </section>
 
       {/* 近期升温 */}
-      <section className="border-b border-border py-16">
+      <section className="py-16">
         <div className="container-prose">
           <ColumnList
             title={t("home.heating")}
@@ -243,7 +243,7 @@ function Index() {
 
 
       {/* 最近温度事件 */}
-      <section className="border-b border-border py-16">
+      <section className="py-16">
         <div className="container-prose">
           <div className="flex items-baseline justify-between">
             <h2 className="font-serif text-3xl">{t("home.latestEvents")}</h2>
@@ -269,7 +269,7 @@ function Index() {
       </section>
 
       {/* 最新 AI 观察 */}
-      <section className="border-b border-border py-16">
+      <section className="py-16">
         <div className="container-prose">
           <h2 className="font-serif text-2xl">{t("home.latestAI")}</h2>
           <p className="text-xs text-muted-foreground">{t("home.latestAIHint")}</p>
@@ -302,7 +302,7 @@ function Index() {
       </section>
 
       {/* 提交 / 申请 CTA */}
-      <section className="border-b border-border bg-card/40 py-16">
+      <section className="bg-card/40 py-16">
         <div className="container-prose">
           <div className="border border-border bg-paper p-6">
             <h3 className="font-serif text-xl">{t("home.submitCardTitle")}</h3>
