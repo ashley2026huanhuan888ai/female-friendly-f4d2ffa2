@@ -204,6 +204,23 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
+        {/* 移动端第二行：快捷入口 */}
+        <div className="container-prose flex items-center justify-between gap-2 border-t border-border/60 py-2 text-xs md:hidden">
+          <Link to="/objects" className="text-muted-foreground hover:text-foreground">
+            {t("nav.objects")}
+          </Link>
+          <Link to="/topics" className="text-muted-foreground hover:text-foreground">
+            {t("nav.topics")}
+          </Link>
+          <LanguageToggle language={language} setLanguage={setLanguage} />
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            {t("nav.more")}
+          </button>
+        </div>
+
         {/* 移动端展开菜单 */}
         {menuOpen && (
           <div className="border-t border-border bg-paper md:hidden">
