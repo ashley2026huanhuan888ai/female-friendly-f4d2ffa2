@@ -31,6 +31,7 @@ const COPY = {
     "nav.evidence": "证据库",
     "nav.knowledge": "知识引擎",
     "nav.about": "关于",
+    "nav.howWeJudge": "了解平台如何判断",
     "nav.more": "更多",
     "nav.admin": "管理后台",
     "nav.adminEntry": "管理入口",
@@ -609,7 +610,30 @@ const COPY = {
     "seo.evidence.title": "证据库（A 级） · 女性友好体验测评",
     "seo.discussions.title": "热门讨论 · 女性友好体验测评",
     "seo.discussions.description": "最近公开的对象留言。",
-  },
+    "seo.howWeJudge.title": "了解平台如何判断 · 女性友好体验测评",
+    "seo.howWeJudge.description":
+      "原则、标签、证据等级与人工审核：平台如何把一条体验变成温度。",
+    "howWeJudge.eyebrow": "How we judge",
+    "howWeJudge.title": "了解平台如何判断",
+    "howWeJudge.body":
+      "我们不是打分榜，也不是审判席。每一次温度变化都遵循同一套流程：原则 → 标签 → 证据等级 → 人工复核 → 趋势更新。来源可追溯，欢迎纠错。",
+    "howWeJudge.steps.1.title": "原则",
+    "howWeJudge.steps.1.body": "公开列出判断依据的原则与边界，避免随机评分。",
+    "howWeJudge.steps.2.title": "标签体系",
+    "howWeJudge.steps.2.body": "用统一标签描述现象，便于对象之间横向比较。",
+    "howWeJudge.steps.3.title": "证据等级 A / B / C",
+    "howWeJudge.steps.3.body": "按可核实程度分级；A 级证据进入证据库公开展示。",
+    "howWeJudge.steps.4.title": "人工复核",
+    "howWeJudge.steps.4.body": "AI 整理后由人工审核，确认后才会影响对象温度与趋势。",
+    "howWeJudge.card.knowledge.title": "知识引擎",
+    "howWeJudge.card.knowledge.body":
+      "查看判断所依据的原则、标签词表与案例知识库。所有 AI 分析都来源于此。",
+    "howWeJudge.card.knowledge.cta": "进入知识引擎",
+    "howWeJudge.card.evidence.title": "证据库（A 级）",
+    "howWeJudge.card.evidence.body":
+      "所有 A 级、可核实的证据条目按对象与时间公开列出，可点击进入原始案例。",
+    "howWeJudge.card.evidence.cta": "进入证据库",
+    "howWeJudge.feedback": "发现误判或希望补充证据？欢迎反馈：",
   en: {
     "app.name": "Female-Friendly Experience Assessment",
     "app.tagline": "Observe · Analyze · No judgment",
@@ -627,6 +651,7 @@ const COPY = {
     "nav.evidence": "Evidence",
     "nav.knowledge": "Knowledge",
     "nav.about": "About",
+    "nav.howWeJudge": "How we judge",
     "nav.more": "More",
     "nav.admin": "Admin",
     "nav.adminEntry": "Admin Entry",
@@ -1252,8 +1277,33 @@ const COPY = {
     "seo.evidence.title": "Evidence Library (A Level) · Female-Friendly Experience Assessment",
     "seo.discussions.title": "Popular Discussions · Female-Friendly Experience Assessment",
     "seo.discussions.description": "Recent public object comments.",
+    "seo.howWeJudge.title": "How We Judge · Female-Friendly Experience Assessment",
+    "seo.howWeJudge.description":
+      "Principles, tags, evidence grades, and human review: how the platform turns experience into temperature.",
+    "howWeJudge.eyebrow": "How we judge",
+    "howWeJudge.title": "How we judge",
+    "howWeJudge.body":
+      "This is not a scoreboard or a courtroom. Every temperature change follows the same flow: principles → tags → evidence grade → human review → trend update. Sources are traceable; corrections welcome.",
+    "howWeJudge.steps.1.title": "Principles",
+    "howWeJudge.steps.1.body": "Public principles and boundaries that guide every judgment.",
+    "howWeJudge.steps.2.title": "Tag system",
+    "howWeJudge.steps.2.body": "A shared vocabulary so cases can be compared across objects.",
+    "howWeJudge.steps.3.title": "Evidence A / B / C",
+    "howWeJudge.steps.3.body": "Graded by verifiability; A-grade evidence is listed in the public library.",
+    "howWeJudge.steps.4.title": "Human review",
+    "howWeJudge.steps.4.body": "AI organizes; humans verify before anything affects temperature or trends.",
+    "howWeJudge.card.knowledge.title": "Knowledge Engine",
+    "howWeJudge.card.knowledge.body":
+      "Browse the principles, tag vocabulary, and case knowledge base that all AI analysis is grounded in.",
+    "howWeJudge.card.knowledge.cta": "Open Knowledge Engine",
+    "howWeJudge.card.evidence.title": "Evidence Library (A level)",
+    "howWeJudge.card.evidence.body":
+      "Every verifiable A-grade evidence item, listed by object and date, linking back to the original case.",
+    "howWeJudge.card.evidence.cta": "Open Evidence Library",
+    "howWeJudge.feedback": "Spotted a misjudgment or want to add evidence? Send us feedback:",
   },
 } as const;
+
 
 type CopyKey = keyof typeof COPY.zh;
 

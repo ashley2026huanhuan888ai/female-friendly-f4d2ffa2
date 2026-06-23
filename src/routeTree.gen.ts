@@ -16,6 +16,7 @@ import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
+import { Route as HowWeJudgeRouteImport } from './routes/how-we-judge'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
@@ -75,6 +76,11 @@ const LoginRoute = LoginRouteImport.update({
 const KnowledgeRoute = KnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowWeJudgeRoute = HowWeJudgeRouteImport.update({
+  id: '/how-we-judge',
+  path: '/how-we-judge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedbackRoute = FeedbackRouteImport.update({
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
+  '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByTo {
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
+  '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
+  '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
@@ -314,6 +323,7 @@ export interface FileRouteTypes {
     | '/discussions'
     | '/feed'
     | '/feedback'
+    | '/how-we-judge'
     | '/knowledge'
     | '/login'
     | '/me'
@@ -347,6 +357,7 @@ export interface FileRouteTypes {
     | '/discussions'
     | '/feed'
     | '/feedback'
+    | '/how-we-judge'
     | '/knowledge'
     | '/login'
     | '/me'
@@ -381,6 +392,7 @@ export interface FileRouteTypes {
     | '/discussions'
     | '/feed'
     | '/feedback'
+    | '/how-we-judge'
     | '/knowledge'
     | '/login'
     | '/me'
@@ -416,6 +428,7 @@ export interface RootRouteChildren {
   DiscussionsRoute: typeof DiscussionsRoute
   FeedRoute: typeof FeedRoute
   FeedbackRoute: typeof FeedbackRoute
+  HowWeJudgeRoute: typeof HowWeJudgeRoute
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
@@ -480,6 +493,13 @@ declare module '@tanstack/react-router' {
       path: '/knowledge'
       fullPath: '/knowledge'
       preLoaderRoute: typeof KnowledgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-we-judge': {
+      id: '/how-we-judge'
+      path: '/how-we-judge'
+      fullPath: '/how-we-judge'
+      preLoaderRoute: typeof HowWeJudgeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feedback': {
@@ -710,6 +730,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscussionsRoute: DiscussionsRoute,
   FeedRoute: FeedRoute,
   FeedbackRoute: FeedbackRoute,
+  HowWeJudgeRoute: HowWeJudgeRoute,
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
