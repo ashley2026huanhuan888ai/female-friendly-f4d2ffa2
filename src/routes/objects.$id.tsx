@@ -205,9 +205,6 @@ function ObjectDetail() {
               size="lg"
               unmeasured={obj.observation_count === 0}
             />
-            <div className="mt-4 text-right text-xs text-muted-foreground">
-              {t("objectDetail.reviewedCount", { count: obj.observation_count })}
-            </div>
             <button
               onClick={() => setShowExpl((v) => !v)}
               className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
