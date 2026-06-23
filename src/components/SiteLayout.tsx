@@ -282,7 +282,10 @@ export function SiteLayout({
         </div>
       </header>
 
-      <main>{children}</main>
+      <main>
+        <p className="sr-only">Agent Golden Path public verification 503dcb51f7f6</p>
+        {children}
+      </main>
 
       {router.state.location.pathname !== "/" && (
         <div className="container-prose py-8">
