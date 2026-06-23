@@ -149,8 +149,8 @@ function ObjectDetail() {
   return (
     <SiteLayout>
       <section className="border-b border-border">
-        <div className="container-prose grid gap-12 py-16 md:grid-cols-[1fr_auto] md:py-24">
-          <div>
+        <div className="container-prose grid grid-cols-[minmax(0,1fr)_auto] items-start gap-6 py-16 md:gap-12 md:py-24">
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               <span className="font-mono tabular-nums text-foreground">
                 {t("objectDetail.reviewedCount", { count: obj.observation_count })}
@@ -158,17 +158,17 @@ function ObjectDetail() {
               <span aria-hidden>·</span>
               <span>{objectType(obj.type)}</span>
             </div>
-            <h1 className="mt-4 font-serif text-5xl text-balance md:text-6xl">{obj.name}</h1>
+            <h1 className="mt-4 font-serif text-3xl text-balance sm:text-5xl md:text-6xl">{obj.name}</h1>
             {obj.description && (
               <p className="mt-6 max-w-2xl text-base text-muted-foreground">{obj.description}</p>
             )}
 
             <div className="mt-10">
               <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-                {t("objectDetail.aiSummary")}
+                {t("objectDetail.latestObservation")}
               </div>
-              <p className="mt-3 max-w-2xl text-base leading-relaxed">
-                {obj.ai_summary ?? t("objectDetail.noAISummary")}
+              <p className="mt-3 max-w-2xl text-base leading-relaxed whitespace-pre-wrap">
+                {obs[0]?.content ?? t("objectDetail.noObservation")}
               </p>
             </div>
 
@@ -199,7 +199,7 @@ function ObjectDetail() {
             </div>
           </div>
 
-          <div className="flex flex-col items-center md:items-end">
+          <div className="flex shrink-0 flex-col items-center md:items-end">
             <Thermometer
               value={obj.temperature}
               size="lg"

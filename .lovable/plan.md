@@ -1,13 +1,17 @@
-## 目标
-移除全站温度计（竖管渐变条）的视觉化 UI，只保留温度数字与档位标签。
+## 对象详情页布局调整
 
-## 修改
-**`src/components/Thermometer.tsx`**：删掉竖管渐变条与刻度线的 div，仅保留右侧文字块（温度数字 `xx°C` + 档位标签）。
-- 不再渲染 `w/h` 矩形条；`size` 仍控制数字字号（`sm/md/lg` → `text-base/text-2xl/text-4xl`）。
-- `unmeasured` 状态：直接显示 `—` 与 "未测量" 文案，无虚线圆框。
-- `showLabel={false}` 时只显示数字（不显示档位文字），保持与现有调用点（首页、me、discussions、submit）一致。
-- 数字颜色根据档位（`band`）从设计 token 中映射（cool/neutral/warm/hot/critical），让温度仍有冷暖语义。
+仅修改 `src/routes/objects.$id.tsx` 头部区域：
 
-## 不改动
-- 不动 `Thermometer` 的 props 接口与各调用点（向后兼容）。
-- 不动 `TemperatureBreakdown` / `TemperatureTimeline` / `HeatSources` 等数据组件。
+1. **温度移到标题右侧并排**（移动端 + 桌面端统一）
+   - 将外层 grid 由 `md:grid-cols-[1fr_auto]` 改为 `grid-cols-[minmax(0,1fr)_auto]`（移动端即生效）
+   - 标题 `<h1>` 字号在窄屏自动缩小（`text-3xl sm:text-5xl md:text-6xl`），并加 `min-w-0`
+   - Thermometer 容器加 `shrink-0`，与「已审核观察 N · 类型」行并排
+   - "为什么是这个温度?" 按钮保持在温度计下方
+
+2. **AI 总结区域 → 最新观察原文**
+   - 移除 `obj.ai_summary` 块与对应 i18n
+   - 改为显示 `obs[0]` 的 `content`（最新一条已审核观察原文），标签文本改为「最新观察」
+   - 若暂无观察则显示「暂无观察」占位
+   - 新增 i18n key `objectDetail.latestObservation` / `objectDetail.noObservation`（中英文）
+
+不改动后端、数据加载与其他模块。
