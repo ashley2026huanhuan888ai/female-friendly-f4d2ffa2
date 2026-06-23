@@ -211,12 +211,12 @@ export const getEvidenceLibrary = createServerFn({ method: "POST" })
     const { data: rows, count } = await supabaseAdmin
       .from("observations")
       .select(
-        `id, case_code, content, cleaned_content, summary, tags, archive_category, evidence_level,
-         reference_url, screenshot_url, scene, created_at,
+        `id, case_code, summary, tags, archive_category, reference_url, screenshot_url, created_at,
          objects!inner ( id, name, type, hidden, status )`,
         { count: "exact" },
       )
       .eq("status", "approved")
+      .eq("evidence_level", "A")
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -227,15 +227,11 @@ export const getEvidenceLibrary = createServerFn({ method: "POST" })
       items: items.map((r) => ({
         id: r.id,
         case_code: r.case_code,
-        original_text: r.content ?? r.cleaned_content ?? r.summary ?? "",
-        cleaned_text: r.cleaned_content ?? null,
         summary: r.summary,
         tags: (r.tags as string[]) ?? [],
         archive_category: r.archive_category,
-        evidence_level: r.evidence_level,
         reference_url: r.reference_url,
         screenshot_url: r.screenshot_url,
-        scene: r.scene,
         created_at: r.created_at,
         object: { id: r.objects.id, name: r.objects.name, type: r.objects.type },
       })),
