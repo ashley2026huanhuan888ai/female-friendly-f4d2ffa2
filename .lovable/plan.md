@@ -1,17 +1,11 @@
 ## 目标
-在对象列表卡片中显示争议标签（如 #女性工具化），点击跳转至按标签筛选的对象列表。
-
-## 现状
-- `ObjectCard` 已经实现 top_tags 渲染并 `Link to="/objects?tag=..."`，点击跳转已就绪。
-- 但数据库中 `objects.top_tags` 字段为空，导致卡片不显示标签。
+"最新性别争议热度"列表，每个对象在中部增加最多 2 个最热标签（来自该对象近 7 天 approved 观察的 tags 频次 top 2），可点击跳转 `/objects?tag=...`。
 
 ## 改动
-在 `src/lib/api/platform.functions.ts` 的 `getPublicObjects.handler` 中，拿到 items 后批量查询这些对象的 approved observations.tags，按对象聚合出 top 3 标签 `[{tag, count}]`，再合并进每个 item 的 `top_tags`（覆盖空数组）。
+1. `src/lib/api/observation-center.functions.ts` — `pack()` 返回新增字段 `top_tags: string[]`，取 `agg.tags` 频次降序前 2。
+2. `src/routes/index.tsx` — `ColumnList` 每项的 `<div className="truncate font-serif">{o.name}</div>` 之下，名称与 detail 之间渲染 `top_tags` 小标签行：
+   - 使用 `Link to="/objects" search={{ tag }}`、`#{tagLabel(tag)}` 样式与 `ObjectCard` 标签一致（边框、`text-[11px]`）。
+   - `onClick` 阻止冒泡，避免触发父级跳转。
+   - 没有标签时不渲染该行。
 
-逻辑：
-1. `const ids = sortedItems.map(o => o.id)`
-2. `supabaseAdmin.from('observations').select('object_id, tags').eq('status','approved').in('object_id', ids)`
-3. 在内存中按 object_id → Map<tag,count>，取 count 降序前 3。
-4. 返回 items 时 `top_tags: byObject.get(o.id) ?? []`。
-
-不动前端 ObjectCard、路由、i18n。
+不动后端聚合粒度（仍是 7 天窗口）、不动样式 token。
