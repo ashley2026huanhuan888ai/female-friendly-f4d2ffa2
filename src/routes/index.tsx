@@ -407,11 +407,27 @@ function ColumnList({
                       {objectType(o.type)}
                     </div>
                     <div className="truncate font-serif">{o.name}</div>
+                    {Array.isArray(o.top_tags) && o.top_tags.length > 0 && (
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {o.top_tags.slice(0, 2).map((tg: string) => (
+                          <Link
+                            key={tg}
+                            to="/objects"
+                            search={{ tag: tg }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:border-foreground/50 hover:text-foreground"
+                          >
+                            #{tagLabel(tg)}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
                   </div>
                 </Link>
               </li>
             );
+
           })}
         </ul>
       )}
