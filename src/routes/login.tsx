@@ -7,7 +7,6 @@ import { useAuth } from "@/components/auth-context";
 import { toast } from "sonner";
 import { setRemember, consumeExpiredNotice } from "@/lib/remember-login";
 import { useI18n, usePageMeta } from "@/lib/i18n";
-import { checkPasswordSafety } from "@/lib/password-security";
 
 type LoginSearch = {
   redirect?: string;
@@ -189,23 +188,6 @@ function LoginPage() {
     setPending(true);
     try {
       if (mode === "signup") {
-        const safety = await checkPasswordSafety(password);
-        if (!safety.safe) {
-          setErrorDetail(
-            safety.reason === "pwned"
-              ? {
-                  title: t("login.error.pwnedPassword.title"),
-                  hint: t("login.error.pwnedPassword.hint", { count: safety.breachCount }),
-                  code: "pwned_password",
-                }
-              : {
-                  title: t("login.error.passwordCheckUnavailable.title"),
-                  hint: t("login.error.passwordCheckUnavailable.hint"),
-                  code: "password_check_unavailable",
-                },
-          );
-          return;
-        }
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
