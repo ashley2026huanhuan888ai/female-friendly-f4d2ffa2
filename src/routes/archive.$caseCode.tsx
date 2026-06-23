@@ -1,15 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  ArchiveStamp,
-  DossierPanel,
-  PaperRows,
-  PaperSheet,
-  PaperStack,
-  TemperatureVerdict,
-} from "@/components/archive-ui";
 import { SiteLayout } from "@/components/SiteLayout";
+import { Thermometer } from "@/components/Thermometer";
 import { getCaseDetail } from "@/lib/api/archive.functions";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 
@@ -37,30 +30,22 @@ export const Route = createFileRoute("/archive/$caseCode")({
   },
   errorComponent: ({ error }) => (
     <SiteLayout>
-      <section className="archive-desk py-24">
-        <div className="container-prose">
-          <PaperSheet tone="dossier" className="p-10 text-center">
-            <h1 className="font-serif text-3xl">{(error as Error).message}</h1>
-            <Link to="/archive" className="paper-action-secondary mt-6 inline-flex text-sm">
-              返回女性观察档案
-            </Link>
-          </PaperSheet>
-        </div>
-      </section>
+      <div className="container-prose py-32 text-center">
+        <h1 className="font-serif text-3xl">{(error as Error).message}</h1>
+        <Link to="/archive" className="mt-4 inline-block text-sm underline">
+          返回案例库
+        </Link>
+      </div>
     </SiteLayout>
   ),
   notFoundComponent: () => (
     <SiteLayout>
-      <section className="archive-desk py-24">
-        <div className="container-prose">
-          <PaperSheet tone="dossier" className="p-10 text-center">
-            <h1 className="font-serif text-3xl">案例未找到</h1>
-            <Link to="/archive" className="paper-action-secondary mt-6 inline-flex text-sm">
-              返回女性观察档案
-            </Link>
-          </PaperSheet>
-        </div>
-      </section>
+      <div className="container-prose py-32 text-center">
+        <h1 className="font-serif text-3xl">案例未找到</h1>
+        <Link to="/archive" className="mt-4 inline-block text-sm underline">
+          返回案例库
+        </Link>
+      </div>
     </SiteLayout>
   ),
   component: CaseDetail,
@@ -84,28 +69,20 @@ function CaseDetail() {
   if (err)
     return (
       <SiteLayout>
-        <section className="archive-desk py-24">
-          <div className="container-prose">
-            <PaperSheet tone="dossier" className="p-10 text-center">
-              <h1 className="font-serif text-3xl">{err}</h1>
-              <Link to="/archive" className="paper-action-secondary mt-6 inline-flex text-sm">
-                {t("common.backToArchive")}
-              </Link>
-            </PaperSheet>
-          </div>
-        </section>
+        <div className="container-prose py-32 text-center">
+          <h1 className="font-serif text-3xl">{err}</h1>
+          <Link to="/archive" className="mt-4 inline-block text-sm underline">
+            {t("common.backToArchive")}
+          </Link>
+        </div>
       </SiteLayout>
     );
   if (!data)
     return (
       <SiteLayout>
-        <section className="archive-desk py-24">
-          <div className="container-prose">
-            <PaperSheet tone="slip" className="p-10 text-center text-muted-foreground">
-              {t("common.loading")}
-            </PaperSheet>
-          </div>
-        </section>
+        <div className="container-prose py-32 text-center text-muted-foreground">
+          {t("common.loading")}
+        </div>
       </SiteLayout>
     );
 
@@ -114,76 +91,68 @@ function CaseDetail() {
 
   return (
     <SiteLayout>
-      <section className="archive-desk border-b border-border">
-        <div className="container-prose grid gap-8 py-14 md:grid-cols-[minmax(0,1fr)_20rem]">
-          <PaperStack>
-            <DossierPanel
-              title={c.summary || t("common.case")}
-              eyebrow={`${archiveCategory(c.archive_category)} / ${c.case_code}`}
-              stamp={c.case_code}
-            >
-              <PaperRows
-                rows={[
-                  {
-                    label: t("common.object"),
-                    value: (
-                      <Link
-                        to="/objects/$id"
-                        params={{ id: o.id }}
-                        className="text-foreground underline"
-                      >
-                        {o.name}
-                      </Link>
-                    ),
-                  },
-                  { label: t("archive.category"), value: archiveCategory(c.archive_category) },
-                  { label: t("archive.objectType"), value: objectType(o.type) },
-                  { label: t("common.evidence"), value: c.evidence_level },
-                  { label: t("archive.contribution"), value: c.impact_score },
-                  {
-                    label: t("common.createdAt"),
-                    value: formatDateForLanguage(c.created_at, language),
-                  },
-                ]}
-              />
-              {c.tags.length > 0 && (
-                <div className="mt-6 flex flex-wrap gap-2 text-xs">
-                  {c.tags.map((t) => (
-                    <span key={t} className="paper-tag paper-tag-active">
-                      #{tag(t)}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </DossierPanel>
-          </PaperStack>
-
-          <PaperSheet tone="slip" className="self-start p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                {t("submit.currentTemperature")}
-              </div>
-              <ArchiveStamp className="archive-stamp-soft rotate-[-5deg]">
+      <section className="border-b border-border">
+        <div className="container-prose grid gap-10 py-14 md:grid-cols-[1fr_auto]">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              <span className="font-mono text-foreground">{c.case_code}</span>
+              <span>·</span>
+              <span>{archiveCategory(c.archive_category)}</span>
+              <span>·</span>
+              <span>
                 {t("common.evidence")} {c.evidence_level}
-              </ArchiveStamp>
+              </span>
+              <span>·</span>
+              <span>
+                {t("archive.contribution")} {c.impact_score}
+              </span>
             </div>
-            <TemperatureVerdict value={o.temperature} compact className="mt-5" />
-          </PaperSheet>
+            <h1 className="mt-4 font-serif text-4xl text-balance md:text-5xl">
+              {c.summary || t("common.case")}
+            </h1>
+            <div className="mt-4 text-sm text-muted-foreground">
+              {t("common.object")}:
+              <Link
+                to="/objects/$id"
+                params={{ id: o.id }}
+                className="ml-1 text-foreground underline"
+              >
+                {o.name}
+              </Link>
+              <span className="ml-2">({objectType(o.type)})</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-center md:items-end">
+            <Thermometer value={o.temperature} size="md" />
+            <div className="mt-2 text-xs text-muted-foreground">
+              {formatDateForLanguage(c.created_at, language)}
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="archive-desk py-12">
+      <section className="py-12">
         <div className="container-prose grid gap-12 md:grid-cols-[1fr_18rem]">
-          <div className="space-y-5">
+          <div>
+            {c.tags.length > 0 && (
+              <div className="mb-8 flex flex-wrap gap-2 text-xs">
+                {c.tags.map((t) => (
+                  <span key={t} className="border border-border px-2 py-0.5 text-accent">
+                    #{tag(t)}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <Section title={t("archive.summary")}>
               <p className="text-base leading-relaxed">{c.summary || t("common.noSummary")}</p>
             </Section>
 
             {c.facts.length > 0 && (
               <Section title={t("archive.aiFacts")}>
-                <ul className="space-y-1 border-l-2 border-accent/40 pl-4 text-sm leading-relaxed">
+                <ul className="space-y-1 border-l-2 border-accent/40 pl-4 text-sm">
                   {c.facts.map((f, i) => (
-                    <li key={i}>{f}</li>
+                    <li key={i}>· {f}</li>
                   ))}
                 </ul>
               </Section>
@@ -218,6 +187,19 @@ function CaseDetail() {
                   </a>
                 </p>
               )}
+              {c.screenshot_url && (
+                <p className="mt-2 text-xs">
+                  {t("archive.screenshot")}
+                  <a
+                    href={c.screenshot_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all underline"
+                  >
+                    {c.screenshot_url}
+                  </a>
+                </p>
+              )}
             </Section>
           </div>
 
@@ -234,12 +216,12 @@ function CaseDetail() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <PaperSheet tone="dossier" className="p-5">
+    <div className="mb-10">
       <div className="mb-3 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
         {title}
       </div>
       {children}
-    </PaperSheet>
+    </div>
   );
 }
 
@@ -247,11 +229,11 @@ function RelatedBlock({ title, items }: { title: string; items: any[] }) {
   const { t } = useI18n();
   if (!items?.length) return null;
   return (
-    <PaperSheet tone="slip" className="p-4">
+    <div>
       <div className="mb-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
         {title}
       </div>
-      <ul className="space-y-3 border-t border-dashed border-border pt-3">
+      <ul className="space-y-3 border-t border-border pt-3">
         {items.map((r) => (
           <li key={r.id}>
             <Link
@@ -259,7 +241,7 @@ function RelatedBlock({ title, items }: { title: string; items: any[] }) {
               params={{ caseCode: r.case_code }}
               className="block hover:text-accent"
             >
-              <ArchiveStamp className="archive-stamp-soft text-[10px]">{r.case_code}</ArchiveStamp>
+              <div className="font-mono text-[11px] text-muted-foreground">{r.case_code}</div>
               <div className="mt-0.5 line-clamp-2 text-sm">
                 {r.summary || t("common.noSummary")}
               </div>
@@ -270,6 +252,6 @@ function RelatedBlock({ title, items }: { title: string; items: any[] }) {
           </li>
         ))}
       </ul>
-    </PaperSheet>
+    </div>
   );
 }
