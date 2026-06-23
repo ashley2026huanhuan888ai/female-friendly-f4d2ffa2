@@ -139,6 +139,24 @@ const COPY = {
     "login.error.noUser.hint": "未获取到用户信息，请重试。",
     "login.error.navFailed.title": "登录成功但跳转失败",
     "login.error.navFailed.hint": "目标路径无效：{path}。已保留登录态，可手动前往首页。",
+    "login.intro":
+      "登录后可以提交观察、跟踪审核状态、保存关注对象。你的邮箱和身份不会公开展示。",
+    "login.tab.password": "密码登录",
+    "login.tab.otp": "邮箱验证码",
+    "login.otp.hint": "无需设置密码，输入邮箱即可收到一次性登录码或魔法链接。",
+    "login.otp.send": "发送验证码",
+    "login.otp.sent": "验证码已发送至 {email}，10 分钟内有效。也可点击邮件中的链接直接登录。",
+    "login.otp.codeLabel": "6 位验证码",
+    "login.otp.verify": "确认登录",
+    "login.otp.resend": "重新发送",
+    "login.otp.resendIn": "{seconds}s 后可重发",
+    "login.otp.changeEmail": "换个邮箱",
+    "login.error.otpExpired.title": "验证码已过期",
+    "login.error.otpExpired.hint": "请点击「重新发送」获取新的验证码。",
+    "login.error.invalidOtp.title": "验证码不正确",
+    "login.error.invalidOtp.hint": "请检查邮件中的 6 位数字是否输入正确。",
+
+
 
     "home.hero.title.before": "一起记录",
     "home.hero.title.accent": "女性体验",
@@ -704,6 +722,25 @@ const COPY = {
     "login.error.navFailed.title": "Logged in, but redirect failed",
     "login.error.navFailed.hint":
       "Invalid target path: {path}. Your session is still active; you can go to the homepage manually.",
+    "login.intro":
+      "Sign in to submit observations, track review status, and follow objects. Your email and identity are never publicly displayed.",
+    "login.tab.password": "Password",
+    "login.tab.otp": "Email code",
+    "login.otp.hint":
+      "No password required — enter your email to receive a one-time code or magic link.",
+    "login.otp.send": "Send code",
+    "login.otp.sent":
+      "A code was sent to {email}, valid for 10 minutes. You can also click the magic link in the email.",
+    "login.otp.codeLabel": "6-digit code",
+    "login.otp.verify": "Verify & sign in",
+    "login.otp.resend": "Resend",
+    "login.otp.resendIn": "Resend in {seconds}s",
+    "login.otp.changeEmail": "Use a different email",
+    "login.error.otpExpired.title": "Code expired",
+    "login.error.otpExpired.hint": "Tap Resend to get a new code.",
+    "login.error.invalidOtp.title": "Incorrect code",
+    "login.error.invalidOtp.hint": "Double-check the 6-digit code from your email.",
+
 
     "home.hero.title.before": "Recording changes in ",
     "home.hero.title.accent": "women's experiences",
