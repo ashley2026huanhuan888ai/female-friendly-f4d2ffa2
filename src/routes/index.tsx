@@ -229,22 +229,18 @@ function Index() {
         </div>
       </section>
 
-      {/* 近期升温 / 降温 */}
+      {/* 近期升温 */}
       <section className="border-b border-border py-16">
-        <div className="container-prose grid gap-10 md:grid-cols-2">
+        <div className="container-prose">
           <ColumnList
             title={t("home.heating")}
             hint={t("home.heatingHint")}
             items={summary?.heating ?? []}
             positive
           />
-          <ColumnList
-            title={t("home.cooling")}
-            hint={t("home.coolingHint")}
-            items={summary?.cooling ?? []}
-          />
         </div>
       </section>
+
 
       {/* 最近温度事件 */}
       <section className="border-b border-border py-16">
