@@ -184,6 +184,24 @@ const COPY = {
     "home.heatingHint": "过去 7 天累计升温最多",
     "home.cooling": "近期降温对象",
     "home.coolingHint": "过去 7 天累计降温最多",
+    "home.heatingDetail.full":
+      "因新增 {count} 条关于「{tag}」的 {level} 级证据，争议温度由 {before}°C 升至 {after}°C。",
+    "home.heatingDetail.noTag":
+      "因新增 {count} 条 {level} 级证据，争议温度由 {before}°C 升至 {after}°C。",
+    "home.heatingDetail.noLevel":
+      "因新增 {count} 条关于「{tag}」的新证据，争议温度由 {before}°C 升至 {after}°C。",
+    "home.heatingDetail.countOnly":
+      "因新增 {count} 条新证据，争议温度由 {before}°C 升至 {after}°C。",
+    "home.heatingDetail.minimal": "争议温度由 {before}°C 升至 {after}°C。",
+    "home.coolingDetail.full":
+      "因新增 {count} 条关于「{tag}」的 {level} 级证据，争议温度由 {before}°C 降至 {after}°C。",
+    "home.coolingDetail.noTag":
+      "因新增 {count} 条 {level} 级证据，争议温度由 {before}°C 降至 {after}°C。",
+    "home.coolingDetail.noLevel":
+      "因新增 {count} 条关于「{tag}」的新证据，争议温度由 {before}°C 降至 {after}°C。",
+    "home.coolingDetail.countOnly":
+      "因新增 {count} 条新证据，争议温度由 {before}°C 降至 {after}°C。",
+    "home.coolingDetail.minimal": "争议温度由 {before}°C 降至 {after}°C。",
     "home.noWeeklyChange": "本周无变化。",
     "home.latestEvents": "最新观察事件",
     "home.noEvents24h": "过去 24 小时暂无温度变化。",
@@ -773,6 +791,24 @@ const COPY = {
     "home.heatingHint": "Largest cumulative increase in the past 7 days",
     "home.cooling": "Recently cooling objects",
     "home.coolingHint": "Largest cumulative decrease in the past 7 days",
+    "home.heatingDetail.full":
+      "{count} new {level}-grade evidence on \"{tag}\" pushed the controversy from {before}°C to {after}°C.",
+    "home.heatingDetail.noTag":
+      "{count} new {level}-grade evidence pushed the controversy from {before}°C to {after}°C.",
+    "home.heatingDetail.noLevel":
+      "{count} new pieces of evidence on \"{tag}\" pushed the controversy from {before}°C to {after}°C.",
+    "home.heatingDetail.countOnly":
+      "{count} new pieces of evidence pushed the controversy from {before}°C to {after}°C.",
+    "home.heatingDetail.minimal": "Controversy moved from {before}°C to {after}°C.",
+    "home.coolingDetail.full":
+      "{count} new {level}-grade evidence on \"{tag}\" cooled the controversy from {before}°C to {after}°C.",
+    "home.coolingDetail.noTag":
+      "{count} new {level}-grade evidence cooled the controversy from {before}°C to {after}°C.",
+    "home.coolingDetail.noLevel":
+      "{count} new pieces of evidence on \"{tag}\" cooled the controversy from {before}°C to {after}°C.",
+    "home.coolingDetail.countOnly":
+      "{count} new pieces of evidence cooled the controversy from {before}°C to {after}°C.",
+    "home.coolingDetail.minimal": "Controversy moved from {before}°C to {after}°C.",
     "home.noWeeklyChange": "No change this week.",
     "home.latestEvents": "Latest observation events",
     "home.noEvents24h": "No temperature changes in the past 24 hours.",
