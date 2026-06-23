@@ -819,7 +819,7 @@ const COPY = {
     "home.steps.1": "Pick or request an object to assess",
     "home.steps.2": "Submit experience and evidence",
     "home.steps.3": "AI organizes, humans review, trends update",
-    "home.heating": "Recently heating objects",
+    "home.heating": "Recent gender-controversy objects",
     "home.heatingHint": "Largest cumulative increase in the past 7 days",
     "home.cooling": "Recently cooling objects",
     "home.coolingHint": "Largest cumulative decrease in the past 7 days",
