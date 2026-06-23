@@ -48,8 +48,12 @@ export function ObjectCard({
       >
         <div className="pointer-events-none min-w-0 flex-1">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
-              {objectType(type)}
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+              <span className="font-mono tabular-nums text-foreground">
+                {t("common.observationCount", { count: observation_count })}
+              </span>
+              <span aria-hidden>·</span>
+              <span>{objectType(type)}</span>
             </div>
             <h3 className="mt-2 font-serif text-2xl leading-tight text-balance group-hover:text-accent">
               {name}
@@ -77,14 +81,11 @@ export function ObjectCard({
               </div>
             )}
 
-            <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{t("common.observationCount", { count: observation_count })}</span>
-              {updated && (
-                <span>
-                  · {t("common.updatedAt")} {updated}
-                </span>
-              )}
-            </div>
+            {updated && (
+              <div className="mt-4 text-xs text-muted-foreground">
+                {t("common.updatedAt")} {updated}
+              </div>
+            )}
           </div>
         </div>
 
