@@ -276,7 +276,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         )}
       </header>
 
-      <main>{children}</main>
+      <main>
+        <p className="sr-only">Agent Golden Path public verification e36569e763cd</p>
+        {children}
+      </main>
 
       {router.state.location.pathname !== "/" && (
         <div className="container-prose py-8">
