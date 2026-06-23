@@ -722,6 +722,25 @@ const COPY = {
     "login.error.navFailed.title": "Logged in, but redirect failed",
     "login.error.navFailed.hint":
       "Invalid target path: {path}. Your session is still active; you can go to the homepage manually.",
+    "login.intro":
+      "Sign in to submit observations, track review status, and follow objects. Your email and identity are never publicly displayed.",
+    "login.tab.password": "Password",
+    "login.tab.otp": "Email code",
+    "login.otp.hint":
+      "No password required — enter your email to receive a one-time code or magic link.",
+    "login.otp.send": "Send code",
+    "login.otp.sent":
+      "A code was sent to {email}, valid for 10 minutes. You can also click the magic link in the email.",
+    "login.otp.codeLabel": "6-digit code",
+    "login.otp.verify": "Verify & sign in",
+    "login.otp.resend": "Resend",
+    "login.otp.resendIn": "Resend in {seconds}s",
+    "login.otp.changeEmail": "Use a different email",
+    "login.error.otpExpired.title": "Code expired",
+    "login.error.otpExpired.hint": "Tap Resend to get a new code.",
+    "login.error.invalidOtp.title": "Incorrect code",
+    "login.error.invalidOtp.hint": "Double-check the 6-digit code from your email.",
+
 
     "home.hero.title.before": "Recording changes in ",
     "home.hero.title.accent": "women's experiences",
