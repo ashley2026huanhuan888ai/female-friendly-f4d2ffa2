@@ -8,66 +8,44 @@ interface Props {
   unmeasured?: boolean;
 }
 
+const NUM_SIZE = {
+  sm: "text-base",
+  md: "text-2xl",
+  lg: "text-4xl",
+} as const;
+
 export function Thermometer({ value, size = "md", showLabel = true, unmeasured = false }: Props) {
   const { t, band: bandLabel } = useI18n();
-  const v = Math.max(20, Math.min(100, value));
-  const pct = ((v - 20) / 80) * 100;
-  const band = bandOf(v);
-
-  const dims = {
-    sm: { w: 28, h: 110, num: "text-base" },
-    md: { w: 40, h: 180, num: "text-2xl" },
-    lg: { w: 56, h: 260, num: "text-4xl" },
-  }[size];
+  const numCls = NUM_SIZE[size];
 
   if (unmeasured) {
     return (
-      <div className="flex items-center gap-4">
-        <div
-          className="flex items-center justify-center rounded-full border border-dashed border-border bg-subtle text-[10px] uppercase tracking-wider text-muted-foreground"
-          style={{ width: dims.w, height: dims.h, writingMode: "vertical-rl" }}
-        >
-          {t("common.unmeasured")}
-        </div>
+      <div className="flex flex-col">
+        <div className={`font-serif tabular-nums ${numCls} text-muted-foreground`}>—</div>
         {showLabel && (
-          <div className="flex flex-col">
-            <div className={`font-serif ${dims.num} text-muted-foreground`}>—</div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">
-              {t("common.noTemperature")}
-            </div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            {t("common.noTemperature")}
           </div>
         )}
       </div>
     );
   }
 
+  const v = Math.max(20, Math.min(100, value));
+  const band = bandOf(v);
+
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-col">
       <div
-        className="relative overflow-hidden rounded-full border border-border bg-subtle"
-        style={{ width: dims.w, height: dims.h }}
+        className={`font-serif tabular-nums ${numCls}`}
+        style={{ color: band.color }}
       >
-        <div
-          className="absolute inset-x-0 bottom-0 transition-all duration-700"
-          style={{
-            height: `${pct}%`,
-            background: `linear-gradient(to top, var(--temp-cool) 0%, var(--temp-neutral) 30%, var(--temp-warm) 55%, var(--temp-hot) 80%, var(--temp-critical) 100%)`,
-          }}
-        />
-        <div
-          className="absolute left-0 right-0 h-px bg-foreground/40"
-          style={{ bottom: `${pct}%` }}
-        />
+        {v.toFixed(0)}
+        <span className="ml-0.5 text-base text-muted-foreground">°C</span>
       </div>
       {showLabel && (
-        <div className="flex flex-col">
-          <div className={`font-serif tabular-nums ${dims.num}`}>
-            {v.toFixed(0)}
-            <span className="text-base text-muted-foreground">°C</span>
-          </div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            {bandLabel(band.band, band.label)}
-          </div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          {bandLabel(band.band, band.label)}
         </div>
       )}
     </div>
