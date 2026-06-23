@@ -1012,6 +1012,12 @@ const COPY = {
     "feed.reason.manual_admin": "Admin adjustment",
     "feed.reason.cooling_cycle": "Natural cooling cycle",
     "feed.reason.positive_case": "New positive case",
+    "feed.reason.recompute": "Platform recomputed scoring",
+    "feed.reason.recompute+rule_min": "New approved observation hit rule floor",
+    "feed.reason.rule_min": "Adjusted by rule floor",
+    "feed.reason.request_approval": "New object request approved",
+    "feed.reason.sentence.up": "{prefix}; controversy moved from {before}°C up to {after}°C.",
+    "feed.reason.sentence.down": "{prefix}; controversy moved from {before}°C down to {after}°C.",
 
     "topics.title": "Trending Topics",
     "topics.body":
