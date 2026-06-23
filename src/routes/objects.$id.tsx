@@ -200,7 +200,7 @@ function ObjectDetail() {
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col items-center md:items-end">
+          <div className="order-1 flex shrink-0 flex-row items-center gap-3 md:order-2 md:flex-col md:items-end">
             <Thermometer
               value={obj.temperature}
               size="lg"
