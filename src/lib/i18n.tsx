@@ -363,6 +363,12 @@ const COPY = {
     "feed.reason.manual_admin": "管理员调整",
     "feed.reason.cooling_cycle": "自然降温周期",
     "feed.reason.positive_case": "新增正向案例",
+    "feed.reason.recompute": "平台重新计算依据",
+    "feed.reason.recompute+rule_min": "新增已审核观察并触达规则下限",
+    "feed.reason.rule_min": "依据规则下限调整",
+    "feed.reason.request_approval": "新对象申请通过",
+    "feed.reason.sentence.up": "{prefix}，争议温度由 {before}°C 升至 {after}°C。",
+    "feed.reason.sentence.down": "{prefix}，争议温度由 {before}°C 降至 {after}°C。",
 
     "topics.title": "热议议题",
     "topics.body": "过去 30 天内，被持续观察的女性议题标签。点击任一标签查看案例、相关对象与趋势。",
@@ -1006,6 +1012,12 @@ const COPY = {
     "feed.reason.manual_admin": "Admin adjustment",
     "feed.reason.cooling_cycle": "Natural cooling cycle",
     "feed.reason.positive_case": "New positive case",
+    "feed.reason.recompute": "Platform recomputed scoring",
+    "feed.reason.recompute+rule_min": "New approved observation hit rule floor",
+    "feed.reason.rule_min": "Adjusted by rule floor",
+    "feed.reason.request_approval": "New object request approved",
+    "feed.reason.sentence.up": "{prefix}; controversy moved from {before}°C up to {after}°C.",
+    "feed.reason.sentence.down": "{prefix}; controversy moved from {before}°C down to {after}°C.",
 
     "topics.title": "Trending Topics",
     "topics.body":
