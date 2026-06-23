@@ -1,18 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArchiveSectionTabs } from "@/components/ArchiveSectionTabs";
-import { ArchiveStamp, DossierPanel, PaperSheet, PaperStack } from "@/components/archive-ui";
 import { SiteLayout } from "@/components/SiteLayout";
 import { getEvidenceLibrary } from "@/lib/api/archive.functions";
 import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/archive/evidence")({
-  head: () => ({ meta: [{ title: "女性观察档案 · 观察原文 · 女性友好体验测评" }] }),
-  component: ObservationOriginals,
+  head: () => ({ meta: [{ title: "证据库（A 级） · 女性友好体验测评" }] }),
+  component: EvidenceLib,
 });
 
-function ObservationOriginals() {
+function EvidenceLib() {
   const { language, t, objectType, tag, archiveCategory } = useI18n();
   usePageMeta("seo.evidence.title");
   const fetcher = useServerFn(getEvidenceLibrary);
@@ -29,77 +27,66 @@ function ObservationOriginals() {
 
   return (
     <SiteLayout>
-      <section className="archive-desk border-b border-border">
+      <section className="border-b border-border">
         <div className="container-prose py-14">
-          <PaperStack>
-            <DossierPanel
-              title={t("archive.title")}
-              eyebrow={t("archive.eyebrow")}
-              stamp={`SOURCE ${total.toLocaleString()}`}
-            >
-              <p className="max-w-2xl text-sm text-muted-foreground">
-                {t("archive.body", { total: total.toLocaleString() })}
-              </p>
-              <ArchiveSectionTabs active="originals" />
-              <PaperSheet tone="slip" className="mt-6 p-5">
-                <h2 className="font-serif text-2xl">{t("evidence.title")}</h2>
-                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{t("evidence.body")}</p>
-              </PaperSheet>
-            </DossierPanel>
-          </PaperStack>
+          <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            {t("evidence.eyebrow")}
+          </div>
+          <h1 className="mt-3 font-serif text-4xl">{t("evidence.title")}</h1>
+          <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
+            {t("evidence.body", { total: total.toLocaleString() })}
+          </p>
+          <Link
+            to="/archive"
+            className="mt-4 inline-block text-sm text-muted-foreground hover:text-foreground"
+          >
+            {t("evidence.back")}
+          </Link>
         </div>
       </section>
 
-      <section className="archive-desk py-10">
+      <section className="py-10">
         <div className="container-prose">
           {items.length === 0 ? (
-            <PaperSheet tone="slip" className="p-10 text-center text-sm text-muted-foreground">
-              {t("evidence.empty")}
-            </PaperSheet>
+            <p className="py-20 text-center text-sm text-muted-foreground">{t("evidence.empty")}</p>
           ) : (
-            <ul className="space-y-4">
+            <ul className="divide-y divide-border border-y border-border">
               {items.map((it) => (
-                <li key={it.id}>
+                <li key={it.id} className="py-5">
                   <Link
                     to="/archive/$caseCode"
                     params={{ caseCode: it.case_code }}
                     className="group block"
                   >
-                    <PaperSheet
-                      tone="dossier"
-                      className="p-4 transition duration-200 group-hover:-translate-y-0.5 group-hover:border-accent/50"
-                    >
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-                        <span className="font-mono text-foreground">{it.case_code}</span>
-                        <ArchiveStamp className="archive-stamp-soft text-[10px]">
-                          {t("common.evidence")} {it.evidence_level ?? "-"}
-                        </ArchiveStamp>
-                        <span>{archiveCategory(it.archive_category)}</span>
-                        <span className="text-foreground">{it.object.name}</span>
-                        <span>({objectType(it.object.type)})</span>
-                        <span className="ml-auto">
-                          {formatDateForLanguage(it.created_at, language)}
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                      <span className="font-mono text-foreground">{it.case_code}</span>
+                      <span>·</span>
+                      <span className="border border-accent px-1.5 text-accent">
+                        {t("common.evidence")} A
+                      </span>
+                      <span>·</span>
+                      <span>{archiveCategory(it.archive_category)}</span>
+                      <span>·</span>
+                      <span className="text-foreground">{it.object.name}</span>
+                      <span>({objectType(it.object.type)})</span>
+                      <span className="ml-auto">
+                        {formatDateForLanguage(it.created_at, language)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
+                      {it.summary}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
+                      {it.tags.slice(0, 6).map((t: string) => (
+                        <span key={t} className="text-accent">
+                          #{tag(t)}
                         </span>
-                      </div>
-                      <p className="mt-3 whitespace-pre-wrap text-base leading-relaxed group-hover:text-accent">
-                        {it.original_text || it.summary || t("common.noSummary")}
-                      </p>
-                      {it.cleaned_text && it.cleaned_text !== it.original_text && (
-                        <p className="mt-3 border-t border-dashed border-border pt-3 text-sm leading-relaxed text-muted-foreground">
-                          {it.cleaned_text}
-                        </p>
+                      ))}
+                      {it.reference_url && (
+                        <span className="ml-auto">📎 {t("common.referenceLink")}</span>
                       )}
-                      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        {it.tags.slice(0, 6).map((t: string) => (
-                          <span key={t} className="paper-tag">
-                            #{tag(t)}
-                          </span>
-                        ))}
-                        {it.reference_url && (
-                          <span className="paper-tag ml-auto">{t("common.referenceLink")}</span>
-                        )}
-                      </div>
-                    </PaperSheet>
+                      {it.screenshot_url && <span>🖼 {t("common.screenshot")}</span>}
+                    </div>
                   </Link>
                 </li>
               ))}
@@ -111,7 +98,7 @@ function ObservationOriginals() {
               <button
                 disabled={page === 1}
                 onClick={() => setPage(page - 1)}
-                className="paper-action-secondary px-3 py-1.5 disabled:opacity-30"
+                className="border border-border px-3 py-1.5 disabled:opacity-30"
               >
                 {t("common.previous")}
               </button>
@@ -119,7 +106,7 @@ function ObservationOriginals() {
               <button
                 disabled={items.length < 20}
                 onClick={() => setPage(page + 1)}
-                className="paper-action-secondary px-3 py-1.5 disabled:opacity-30"
+                className="border border-border px-3 py-1.5 disabled:opacity-30"
               >
                 {t("common.next")}
               </button>

@@ -48,19 +48,17 @@ function ReqAdmin() {
     setSelected((s) => (s.size === items.length ? new Set() : new Set(items.map((i) => i.id))));
 
   const runBatch = async (action: "approve" | "reject") => {
-    const ids = action === "approve" ? items.map((item) => item.id) : [...selected];
-    if (ids.length === 0) return;
-    if (action === "approve") setSelected(new Set(ids));
+    if (selected.size === 0) return;
     if (
       !confirm(
-        `确认批量${action === "approve" ? "通过当前全部（含观察生成 + 温度重算）" : "驳回"} ${ids.length} 条？`,
+        `确认批量${action === "approve" ? "通过（含观察生成 + 温度重算）" : "驳回"} ${selected.size} 条？`,
       )
     )
       return;
     setBatchBusy(true);
     let ok = 0,
       fail = 0;
-    for (const id of ids) {
+    for (const id of [...selected]) {
       try {
         if (action === "approve") {
           await approve({ data: { request_id: id } });
@@ -122,8 +120,8 @@ function ReqAdmin() {
             />
             <button
               onClick={() => runBatch("approve")}
-              disabled={batchBusy || items.length === 0}
-              className="border border-[var(--archive-pink)] bg-[var(--archive-pink)] px-9 py-3 text-sm font-medium text-white hover:border-foreground hover:bg-foreground disabled:opacity-40"
+              disabled={batchBusy || selected.size === 0}
+              className="border border-foreground bg-foreground px-3 py-1 text-background disabled:opacity-40"
             >
               批量通过并创建
             </button>
