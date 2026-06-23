@@ -374,7 +374,15 @@ function ColumnList({
   items: any[];
   positive?: boolean;
 }) {
-  const { t, objectType } = useI18n();
+  const { t, objectType, tag: tagLabel, evidence } = useI18n();
+  const prefix = positive ? "home.heatingDetail" : "home.coolingDetail";
+  const pickDetailKey = (count: number, hasTag: boolean, hasLevel: boolean) => {
+    if (count > 0 && hasTag && hasLevel) return `${prefix}.full` as const;
+    if (count > 0 && hasLevel) return `${prefix}.noTag` as const;
+    if (count > 0 && hasTag) return `${prefix}.noLevel` as const;
+    if (count > 0) return `${prefix}.countOnly` as const;
+    return `${prefix}.minimal` as const;
+  };
   return (
     <div>
       <h2 className="font-serif text-2xl">{title}</h2>
@@ -383,29 +391,38 @@ function ColumnList({
         <p className="mt-6 text-sm text-muted-foreground">{t("home.noWeeklyChange")}</p>
       ) : (
         <ul className="mt-6 divide-y divide-border border-y border-border">
-          {items.map((o) => (
-            <li key={o.id}>
-              <Link
-                to="/objects/$id"
-                params={{ id: o.id }}
-                className="flex items-center gap-3 py-3 hover:bg-card/60"
-              >
-                <Thermometer value={o.temperature} size="sm" showLabel={false} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {objectType(o.type)}
-                  </div>
-                  <div className="truncate font-serif">{o.name}</div>
-                </div>
-                <span
-                  className={`font-mono text-sm tabular-nums ${positive ? "text-foreground" : "text-muted-foreground"}`}
+          {items.map((o) => {
+            const count = Number(o.evidence_7d_count ?? 0);
+            const hasTag = !!o.top_tag;
+            const hasLevel = !!o.top_evidence_level;
+            const before = Number(o.temperature_before ?? o.temperature);
+            const after = Number(o.temperature_after ?? o.temperature);
+            const detail = t(pickDetailKey(count, hasTag, hasLevel) as never, {
+              count,
+              tag: hasTag ? tagLabel(o.top_tag) : "",
+              level: hasLevel ? evidence(o.top_evidence_level) : "",
+              before: before.toFixed(1).replace(/\.0$/, ""),
+              after: after.toFixed(1).replace(/\.0$/, ""),
+            });
+            return (
+              <li key={o.id}>
+                <Link
+                  to="/objects/$id"
+                  params={{ id: o.id }}
+                  className="flex items-start gap-3 py-3 hover:bg-card/60"
                 >
-                  {o.delta_7d > 0 ? "+" : ""}
-                  {o.delta_7d}°C
-                </span>
-              </Link>
-            </li>
-          ))}
+                  <Thermometer value={o.temperature} size="sm" showLabel={false} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {objectType(o.type)}
+                    </div>
+                    <div className="truncate font-serif">{o.name}</div>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{detail}</p>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
