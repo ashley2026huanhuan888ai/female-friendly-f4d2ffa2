@@ -151,8 +151,12 @@ function ObjectDetail() {
       <section className="border-b border-border">
         <div className="container-prose grid gap-12 py-16 md:grid-cols-[1fr_auto] md:py-24">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              {objectType(obj.type)}
+            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              <span className="font-mono tabular-nums text-foreground">
+                {t("objectDetail.reviewedCount", { count: obj.observation_count })}
+              </span>
+              <span aria-hidden>·</span>
+              <span>{objectType(obj.type)}</span>
             </div>
             <h1 className="mt-4 font-serif text-5xl text-balance md:text-6xl">{obj.name}</h1>
             {obj.description && (
@@ -201,9 +205,6 @@ function ObjectDetail() {
               size="lg"
               unmeasured={obj.observation_count === 0}
             />
-            <div className="mt-4 text-right text-xs text-muted-foreground">
-              {t("objectDetail.reviewedCount", { count: obj.observation_count })}
-            </div>
             <button
               onClick={() => setShowExpl((v) => !v)}
               className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
