@@ -1,28 +1,31 @@
-把"近期升温对象"的右侧 `+3°C` 改成一句可读的解释，包含证据数 / 主话题 / 证据等级 / 温度前后值。
+新建一个汇总页 `/how-we-judge` —— "了解平台如何判断"，作为知识引擎与证据库的总入口；导航中合并这两项为单条链接。
 
-## 后端 `src/lib/api/observation-center.functions.ts`（getHomeSummary）
-1. 在并行 fetch 中加一项：拉取近 7 天 `status='approved'` 的 observations（字段 `object_id, evidence_level, tags`）。
-2. 计算 heating 候选对象后，对每个 heating 对象聚合这批 obs：
-   - `evidence_7d_count` = 条数
-   - `top_tag` = 出现最多的 tag（无则 null）
-   - `top_evidence_level` = 出现最多的等级（A/B/C，无则 null）
-3. `pack(heatIds)` 输出每项追加：`evidence_7d_count`、`top_tag`、`top_evidence_level`、`temperature_before = round(temperature - delta_7d, 1)`、`temperature_after = temperature`。
+## 改动
 
-cooling 同样处理，便于对称展示"降至"。
+1. 新建 `src/routes/how-we-judge.tsx`
+   - 路由 `createFileRoute("/how-we-judge")`，独立 `head()` 含标题/描述/og 元信息。
+   - 页面结构（单列、editorial 风格，沿用现有 token）：
+     a) 标题区："了解平台如何判断"，副标题简述判断流程：原则 → 标签 → 证据等级 → 案例 → 趋势温度。
+     b) "我们怎么判断"四步说明（原则、标签体系、证据等级 A/B/C、人工审核），每步一句话。
+     c) 两张大入口卡片：
+        - 知识引擎 `/knowledge`：原则、标签、案例知识库。
+        - 证据库（A 级）`/archive/evidence`：所有 A 级证据条目列表。
+     d) 底部"想纠错？"指引链接到 `/feedback`。
 
-## i18n `src/lib/i18n.tsx`
-新增键（中/英）：
-- `home.heatingDetail.full`：`因新增 {count} 条关于"{tag}"的 {level} 级证据，争议温度由 {before}°C 升至 {after}°C。`
-- `home.heatingDetail.noTag`：`因新增 {count} 条 {level} 级证据，争议温度由 {before}°C 升至 {after}°C。`
-- `home.heatingDetail.noLevel`：`因新增 {count} 条关于"{tag}"的新证据，争议温度由 {before}°C 升至 {after}°C。`
-- `home.heatingDetail.minimal`：`争议温度由 {before}°C 升至 {after}°C。`
-- `home.coolingDetail.*`：对应"降至"版本。
+2. `src/components/SiteLayout.tsx`：`SECONDARY_NAV` 把 `nav.evidence` 与 `nav.knowledge` 两项替换为 `{ to: "/how-we-judge", labelKey: "nav.howWeJudge" }`。
 
-英文版同结构。
+3. `src/lib/i18n.tsx`：新增中英 i18n 键
+   - `nav.howWeJudge`：中"了解平台如何判断" / 英"How we judge"
+   - `howWeJudge.eyebrow`、`howWeJudge.title`、`howWeJudge.body`
+   - `howWeJudge.steps.1..4`（原则 / 标签体系 / 证据等级 A‑C / 人工复核）
+   - `howWeJudge.card.knowledge.title`/`.body`/`.cta`
+   - `howWeJudge.card.evidence.title`/`.body`/`.cta`
+   - `howWeJudge.feedback`
+   - `seo.howWeJudge.title` / `.description`（供 `usePageMeta` 使用）
 
-## 前端 `src/routes/index.tsx`（HeatingList 组件）
-- 取消右侧 `+N°C` 数字。
-- 列表项布局改为：温度计 + 右侧两行（第一行：类型 + 对象名；第二行：根据字段可用性选择对应模板渲染的小字描述，`text-xs text-muted-foreground leading-5`）。
-- positive 用 heating 模板，否则 cooling 模板。
+4. 保留 `/knowledge` 与 `/archive/evidence` 路由本身不变。
 
-不改动数据库与其它页面。
+## 不做
+- 不删除原页面，仅改动导航 + 新增汇总页。
+- 不改变数据接口。
+- 不改其它页面文案。
