@@ -242,31 +242,7 @@ function Index() {
       </section>
 
 
-      {/* 最近温度事件 */}
-      <section className="py-16">
-        <div className="container-prose">
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-serif text-3xl">{t("home.latestEvents")}</h2>
-            <Link
-              to="/feed"
-              className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-            >
-              {t("common.viewAll")}
-            </Link>
-          </div>
-          {!summary?.today_events?.length ? (
-            <p className="mt-10 border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-              {t("home.noEvents24h")}
-            </p>
-          ) : (
-            <div className="mt-8 grid gap-3 md:grid-cols-2">
-              {summary.today_events.map((e: any, i: number) => (
-                <FeedEventCard key={i} ev={{ ...e, id: String(i) }} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+
 
       {/* 最新 AI 观察 */}
       <section className="py-16">
