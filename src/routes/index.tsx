@@ -208,25 +208,31 @@ function Index() {
           <p className="text-xs text-muted-foreground">{t("home.latestAIHint")}</p>
           {summary?.latest_observations?.length ? (
             <ul className="mt-6 grid gap-4 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0">
-              {summary.latest_observations.slice(0, 6).map((o: any) => (
-                <li key={o.id} className="py-4 md:border-b md:border-border">
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              {summary.latest_observations.slice(0, 6).map((o: any) => {
+                const inner = (
+                  <>
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                      {o.object ? o.object.name : "—"} · {t("common.evidence")} {o.evidence_level ?? "—"}
+                    </div>
+                    <p className="mt-1 text-sm">{o.summary ?? t("common.noSummary")}</p>
+                  </>
+                );
+                return (
+                  <li key={o.id} className="md:border-b md:border-border">
                     {o.object ? (
                       <Link
                         to="/objects/$id"
                         params={{ id: o.object.id }}
-                        className="underline-offset-4 hover:text-foreground hover:underline"
+                        className="block py-4 hover:bg-card/60"
                       >
-                        {o.object.name}
+                        {inner}
                       </Link>
                     ) : (
-                      "—"
-                    )}{" "}
-                    · {t("common.evidence")} {o.evidence_level ?? "—"}
-                  </div>
-                  <p className="mt-1 text-sm">{o.summary ?? t("common.noSummary")}</p>
-                </li>
-              ))}
+                      <div className="py-4">{inner}</div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="mt-6 text-sm text-muted-foreground">{t("common.noObservations")}</p>
