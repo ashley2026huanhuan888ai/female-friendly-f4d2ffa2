@@ -19,7 +19,14 @@ export function FeedEventCard({ ev }: { ev: Event }) {
   const heating = ev.delta > 0;
   const band = bandOf(ev.temperature_after);
   const reasonKey = `feed.reason.${ev.reason}` as Parameters<typeof t>[0];
-  const reasonText = t(reasonKey) === reasonKey ? ev.reason : t(reasonKey);
+  const rawReason = t(reasonKey);
+  const prefix = rawReason === reasonKey ? ev.reason : rawReason;
+  const sentenceKey = (ev.delta >= 0 ? "feed.reason.sentence.up" : "feed.reason.sentence.down") as Parameters<typeof t>[0];
+  const reasonText = t(sentenceKey, {
+    prefix,
+    before: Number(ev.before).toFixed(0),
+    after: Number(ev.temperature_after).toFixed(0),
+  });
   const date = formatDateForLanguage(ev.created_at, language, {
     month: "2-digit",
     day: "2-digit",
