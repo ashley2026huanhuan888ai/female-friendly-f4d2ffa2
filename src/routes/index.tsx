@@ -235,7 +235,7 @@ function Index() {
           <ColumnList
             title={t("home.heating")}
             hint={t("home.heatingHint")}
-            items={summary?.heating ?? []}
+            items={(summary?.heating ?? []).filter((o: any) => Number(o.temperature_after ?? o.temperature ?? 0) >= 40)}
             positive
           />
         </div>
