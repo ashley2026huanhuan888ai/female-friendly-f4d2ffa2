@@ -825,6 +825,8 @@ const COPY = {
       "This object may not be published, may be hidden, or the object ID in the link may be incorrect.",
     "objectDetail.aiSummary": "AI Summary",
     "objectDetail.noAISummary": "Not enough observations to generate a summary yet.",
+    "objectDetail.latestObservation": "Latest Observation",
+    "objectDetail.noObservation": "No reviewed observations yet.",
     "objectDetail.topTags": "Main controversy tags",
     "objectDetail.submit": "Submit observation ->",
     "objectDetail.reviewedCount": "{count} approved observations",
