@@ -145,13 +145,59 @@ export const getHomeSummary = createServerFn({ method: "GET" }).handler(async ()
     : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
   const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
 
+  // 按对象聚合近 7 天通过的观察：条数 / 主话题 / 主证据等级
+  const obs7d = (recentObs7d.data ?? []) as Array<{
+    object_id: string;
+    tags: unknown;
+    evidence_level: string | null;
+  }>;
+  const perObj = new Map<
+    string,
+    { count: number; tags: Map<string, number>; levels: Map<string, number> }
+  >();
+  for (const r of obs7d) {
+    let agg = perObj.get(r.object_id);
+    if (!agg) {
+      agg = { count: 0, tags: new Map(), levels: new Map() };
+      perObj.set(r.object_id, agg);
+    }
+    agg.count += 1;
+    const tags = Array.isArray(r.tags) ? (r.tags as string[]) : [];
+    for (const tg of tags) agg.tags.set(tg, (agg.tags.get(tg) ?? 0) + 1);
+    if (r.evidence_level) agg.levels.set(r.evidence_level, (agg.levels.get(r.evidence_level) ?? 0) + 1);
+  }
+  const topKey = (m: Map<string, number>) => {
+    let best: string | null = null;
+    let bestN = 0;
+    for (const [k, n] of m) {
+      if (n > bestN) {
+        best = k;
+        bestN = n;
+      }
+    }
+    return best;
+  };
+
   const pack = (ids: string[]) =>
     ids
       .map((id) => {
         const o = oMap.get(id);
-        return o ? { ...o, delta_7d: Math.round((byObj.get(id) ?? 0) * 10) / 10 } : null;
+        if (!o) return null;
+        const delta_7d = Math.round((byObj.get(id) ?? 0) * 10) / 10;
+        const agg = perObj.get(id);
+        const before = Math.round((Number(o.temperature) - delta_7d) * 10) / 10;
+        return {
+          ...o,
+          delta_7d,
+          temperature_before: before,
+          temperature_after: Number(o.temperature),
+          evidence_7d_count: agg?.count ?? 0,
+          top_tag: agg ? topKey(agg.tags) : null,
+          top_evidence_level: agg ? topKey(agg.levels) : null,
+        };
       })
       .filter(Boolean);
+
 
   const todayWithObj = (
     (todayEvents.data ?? []) as Array<{
