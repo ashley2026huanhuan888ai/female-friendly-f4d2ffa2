@@ -149,7 +149,7 @@ const COPY = {
     "home.hero.actions": "创建对象，提交观察，持续监督，推动提升……",
     "home.search.placeholder": "搜索你关心的品牌、影视、组织、事件…",
     "home.search.button": "查询",
-    "home.cta.browse": "看看大家在观察什么",
+    "home.cta.browse": "大家在观察的性别争议对象",
     "home.cta.feed": "查看最近变化",
     "home.cta.feedback": "给平台提建议",
     "home.cta.request": "增加新测评对象",
