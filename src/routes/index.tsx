@@ -183,19 +183,19 @@ function Index() {
                     params={{ id: o.id }}
                     className="flex items-center gap-3 py-3 hover:bg-card/60"
                   >
-                    <Thermometer
-                      value={o.temperature}
-                      size="sm"
-                      showLabel={false}
-                      unmeasured={(o.observation_count ?? 0) === 0}
-                    />
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                         {objectType(o.type)}
                       </div>
                       <div className="truncate font-serif">{o.name}</div>
                     </div>
-                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                    <Thermometer
+                      value={o.temperature}
+                      size="sm"
+                      showLabel={false}
+                      unmeasured={(o.observation_count ?? 0) === 0}
+                    />
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground shrink-0">
                       {t("common.observationCount", { count: o.observation_count ?? 0 })}
                     </span>
                   </Link>
