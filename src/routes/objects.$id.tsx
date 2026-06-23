@@ -163,14 +163,15 @@ function ObjectDetail() {
               <p className="mt-6 max-w-2xl text-base text-muted-foreground">{obj.description}</p>
             )}
 
-            <div className="mt-6 md:mt-10">
+            <div className="mt-4 rounded-sm bg-card/40 px-4 py-5 md:mt-10 md:bg-transparent md:px-0 md:py-0">
               <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
                 {t("objectDetail.latestObservation")}
               </div>
-              <p className="mt-2 text-base leading-relaxed whitespace-pre-wrap md:mt-3 md:max-w-2xl">
+              <p className="mt-2 text-[15px] leading-7 whitespace-pre-wrap md:mt-3 md:max-w-2xl md:text-base md:leading-relaxed">
                 {obs[0]?.content ?? t("objectDetail.noObservation")}
               </p>
             </div>
+
 
 
             {topTags.length > 0 && (
@@ -200,7 +201,7 @@ function ObjectDetail() {
             </div>
           </div>
 
-          <div className="order-1 flex shrink-0 flex-row items-center gap-3 border-b border-border/60 pb-3 md:order-2 md:flex-col md:items-end md:border-0 md:pb-0">
+          <div className="order-1 flex shrink-0 flex-row items-center gap-3 md:order-2 md:flex-col md:items-end">
             <Thermometer
               value={obj.temperature}
               size="lg"
