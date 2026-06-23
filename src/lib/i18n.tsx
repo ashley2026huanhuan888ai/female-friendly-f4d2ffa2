@@ -155,7 +155,7 @@ const COPY = {
     "home.cta.request": "增加新测评对象",
     "home.stats.title": "观察",
     "home.topicWall.title": "正在被观察",
-    "home.topicWall.hint": "字越大，最近 30 天被提到越多。点击查看相关对象。",
+    "home.topicWall.hint": "字越大，最近 30 天性别争议升温。点击查看相关对象。",
     "home.topicWall.empty": "还没有足够的近期议题。我们等第一条观察。",
     "home.topicWall.active": "近期活跃议题",
     "home.topicWall.objects": "观察对象",
