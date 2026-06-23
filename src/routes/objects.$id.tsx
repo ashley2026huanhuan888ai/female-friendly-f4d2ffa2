@@ -149,8 +149,8 @@ function ObjectDetail() {
   return (
     <SiteLayout>
       <section className="border-b border-border">
-        <div className="container-prose grid grid-cols-[minmax(0,1fr)_auto] items-start gap-6 py-16 md:gap-12 md:py-24">
-          <div className="min-w-0">
+        <div className="container-prose grid grid-cols-1 items-start gap-6 py-16 md:grid-cols-[minmax(0,1fr)_auto] md:gap-12 md:py-24">
+          <div className="min-w-0 order-2 md:order-1">
             <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               <span className="font-mono tabular-nums text-foreground">
                 {t("objectDetail.reviewedCount", { count: obj.observation_count })}
@@ -167,10 +167,11 @@ function ObjectDetail() {
               <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
                 {t("objectDetail.latestObservation")}
               </div>
-              <p className="mt-3 max-w-2xl text-base leading-relaxed whitespace-pre-wrap">
+              <p className="mt-3 text-base leading-relaxed whitespace-pre-wrap md:max-w-2xl">
                 {obs[0]?.content ?? t("objectDetail.noObservation")}
               </p>
             </div>
+
 
             {topTags.length > 0 && (
               <div className="mt-10">
