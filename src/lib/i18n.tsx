@@ -1301,6 +1301,9 @@ const COPY = {
       "Every verifiable A-grade evidence item, listed by object and date, linking back to the original case.",
     "howWeJudge.card.evidence.cta": "Open Evidence Library",
     "howWeJudge.feedback": "Spotted a misjudgment or want to add evidence? Send us feedback:",
+  },
+} as const;
+
 
 type CopyKey = keyof typeof COPY.zh;
 
