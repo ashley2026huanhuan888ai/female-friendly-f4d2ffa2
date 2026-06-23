@@ -53,7 +53,7 @@ function Index() {
     <SiteLayout>
       {/* HERO */}
       <section className="border-b border-border">
-        <div className="container-prose grid gap-10 py-16 md:grid-cols-[1.5fr_1fr] md:py-24">
+        <div className="container-prose grid gap-10 pt-6 pb-12 md:grid-cols-[1.5fr_1fr] md:pt-10 md:pb-16">
           <div>
             <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               Observatory · Est. 2026
