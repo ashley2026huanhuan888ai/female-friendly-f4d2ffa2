@@ -1239,8 +1239,47 @@ export const getPublicObjects = createServerFn({ method: "GET" })
               (tagObjectOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER),
           )
         : (items ?? []);
-    return { items: sortedItems.slice(0, data.limit) };
+    const finalItems = sortedItems.slice(0, data.limit);
+
+    // 聚合 top_tags（来自 approved observations.tags）
+    const ids = finalItems.map((o: any) => o.id);
+    const tagsByObject = new Map<string, { tag: string; count: number }[]>();
+    if (ids.length) {
+      const { data: obsTags } = await supabaseAdmin
+        .from("observations")
+        .select("object_id, tags")
+        .eq("status", "approved")
+        .in("object_id", ids);
+      const counters = new Map<string, Map<string, number>>();
+      for (const row of (obsTags ?? []) as Array<{ object_id: string; tags: unknown }>) {
+        const tags = Array.isArray(row.tags) ? (row.tags as string[]) : [];
+        if (!tags.length) continue;
+        let m = counters.get(row.object_id);
+        if (!m) {
+          m = new Map();
+          counters.set(row.object_id, m);
+        }
+        for (const t of tags) m.set(t, (m.get(t) ?? 0) + 1);
+      }
+      for (const [oid, m] of counters) {
+        tagsByObject.set(
+          oid,
+          [...m.entries()]
+            .map(([tag, count]) => ({ tag, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 3),
+        );
+      }
+    }
+
+    return {
+      items: finalItems.map((o: any) => ({
+        ...o,
+        top_tags: tagsByObject.get(o.id) ?? o.top_tags ?? [],
+      })),
+    };
   });
+
 
 const PUBLIC_OBJECT_OBSERVATION_COLUMNS =
   "id, cleaned_content, content, scene, tags, evidence_level, summary, reference_url, screenshot_url, created_at";
