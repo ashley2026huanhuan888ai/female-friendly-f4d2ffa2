@@ -184,7 +184,7 @@ const COPY = {
     "home.steps.1": "选择或申请测评对象",
     "home.steps.2": "提交体验和证据",
     "home.steps.3": "AI 整理、人工审核并更新趋势",
-    "home.heating": "近期升温对象",
+    "home.heating": "近期性别争议对象",
     "home.heatingHint": "过去 7 天累计升温最多",
     "home.cooling": "近期降温对象",
     "home.coolingHint": "过去 7 天累计降温最多",
