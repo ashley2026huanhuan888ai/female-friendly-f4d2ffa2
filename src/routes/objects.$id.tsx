@@ -149,7 +149,7 @@ function ObjectDetail() {
   return (
     <SiteLayout>
       <section className="border-b border-border">
-        <div className="container-prose grid grid-cols-1 items-start gap-6 py-16 md:grid-cols-[minmax(0,1fr)_auto] md:gap-12 md:py-24">
+        <div className="container-prose grid grid-cols-1 items-start gap-4 py-8 md:grid-cols-[minmax(0,1fr)_auto] md:gap-12 md:py-24">
           <div className="min-w-0 order-2 md:order-1">
             <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               <span className="font-mono tabular-nums text-foreground">
@@ -158,16 +158,16 @@ function ObjectDetail() {
               <span aria-hidden>·</span>
               <span>{objectType(obj.type)}</span>
             </div>
-            <h1 className="mt-4 font-serif text-3xl text-balance sm:text-5xl md:text-6xl">{obj.name}</h1>
+            <h1 className="mt-3 font-serif text-3xl text-balance sm:text-5xl md:mt-4 md:text-6xl">{obj.name}</h1>
             {obj.description && (
               <p className="mt-6 max-w-2xl text-base text-muted-foreground">{obj.description}</p>
             )}
 
-            <div className="mt-10">
+            <div className="mt-6 md:mt-10">
               <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
                 {t("objectDetail.latestObservation")}
               </div>
-              <p className="mt-3 text-base leading-relaxed whitespace-pre-wrap md:max-w-2xl">
+              <p className="mt-2 text-base leading-relaxed whitespace-pre-wrap md:mt-3 md:max-w-2xl">
                 {obs[0]?.content ?? t("objectDetail.noObservation")}
               </p>
             </div>
@@ -200,7 +200,7 @@ function ObjectDetail() {
             </div>
           </div>
 
-          <div className="order-1 flex shrink-0 flex-row items-center gap-3 md:order-2 md:flex-col md:items-end">
+          <div className="order-1 flex shrink-0 flex-row items-center gap-3 border-b border-border/60 pb-3 md:order-2 md:flex-col md:items-end md:border-0 md:pb-0">
             <Thermometer
               value={obj.temperature}
               size="lg"
@@ -208,11 +208,12 @@ function ObjectDetail() {
             />
             <button
               onClick={() => setShowExpl((v) => !v)}
-              className="mt-3 text-[11px] uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground underline-offset-4 hover:text-foreground hover:underline md:mt-3"
             >
               {showExpl ? t("objectDetail.collapse") : t("objectDetail.why")}
             </button>
           </div>
+
         </div>
       </section>
 
