@@ -63,14 +63,16 @@ function Index() {
               <span className="text-accent">{t("home.hero.title.accent")}</span>
               {t("home.hero.title.after")}
             </h1>
-            <ol className="mt-8 grid gap-3 grid-cols-1 sm:grid-cols-3">
+            <ol className="mt-8 grid grid-cols-3 gap-2 sm:gap-3">
               {([1, 2, 3] as const).map((n) => (
                 <li
                   key={n}
-                  className="border border-border bg-card p-4 flex items-start gap-3"
+                  className="flex flex-col gap-1 border border-border bg-card p-2 sm:flex-row sm:items-start sm:gap-3 sm:p-4"
                 >
-                  <span className="font-mono text-xs tabular-nums text-accent">0{n}</span>
-                  <span className="text-sm leading-6 text-foreground">
+                  <span className="font-mono text-[10px] tabular-nums text-accent sm:text-xs">
+                    0{n}
+                  </span>
+                  <span className="text-[11px] leading-snug text-foreground sm:text-sm sm:leading-6">
                     {t(`home.steps.${n}` as never)}
                   </span>
                 </li>
