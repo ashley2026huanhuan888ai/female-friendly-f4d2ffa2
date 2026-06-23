@@ -212,8 +212,20 @@ function Index() {
         <div className="container-prose">
           <h2 className="font-serif text-2xl">{t("home.latestAI")}</h2>
           <p className="text-xs text-muted-foreground">{t("home.latestAIHint")}</p>
-          {summary?.latest_observations?.length ? (
-            <ul className="mt-6 grid gap-4 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0">
+          {obsStatus === "loading" ? (
+            <ul className="mt-6 grid gap-4 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0" aria-busy="true">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <li key={i} className="py-4 md:border-b md:border-border">
+                  <div className="h-3 w-32 animate-pulse bg-muted/60" />
+                  <div className="mt-2 h-3 w-full animate-pulse bg-muted/40" />
+                  <div className="mt-1 h-3 w-4/5 animate-pulse bg-muted/40" />
+                </li>
+              ))}
+            </ul>
+          ) : obsStatus === "error" ? (
+            <p className="mt-6 text-sm text-destructive">{t("common.loadError")}</p>
+          ) : summary?.latest_observations?.length ? (
+            <ul className="mt-6 grid gap-4 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0 animate-fade-in">
               {summary.latest_observations.slice(0, 6).map((o: any) => {
                 const inner = (
                   <>
