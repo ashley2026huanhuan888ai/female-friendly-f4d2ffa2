@@ -507,7 +507,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 {t("export.share")}
               </button>
               <button
-                onClick={() => setResult(null)}
+                onClick={() => { setResult(null); setSelectionOpen(true); }}
                 className="ml-auto border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:border-foreground hover:text-foreground"
               >
                 {t("export.regenerate")}
