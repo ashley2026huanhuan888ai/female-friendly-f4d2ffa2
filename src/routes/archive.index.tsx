@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { searchArchive, ARCHIVE_CATEGORIES } from "@/lib/api/archive.functions";
-import { FEMINIST_TAGS, bandOf } from "@/lib/temperature";
+import { FEMINIST_TAGS } from "@/lib/temperature";
+import { TempText } from "@/components/TempText";
 import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
 
 export const Route = createFileRoute("/archive/")({
