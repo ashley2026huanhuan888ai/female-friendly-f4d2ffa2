@@ -192,6 +192,46 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
     }
   };
 
+  const handleDownload = () => {
+    if (!result) return;
+    const a = document.createElement("a");
+    a.href = result.dataUrl;
+    a.download = result.filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const handleShare = async () => {
+    if (!result) return;
+    const file = new File([result.blob], result.filename, { type: "image/png" });
+    const nav: any = navigator;
+    try {
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({ files: [file], title: object.name, text: t("export.cardTitle") });
+        return;
+      }
+    } catch (e) {
+      // user cancelled or share failed — fall through to clipboard
+    }
+    try {
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": result.blob })]);
+        toast.success(t("export.shareUnsupported"));
+        return;
+      }
+    } catch {}
+    toast.error(t("export.copyFailed"));
+  };
+
+  const copyFilename = async () => {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(result.filename);
+      toast.success(t("export.filenameCopied"));
+    } catch {}
+  };
+
   const archiveNo = `FF-2026-${object.id.slice(0, 6).toUpperCase()}`;
   const exporterName = nickname || t("export.anonymous");
   const allSelected = selectedIds.size === observations.length && observations.length > 0;
