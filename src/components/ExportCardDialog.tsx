@@ -75,15 +75,38 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
   const handleExport = async () => {
     if (!cardRef.current || !selected) return;
+
+    // Validate: at least one content section must be enabled
+    if (!includeScreenshot && !includeContent) {
+      toast.error(t("export.needContent"));
+      return;
+    }
+
     setGenerating(true);
     try {
-      // wait for images to load
+      // Pre-check screenshot availability before rendering
+      if (includeScreenshot && selected.screenshot_url) {
+        const ok = await new Promise<boolean>((resolve) => {
+          const probe = new Image();
+          probe.crossOrigin = "anonymous";
+          probe.onload = () => resolve(true);
+          probe.onerror = () => resolve(false);
+          probe.src = selected.screenshot_url!;
+        });
+        if (!ok) {
+          toast.error(t("export.imageNotReady"));
+          setGenerating(false);
+          return;
+        }
+      }
+
+      // wait for in-DOM images to settle
       const imgs = cardRef.current.querySelectorAll("img");
       await Promise.all(
         Array.from(imgs).map(
           (img) =>
             new Promise<void>((resolve) => {
-              if (img.complete) return resolve();
+              if (img.complete && img.naturalWidth > 0) return resolve();
               img.onload = () => resolve();
               img.onerror = () => resolve();
             })
