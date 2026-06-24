@@ -1,45 +1,35 @@
 ## 目标
-重做 `src/components/ExportCardDialog.tsx` 的长图渲染区域（off-screen 卡片），与平台首页 / 详情页风格统一，并提升可读性。
+在导出长图完成后，提供清晰的下载反馈与一键分享入口。
 
-## 改动点
+## 改动点（仅 `src/components/ExportCardDialog.tsx`）
 
-### 1. 删除无附件证据
-- 在 `handleExport` 与选项 UI 中：当某条观察 `includeScreenshot=true` 但 `screenshot_url` 为空时，自动剔除（不再渲染"未提供附件"占位框）。
-- 渲染循环里同步过滤：无截图就不显示截图区，整条观察若内容/截图都没有则跳过。
-- 选项面板里，对没有附件的观察直接禁用"包含附件"勾选，并提示。
+1. **生成结果状态**：新增 `result: { dataUrl, filename, blob } | null`。`handleExport` 不再立即触发 `<a download>`，而是生成完毕后把结果存入 state，并 `toast.success`。
 
-### 2. 标签风格对齐主页
-当前：黑底白字方块 + ✓。
-改为与 `objects.$id.tsx` 列表一致：`#tagname`，使用 accent（芭比粉）色，无边框，inline 横排，前面带证据等级胶囊：
-```
-[evidence 3]  #服美役  #PUA  · 场景
-```
+2. **文件名规范化**：`${object.name}-${YYYYMMDD}-${count}cards.png`，把对象名里非法字符替换为 `_`。
 
-### 3. 对象名称旁加温度
-在 header 区 `{object.name}` 右侧加 `TempText`-等价的温度数值（无法直接挂载 React 组件到内联 HTML 渲染没问题——它已是 React 树）：
-- 直接 `import { TempText } from "@/components/TempText"`，`<TempText value={object.temperature} size="lg" />`。
-- 需要 `Props.object` 新增 `temperature: number`，调用方 `objects.$id.tsx` 传入 `obj.temperature`。
+3. **结果面板**（替换原"生成"按钮区域，仅当 `result` 存在时显示在底部）：
+   - 显示缩略图（max-h 160px）
+   - 显示完整文件名（mono 字体，可点击复制）
+   - 三个按钮：
+     - **下载 PNG**：触发 `<a href=dataUrl download=filename>`
+     - **分享**：优先调用 `navigator.share({ files:[File], title, text })`（Web Share Level 2）；不支持文件分享时回退到复制图片到剪贴板（`navigator.clipboard.write([new ClipboardItem({'image/png': blob})])`）；都不支持就 toast 提示"长按图片保存"。
+     - **重新生成 / 关闭**
 
-### 4. 增加二维码
-- 新增 dep：`bun add qrcode`（含类型）。
-- 在打开 dialog 时用 `QRCode.toDataURL(url)` 生成档案入口二维码，URL 指向 `${window.location.origin}/objects/${object.id}`。
-- 在 footer 上方插入一个区块，模仿用户上传图：左侧二维码（160×160），右侧两行文字"档案入口 / 扫码查看完整档案"，accent 色下划线短横强调"档案入口"，右侧箭头 →。
+4. **i18n 新增键**（中/英）：
+   - `export.ready` "长图已生成" / "Image ready"
+   - `export.download` "下载 PNG" / "Download PNG"
+   - `export.share` "分享" / "Share"
+   - `export.shareUnsupported` "当前设备不支持直接分享，已复制到剪贴板" / "Sharing not supported, copied to clipboard"
+   - `export.copyFailed` "复制失败，请长按图片保存" / "Copy failed, long-press the image to save"
+   - `export.regenerate` "重新生成" / "Regenerate"
+   - `export.filename` "文件名" / "Filename"
 
-### 5. 可读性 & 排版
-- 卡片整体 padding 提到 `64px 64px 48px`，正文行距 `1.8`，正文字号 `19px`，摘要 `22px`。
-- header 标题字号与对象名字号微调；分隔线由 2px 改 1px 更精致，统一边框颜色 `#1a1a1a`。
-- section 间距 `marginBottom: 44`。
-- 截图最大高度限制 `maxHeight: 720px; object-fit: contain` 防止单张截图把卡片拉太长。
-- footer 改双行：左 = 导出人 + 日期；右 = 平台名（accent）+ 档案号（mono）。
-
-## 涉及文件
-- `src/components/ExportCardDialog.tsx`（主要改动）
-- `src/routes/objects.$id.tsx`（给 ExportCardDialog 传 `temperature`）
-- `package.json`（新增 `qrcode`）
+5. **关闭对话框时**清空 `result`，避免下次打开看到上次结果。
 
 ## 验收
-- 选择没有截图的观察 → 长图里不出现"未提供附件"占位，截图区直接省略。
-- 长图 header 显示：对象类型 / 对象名 / 温度（粉色或区间色）。
-- 标签呈现 `#xxx` 粉色，与详情页一致。
-- 卡片底部含二维码 + "档案入口"提示。
-- 字号、行距更舒展，整体不再拥挤。
+- 点击"生成长图"→ 出现结果面板，含缩略图、文件名、下载/分享/重新生成按钮。
+- 下载按钮在桌面/移动端均生效。
+- 移动端 Safari/Chrome 点"分享"调起系统分享面板；不支持时降级到剪贴板或提示。
+- 切换观察项或关闭重开后，旧结果被清空。
+
+不涉及任何后端、路由或其他组件改动。

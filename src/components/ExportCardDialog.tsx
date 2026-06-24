@@ -48,6 +48,12 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [nickname, setNickname] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [result, setResult] = useState<{ dataUrl: string; blob: Blob; filename: string } | null>(null);
+
+  const handleClose = () => {
+    setResult(null);
+    onClose();
+  };
 
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -171,17 +177,59 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
         cacheBust: true,
         backgroundColor: PAPER,
       });
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `${object.name}-cards-${orderedSelected.length}.png`;
-      a.click();
-      toast.success(t("export.button"));
+      const blob = await (await fetch(dataUrl)).blob();
+      const d = new Date();
+      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+      const safeName = object.name.replace(/[\\/:*?"<>|\s]+/g, "_");
+      const filename = `${safeName}-${ymd}-${orderedSelected.length}cards.png`;
+      setResult({ dataUrl, blob, filename });
+      toast.success(t("export.ready"));
     } catch (e: any) {
       console.error(e);
       toast.error(t("export.failed"));
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleDownload = () => {
+    if (!result) return;
+    const a = document.createElement("a");
+    a.href = result.dataUrl;
+    a.download = result.filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const handleShare = async () => {
+    if (!result) return;
+    const file = new File([result.blob], result.filename, { type: "image/png" });
+    const nav: any = navigator;
+    try {
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({ files: [file], title: object.name, text: t("export.cardTitle") });
+        return;
+      }
+    } catch (e) {
+      // user cancelled or share failed — fall through to clipboard
+    }
+    try {
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": result.blob })]);
+        toast.success(t("export.shareUnsupported"));
+        return;
+      }
+    } catch {}
+    toast.error(t("export.copyFailed"));
+  };
+
+  const copyFilename = async () => {
+    if (!result) return;
+    try {
+      await navigator.clipboard.writeText(result.filename);
+      toast.success(t("export.filenameCopied"));
+    } catch {}
   };
 
   const archiveNo = `FF-2026-${object.id.slice(0, 6).toUpperCase()}`;
@@ -192,7 +240,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-8"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="relative w-full max-w-2xl bg-background shadow-2xl"
@@ -201,7 +249,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <h2 className="font-serif text-lg">{t("export.title")}</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
           >
             ✕
@@ -314,9 +362,54 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
           )}
         </div>
 
+        {result && (
+          <div className="border-t border-border bg-muted/30 px-5 py-4">
+            <div className="mb-3 flex items-start gap-4">
+              <img
+                src={result.dataUrl}
+                alt=""
+                className="max-h-40 w-24 border border-border object-cover object-top"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {t("export.ready")} · {t("export.filename")}
+                </div>
+                <button
+                  type="button"
+                  onClick={copyFilename}
+                  className="mt-1 block w-full truncate text-left font-mono text-xs text-foreground hover:text-accent"
+                  title={result.filename}
+                >
+                  {result.filename}
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleDownload}
+                className="border border-accent bg-accent px-4 py-2 text-xs uppercase tracking-wider text-accent-foreground hover:opacity-90"
+              >
+                {t("export.download")}
+              </button>
+              <button
+                onClick={handleShare}
+                className="border border-foreground px-4 py-2 text-xs uppercase tracking-wider hover:bg-foreground hover:text-background"
+              >
+                {t("export.share")}
+              </button>
+              <button
+                onClick={() => setResult(null)}
+                className="ml-auto border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:border-foreground hover:text-foreground"
+              >
+                {t("export.regenerate")}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="border border-border px-4 py-2 text-xs uppercase tracking-wider hover:border-foreground"
           >
             ✕
