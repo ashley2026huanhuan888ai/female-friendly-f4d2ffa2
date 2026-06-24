@@ -17,7 +17,6 @@ interface Event {
 export function FeedEventCard({ ev }: { ev: Event }) {
   const { language, t, objectType, band: bandLabel } = useI18n();
   if (!ev.object) return null;
-  const heating = ev.delta > 0;
   const band = bandOf(ev.temperature_after);
   const reasonKey = `feed.reason.${ev.reason}` as Parameters<typeof t>[0];
   const rawReason = t(reasonKey);
