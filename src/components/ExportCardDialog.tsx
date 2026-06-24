@@ -712,7 +712,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                         left: 0,
                         height: "100%",
                         width: `${Math.max(0, Math.min(100, object.temperature))}%`,
-                        background: tempBand.color,
+                        background: BAND_HEX[tempBand.band] || ACCENT,
                         borderRadius: 9999,
                       }}
                     />
@@ -723,7 +723,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                         fontSize: 72,
                         fontWeight: 700,
                         lineHeight: 1,
-                        color: tempBand.color,
+                        color: BAND_HEX[tempBand.band] || ACCENT,
                         fontVariantNumeric: "tabular-nums",
                         letterSpacing: "-0.02em",
                       }}
@@ -849,10 +849,10 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                           </>
                         )}
 
-                        {showShot && (
+                        {showShot && shotBlobs[obs.id] && (
                           <div style={{ marginTop: 22 }}>
                             <img
-                              src={shotBlobs[obs.id] || obs.screenshot_url!}
+                              src={shotBlobs[obs.id]}
                               alt=""
                               style={{
                                 width: "100%",
