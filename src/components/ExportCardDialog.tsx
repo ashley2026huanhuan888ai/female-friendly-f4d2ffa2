@@ -815,36 +815,19 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        {(cfg.tags.size > 0 || obs.scene) && (
+                        {obs.scene && (
                           <div
                             style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              alignItems: "center",
-                              gap: "8px 16px",
-                              marginBottom: 16,
-                              fontSize: 18,
-                              fontWeight: 600,
+                              color: MUTED,
+                              fontWeight: 400,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.12em",
+                              fontSize: 13,
+                              marginBottom: 12,
+                              fontFamily: "ui-sans-serif, system-ui, sans-serif",
                             }}
                           >
-                            {Array.from(cfg.tags).map((tg) => (
-                              <span key={tg} style={{ color: ACCENT }}>
-                                #{tag(tg)}
-                              </span>
-                            ))}
-                            {obs.scene && (
-                              <span
-                                style={{
-                                  color: MUTED,
-                                  fontWeight: 400,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "0.12em",
-                                  fontSize: 14,
-                                }}
-                              >
-                                · {obs.scene}
-                              </span>
-                            )}
+                            {obs.scene}
                           </div>
                         )}
 
@@ -853,7 +836,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                             {obs.summary && (
                               <div
                                 style={{
-                                  fontSize: 32,
+                                  fontSize: 30,
                                   fontWeight: 700,
                                   lineHeight: 1.4,
                                   marginBottom: 16,
@@ -865,8 +848,8 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                             )}
                             <div
                               style={{
-                                fontSize: 24,
-                                lineHeight: 1.8,
+                                fontSize: 26,
+                                lineHeight: 1.7,
                                 whiteSpace: "pre-wrap",
                                 color: "#2a2a2a",
                               }}
@@ -875,6 +858,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                             </div>
                           </>
                         )}
+
 
                         {showShot && shotBlobs[obs.id] && (
                           <div style={{ marginTop: 22 }}>
