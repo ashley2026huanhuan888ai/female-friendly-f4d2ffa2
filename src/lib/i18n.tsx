@@ -698,6 +698,8 @@ const COPY = {
     "export.evidenceLabel": "触发点",
     "export.observationLabel": "观察原文",
     "export.failed": "生成失败，请重试",
+    "export.needContent": "请至少选择截图或观察原文",
+    "export.imageNotReady": "截图未能加载，请取消勾选或稍后重试",
   },
 
   en: {
@@ -1431,6 +1433,8 @@ const COPY = {
     "export.evidenceLabel": "Triggers",
     "export.observationLabel": "Observation",
     "export.failed": "Failed to generate, please retry",
+    "export.needContent": "Please include screenshot or observation text",
+    "export.imageNotReady": "Screenshot failed to load — uncheck it or retry",
   },
 
 } as const;
