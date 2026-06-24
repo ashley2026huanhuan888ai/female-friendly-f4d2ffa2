@@ -219,7 +219,7 @@ function layoutTags(
     if (ctx.measureText(label).width > CONTENT_W) {
       label = ellipsize(ctx, label, CONTENT_W);
     }
-    const w = ctx.measureText(label).width;
+    const w = ctx.measureText(label).width + TYPO.tagPadX * 2;
     const advance = w + TYPO.tagGapX;
     if (lineW > 0 && lineW + w > CONTENT_W) {
       lines.push([{ text: label, w }]);
@@ -235,18 +235,18 @@ function layoutTags(
     const trimmed = lines.slice(0, 3);
     let extra = `+${overflow}`;
     ctx.font = `600 ${size}px ${FONT_SANS}`;
-    let extraW = ctx.measureText(extra).width;
+    let extraW = ctx.measureText(extra).width + TYPO.tagPadX * 2;
     const last = trimmed[2];
     const lineWidth = () => last.reduce((sum, item, index) => sum + item.w + (index > 0 ? TYPO.tagGapX : 0), 0);
     while (last.length > 0 && lineWidth() + TYPO.tagGapX + extraW > CONTENT_W) {
       last.pop();
       overflow += 1;
       extra = `+${overflow}`;
-      extraW = ctx.measureText(extra).width;
+      extraW = ctx.measureText(extra).width + TYPO.tagPadX * 2;
     }
     if (extraW > CONTENT_W) {
       extra = ellipsize(ctx, extra, CONTENT_W);
-      extraW = ctx.measureText(extra).width;
+      extraW = ctx.measureText(extra).width + TYPO.tagPadX * 2;
     }
     last.push({ text: extra, w: extraW });
     return { lines: trimmed, size, lh: TYPO.tagLH };
