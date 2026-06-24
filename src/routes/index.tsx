@@ -83,6 +83,15 @@ function Index() {
             <div className="inline-block text-[11px] uppercase tracking-[0.18em] text-muted-foreground md:tracking-[0.2em]">
               Observatory · Est. 2026
             </div>
+            <div className="mt-2">
+              <Link
+                to="/how-we-judge"
+                className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+              >
+                {t("nav.howWeJudge")} →
+              </Link>
+            </div>
+
             <h1 className="mt-6 font-serif text-4xl leading-[1.1] text-balance md:text-7xl">
               {t("home.hero.title.before")}
               <span className="text-accent">{t("home.hero.title.accent")}</span>
