@@ -9,7 +9,9 @@ import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
 import { HeatSources } from "@/components/HeatSources";
 import { TemperatureTimeline } from "@/components/TemperatureTimeline";
 import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
-import { getPublicObjectDetail, getPublicObjectObservations } from "@/lib/api/platform.functions";
+import { getPublicObjectDetail, getPublicObjectObservations, deleteObservation } from "@/lib/api/platform.functions";
+import { useAuth } from "@/components/auth-context";
+
 import { FollowButton } from "@/components/FollowButton";
 import { ObjectComments } from "@/components/ObjectComments";
 import { ExportCardDialog } from "@/components/ExportCardDialog";
@@ -74,6 +76,21 @@ function ObjectDetail() {
 
   const fetchDetail = useServerFn(getPublicObjectDetail);
   const fetchMoreObservations = useServerFn(getPublicObjectObservations);
+  const removeObservation = useServerFn(deleteObservation);
+  const { isAdmin } = useAuth();
+
+  async function handleDeleteObservation(obsId: string) {
+    if (!confirm(t("objectDetail.deleteConfirm"))) return;
+    try {
+      await removeObservation({ data: { id: obsId } });
+      setObs((prev) => prev.filter((o) => o.id !== obsId));
+      setObsTotal((n) => Math.max(0, n - 1));
+      toast.success(t("objectDetail.deleteSuccess"));
+    } catch (e: any) {
+      toast.error(e?.message || "Error");
+    }
+  }
+
 
   useEffect(() => {
     let cancelled = false;
@@ -359,6 +376,15 @@ function ObjectDetail() {
                     ))}
                     {o.scene && <span>· {o.scene}</span>}
                     <span className="ml-auto">{formatDateForLanguage(o.created_at, language)}</span>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDeleteObservation(o.id)}
+                        className="border border-destructive/60 px-2 py-0.5 text-[10px] uppercase tracking-wider text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        {t("objectDetail.deleteObservation")}
+                      </button>
+                    )}
+
                   </div>
                   {o.summary && (
                     <p className="mt-3 text-sm font-medium leading-relaxed">{o.summary}</p>
