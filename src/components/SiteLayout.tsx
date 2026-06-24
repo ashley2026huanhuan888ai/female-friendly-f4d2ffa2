@@ -322,25 +322,16 @@ function LanguageToggle({
   language: "zh" | "en";
   setLanguage: (language: "zh" | "en") => void;
 }) {
+  const next = language === "zh" ? "en" : "zh";
   return (
-    <div
-      className="inline-flex border border-border text-[11px] uppercase tracking-wider"
-      aria-label="Language"
+    <button
+      type="button"
+      onClick={() => setLanguage(next)}
+      aria-label={language === "zh" ? "Switch to English" : "切换为中文"}
+      className="border border-border px-2 py-1 text-[11px] uppercase tracking-wider text-muted-foreground hover:bg-foreground hover:text-background"
     >
-      <button
-        type="button"
-        onClick={() => setLanguage("zh")}
-        className={`px-2 py-1 ${language === "zh" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-      >
-        中文
-      </button>
-      <button
-        type="button"
-        onClick={() => setLanguage("en")}
-        className={`border-l border-border px-2 py-1 ${language === "en" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
-      >
-        EN
-      </button>
-    </div>
+      {next === "en" ? "EN" : "中文"}
+    </button>
   );
+
 }

@@ -1,22 +1,18 @@
-# 管理员删除单条观察
+# 简化语言切换按钮
 
-后端 `deleteObservation` server fn 已存在并校验 admin，无需新增。仅做前端接入。
+把现有的「中文 / EN」双按钮组改成单按钮：显示的是「另一种语言」，点击即切换。
 
-## 改动 `src/routes/objects.$id.tsx`
+## 改动 `src/components/SiteLayout.tsx`
 
-1. `import { deleteObservation } from "@/lib/api/platform.functions"`，`useServerFn` 包装；从 `useAuth()` 取 `isAdmin`。
-2. 在「所有已审核观察」列表（约 324 行 `<article>`）右上角元数据行内追加一个仅 `isAdmin` 时渲染的删除按钮（小号文字按钮 `border border-destructive/60 text-destructive`，文案 i18n `objectDetail.deleteObservation` / "删除" / "Delete"）。
-3. 点击 → `confirm(t("objectDetail.deleteConfirm"))` → 调用 `deleteObservation({ data: { id: o.id } })` → 成功 `toast.success` 并刷新列表（沿用现有的 `loadObservations` 或本地 `setObs(prev => prev.filter)`）。
-4. 失败：`toast.error(err.message)`。
-
-## i18n
-
-`src/lib/i18n.tsx` 新增 zh/en：
-- `objectDetail.deleteObservation`: "删除" / "Delete"
-- `objectDetail.deleteConfirm`: "确认删除该观察？此操作不可撤销。" / "Delete this observation? This cannot be undone."
+- 找到现有语言切换的两个按钮（中文 / EN）。
+- 替换为单个按钮：
+  - 当前 `language === "zh"` → 按钮文字 `EN`
+  - 当前 `language === "en"` → 按钮文字 `中文`
+- 点击调用 `setLanguage(language === "zh" ? "en" : "zh")`。
+- 样式：保留外层细边框 + 紧凑 padding（`border border-border px-2 py-1 text-xs hover:bg-foreground hover:text-background`），无背景填充，去掉分段选中态。
+- `aria-label` 设为「Switch to English / 切换为中文」。
 
 ## 不做
 
-- 不改 RLS / 不新建迁移（admin 走 service-role 的 server fn）。
-- 不改桌面端其它布局。
-- 不在 admin 后台页面重复加入口（已有审核流程；此处只是详情页便捷删除）。
+- 不改 i18n 逻辑、不改持久化方式。
+- 桌面/移动端共用同一按钮。
