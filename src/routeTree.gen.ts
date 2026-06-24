@@ -13,6 +13,7 @@ import { Route as TopicsRouteImport } from './routes/topics'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestObjectRouteImport } from './routes/request-object'
+import { Route as PointsSystemRouteImport } from './routes/points-system'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
@@ -68,6 +69,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RequestObjectRoute = RequestObjectRouteImport.update({
   id: '/request-object',
   path: '/request-object',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PointsSystemRoute = PointsSystemRouteImport.update({
+  id: '/points-system',
+  path: '/points-system',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeRoute = MeRouteImport.update({
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/points-system': typeof PointsSystemRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/points-system': typeof PointsSystemRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
+  '/points-system': typeof PointsSystemRoute
   '/request-object': typeof RequestObjectRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -392,6 +401,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/login'
     | '/me'
+    | '/points-system'
     | '/request-object'
     | '/reset-password'
     | '/sitemap.xml'
@@ -433,6 +443,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/login'
     | '/me'
+    | '/points-system'
     | '/request-object'
     | '/reset-password'
     | '/sitemap.xml'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/login'
     | '/me'
+    | '/points-system'
     | '/request-object'
     | '/reset-password'
     | '/sitemap.xml'
@@ -518,6 +530,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
+  PointsSystemRoute: typeof PointsSystemRoute
   RequestObjectRoute: typeof RequestObjectRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -562,6 +575,13 @@ declare module '@tanstack/react-router' {
       path: '/request-object'
       fullPath: '/request-object'
       preLoaderRoute: typeof RequestObjectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/points-system': {
+      id: '/points-system'
+      path: '/points-system'
+      fullPath: '/points-system'
+      preLoaderRoute: typeof PointsSystemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/me': {
@@ -877,6 +897,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
+  PointsSystemRoute: PointsSystemRoute,
   RequestObjectRoute: RequestObjectRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
