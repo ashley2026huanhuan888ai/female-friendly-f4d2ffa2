@@ -700,6 +700,8 @@ const COPY = {
     "export.failed": "生成失败，请重试",
     "export.needContent": "请至少选择截图或观察原文",
     "export.imageNotReady": "截图未能加载，请取消勾选或稍后重试",
+    "export.selectAll": "全选",
+    "export.deselectAll": "取消全选",
   },
 
   en: {
