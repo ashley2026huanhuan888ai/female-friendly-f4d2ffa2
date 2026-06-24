@@ -79,6 +79,33 @@ export type Database = {
         }
         Relationships: []
       }
+      direct_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       knowledge_cases: {
         Row: {
           code: string
@@ -650,6 +677,8 @@ export type Database = {
       profiles: {
         Row: {
           auto_approve: boolean
+          avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
           email: string | null
@@ -658,6 +687,8 @@ export type Database = {
         }
         Insert: {
           auto_approve?: boolean
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -666,6 +697,8 @@ export type Database = {
         }
         Update: {
           auto_approve?: boolean
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
