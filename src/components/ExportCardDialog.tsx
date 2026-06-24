@@ -448,34 +448,55 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 boxSizing: "border-box",
               }}
             >
-              {/* Header */}
-              <div style={{ borderBottom: `1px solid ${INK}`, paddingBottom: 24, marginBottom: 32 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                  <div>
+              {/* Header — title / temperature / QR in one row */}
+              <div style={{ borderBottom: `1px solid ${INK}`, paddingBottom: 28, marginBottom: 32 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 32 }}>
+                  {/* Left: title block + object */}
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.04em" }}>
                       {t("export.cardTitle")}
                     </div>
                     <div style={{ fontSize: 15, color: MUTED, marginTop: 6 }}>
                       {t("export.cardSubtitle")}
                     </div>
-                  </div>
-                  <div style={{ fontSize: 13, color: MUTED, fontFamily: "ui-monospace, monospace" }}>
-                    {t("export.archiveNo")}: {archiveNo}
-                  </div>
-                </div>
-                <div style={{ marginTop: 22, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 6 }}>
+                    <div style={{ marginTop: 24, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 6 }}>
                       {objectType(object.type)}
                     </div>
                     <div style={{ fontSize: 46, fontWeight: 700, lineHeight: 1.1 }}>{object.name}</div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, fontFamily: "ui-serif, Georgia, serif" }}>
-                    <span style={{ fontSize: 64, fontWeight: 700, lineHeight: 1, color: tempBand.color, fontVariantNumeric: "tabular-nums" }}>
-                      {Math.round(object.temperature)}
-                    </span>
-                    <span style={{ fontSize: 22, color: MUTED }}>°C</span>
+
+                  {/* Middle: temperature */}
+                  <div style={{ flexShrink: 0, textAlign: "center", paddingTop: 4 }}>
+                    <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 6 }}>
+                      {t("objectDetail.temperatureLabel") || "温度"}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4, fontFamily: "ui-serif, Georgia, serif" }}>
+                      <span style={{ fontSize: 64, fontWeight: 700, lineHeight: 1, color: tempBand.color, fontVariantNumeric: "tabular-nums" }}>
+                        {Math.round(object.temperature)}
+                      </span>
+                      <span style={{ fontSize: 22, color: MUTED }}>°C</span>
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 12, color: MUTED, fontFamily: "ui-monospace, monospace" }}>
+                      {archiveNo}
+                    </div>
                   </div>
+
+                  {/* Right: QR archive entry */}
+                  {qrDataUrl && (
+                    <div style={{ flexShrink: 0, textAlign: "center", paddingTop: 4 }}>
+                      <img
+                        src={qrDataUrl}
+                        alt="QR"
+                        style={{ width: 104, height: 104, display: "block", background: "#fff", padding: 4, border: `1px solid ${INK}` }}
+                      />
+                      <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: INK, borderBottom: `2px solid ${ACCENT}`, display: "inline-block", paddingBottom: 1 }}>
+                        {t("export.archiveEntry")}
+                      </div>
+                      <div style={{ marginTop: 4, fontSize: 10, color: MUTED, maxWidth: 110, lineHeight: 1.3 }}>
+                        {t("export.scanToView")}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
