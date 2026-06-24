@@ -437,7 +437,7 @@ function ObjectDetail() {
       <ExportCardDialog
         open={showExport}
         onClose={() => setShowExport(false)}
-        object={{ id, name: obj.name, type: obj.type }}
+        object={{ id, name: obj.name, type: obj.type, temperature: obj.temperature }}
         observations={obs}
       />
     </SiteLayout>
