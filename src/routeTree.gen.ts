@@ -15,6 +15,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as HowWeJudgeRouteImport } from './routes/how-we-judge'
 import { Route as FeedbackRouteImport } from './routes/feedback'
@@ -76,6 +77,11 @@ const MeRoute = MeRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KnowledgeRoute = KnowledgeRouteImport.update({
@@ -249,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/feedback': typeof FeedbackRoute
   '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/feedback': typeof FeedbackRoute
   '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
@@ -329,6 +337,7 @@ export interface FileRoutesById {
   '/feedback': typeof FeedbackRoute
   '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
@@ -371,6 +380,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/how-we-judge'
     | '/knowledge'
+    | '/leaderboard'
     | '/login'
     | '/me'
     | '/request-object'
@@ -410,6 +420,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/how-we-judge'
     | '/knowledge'
+    | '/leaderboard'
     | '/login'
     | '/me'
     | '/request-object'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/feedback'
     | '/how-we-judge'
     | '/knowledge'
+    | '/leaderboard'
     | '/login'
     | '/me'
     | '/request-object'
@@ -491,6 +503,7 @@ export interface RootRouteChildren {
   FeedbackRoute: typeof FeedbackRoute
   HowWeJudgeRoute: typeof HowWeJudgeRoute
   KnowledgeRoute: typeof KnowledgeRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
   RequestObjectRoute: typeof RequestObjectRoute
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/knowledge': {
@@ -833,6 +853,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeedbackRoute: FeedbackRoute,
   HowWeJudgeRoute: HowWeJudgeRoute,
   KnowledgeRoute: KnowledgeRoute,
+  LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
   RequestObjectRoute: RequestObjectRoute,
