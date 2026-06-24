@@ -1,31 +1,22 @@
-## 目标
-将 `/me` 个人资料页的"头像 URL 输入框"替换为一组**固定预设头像**，用户点击即选中。
+## 问题
+预设头像目前通过 Vite `import a1 from "@/assets/avatars/avatar-01.png"` 引入。Vite 在构建时会把它替换成带 hash 的资源 URL（如 `/assets/avatar-12-abc123.png`），数据库里存的就是这个 hash 路径。
 
-## 改动
+下次构建 hash 会变 → 旧 URL 失效；服务端渲染 / 其它页面引用时也可能解析不到 → 头像显示破图（即截图里的灰色占位）。
 
-### 1. 生成预设头像（12 张）
-- 风格：芭比粉极简插画，与站点视觉一致；中性人物剪影 / 几何图形 / 抽象温度计图样混合
-- 输出到 `src/assets/avatars/`：`avatar-01.png` … `avatar-12.png`（512×512，PNG 透明背景）
-- 通过 `imagegen` 批量生成
+## 修复方案
+把 12 张预设头像改用 **Lovable Assets CDN**，得到永久稳定的 URL，再写入数据库。
 
-### 2. 新建 `src/components/AvatarPicker.tsx`
-- 4 × 3 网格（移动端 4 列）
-- 每个头像为圆形按钮，选中态：`ring-2 ring-accent` + 右下角小勾
-- 支持"无头像"占位选项
-- props: `value: string | null`、`onChange: (url) => void`
+具体步骤：
 
-### 3. 修改 `src/routes/me.tsx`
-- 移除 `avatar_url` 文本输入框
-- 在原位置渲染 `<AvatarPicker value={avatarUrl} onChange={setAvatarUrl} />`
-- 顶部预览仍显示当前选中头像
-- 提交逻辑不变（写 `profiles.avatar_url`）
-
-### 4. 头像存储格式
-- 沿用现有 `profiles.avatar_url`（text）
-- 写入相对路径（如 `/assets/avatars/avatar-03.png` 经 Vite 处理后的导入 URL）
-- 不动数据库 schema
+1. 用 `lovable-assets create` 把 `src/assets/avatars/avatar-01.png … avatar-12.png` 逐个上传，生成 `*.asset.json` 指针文件。
+2. 删除原始 PNG 二进制（CDN 已托管）。
+3. 改写 `src/components/AvatarPicker.tsx`：
+   - 不再 `import a1 from "...png"`，改为 `import a1 from "@/assets/avatars/avatar-01.png.asset.json"`，使用 `a1.url`（形如 `/__l5e/assets-v1/<uuid>/avatar-01.png`，永久稳定）。
+   - `PRESET_AVATARS` 数组内容变成 CDN URL 字符串，其它逻辑（实时预览、无头像选项、网格、选中态）保持不变。
+4. 服务端校验 `src/lib/api/profile.functions.ts` 已放宽为 `^(https?:\/\/|\/)`，CDN 路径以 `/` 开头，无需再改。
+5. 已写入数据库的旧 hash 路径会自动失效，但用户重新选一次预设就会写入新的 CDN URL；无需迁移脚本。
 
 ## 不在范围
-- 不做上传自定义头像
-- 不改其它页面展示头像的逻辑（继续读 `avatar_url`）
-- 不改 i18n key（保留并复用 `profile.avatar*` 文案，必要时把 placeholder 文案替换为"选择一个头像"）
+- 不改 me / leaderboard / contribution / messages / follows 等消费端代码（它们只是 `<img src={avatar_url}>`，URL 换成 CDN 后自然能用）。
+- 不新增上传自定义头像功能。
+- 不调整头像图片本身，也不改数据库表结构。
