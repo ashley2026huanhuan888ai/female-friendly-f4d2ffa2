@@ -341,6 +341,14 @@ function ObjectDetail() {
       </section>
 
       <ObjectComments objectId={id} />
+
+      <ExportCardDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        object={{ id, name: obj.name, type: obj.type }}
+        observations={obs}
+      />
     </SiteLayout>
+
   );
 }
