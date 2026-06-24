@@ -67,8 +67,16 @@ function MePage() {
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             My Observatory
           </div>
-          <h1 className="mt-3 font-serif text-4xl">{t("me.title")}</h1>
-          <ProfileEditor />
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+            <h1 className="font-serif text-4xl">{t("me.title")}</h1>
+            <button
+              onClick={() => setEditingProfile(true)}
+              className="shrink-0 border border-foreground/60 px-3 py-1.5 text-xs hover:border-foreground"
+            >
+              {t("profile.edit")}
+            </button>
+          </div>
+          {editingProfile && <ProfileEditor onClose={() => setEditingProfile(false)} />}
           <MyTags tags={data.my_tags ?? []} />
 
           <div className="mt-6 inline-flex border border-border">
@@ -100,6 +108,7 @@ function MePage() {
           </div>
         </div>
       </section>
+
 
 
       <section className="py-12">
