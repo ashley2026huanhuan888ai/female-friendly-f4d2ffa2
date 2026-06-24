@@ -12,7 +12,9 @@ import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
 import { getPublicObjectDetail, getPublicObjectObservations } from "@/lib/api/platform.functions";
 import { FollowButton } from "@/components/FollowButton";
 import { ObjectComments } from "@/components/ObjectComments";
+import { ExportCardDialog } from "@/components/ExportCardDialog";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/objects/$id")({
   loader: async ({ params }) => {
@@ -67,7 +69,9 @@ function ObjectDetail() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [expl, setExpl] = useState<{ breakdown: any; object: any } | null>(null);
   const [showExpl, setShowExpl] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const fetchExpl = useServerFn(getTemperatureExplanation);
+
   const fetchDetail = useServerFn(getPublicObjectDetail);
   const fetchMoreObservations = useServerFn(getPublicObjectObservations);
 
@@ -158,7 +162,16 @@ function ObjectDetail() {
               <span aria-hidden>·</span>
               <span>{objectType(obj.type)}</span>
             </div>
-            <h1 className="mt-3 font-serif text-3xl text-balance sm:text-5xl md:mt-4 md:text-6xl">{obj.name}</h1>
+            <div className="mt-3 flex flex-wrap items-start gap-3 md:mt-4">
+              <h1 className="font-serif text-3xl text-balance sm:text-5xl md:text-6xl">{obj.name}</h1>
+              <button
+                onClick={() => setShowExport(true)}
+                className="mt-2 shrink-0 border border-foreground/60 px-3 py-1.5 text-[11px] uppercase tracking-wider hover:border-foreground"
+              >
+                {t("export.button")}
+              </button>
+            </div>
+
             {obj.description && (
               <p className="mt-6 max-w-2xl text-base text-muted-foreground">{obj.description}</p>
             )}
@@ -328,6 +341,14 @@ function ObjectDetail() {
       </section>
 
       <ObjectComments objectId={id} />
+
+      <ExportCardDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        object={{ id, name: obj.name, type: obj.type }}
+        observations={obs}
+      />
     </SiteLayout>
+
   );
 }
