@@ -232,7 +232,6 @@ function Chip({
 
 function CaseRow({ item }: { item: Item }) {
   const { language, t, objectType, tag, archiveCategory } = useI18n();
-  const band = bandOf(item.object.temperature);
   return (
     <li className="py-5">
       <Link to="/archive/$caseCode" params={{ caseCode: item.case_code }} className="group block">
@@ -247,13 +246,8 @@ function CaseRow({ item }: { item: Item }) {
           <span>·</span>
           <span className="text-foreground">{item.object.name}</span>
           <span className="text-muted-foreground">({objectType(item.object.type)})</span>
-          <span
-            className="ml-auto"
-            style={{
-              color: `var(--temp-${band.band === "comfort" ? "cool" : band.band === "minor" ? "neutral" : band.band === "notable" ? "warm" : band.band === "high" ? "hot" : "critical"})`,
-            }}
-          >
-            {item.object.temperature.toFixed(1)}°C
+          <span className="ml-auto">
+            <TempText value={item.object.temperature} size="xs" />
           </span>
         </div>
         <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
