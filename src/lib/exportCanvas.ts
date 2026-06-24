@@ -227,8 +227,10 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   let y = 56; // top padding
 
   // Header
-  const headerH = 24 + 38 * 1.1 + 8 + 15 + 24; // pill + title + sub + bottom border padding
+  // pill(34) + 16 gap + title(52) + subtitle(26) + 28 gap + separator + 40
+  const headerH = 34 + 16 + 52 + 26 + 28 + 1 + 40;
   y += headerH + 24;
+
 
   // Object name + tags + temp
   const name = input.object.name;
