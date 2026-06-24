@@ -40,39 +40,70 @@ const ACCENT = "#e0218a";
 const INK = "#1a1a1a";
 const MUTED = "#6b6b6b";
 const PAPER = "#f5f1ea";
-const W = 1080;
-const PAD = 64;
+const W = 640;
+const PAD = 36;
 const CONTENT_W = W - PAD * 2;
 
-const FONT_SERIF = `"Songti SC", "Noto Serif SC", Georgia, serif`;
-const FONT_SANS = `-apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif`;
+const FONT_SERIF = `"Noto Serif SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", serif`;
+const FONT_SANS = `"Noto Sans SC", "Noto Serif SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif`;
 const FONT_MONO = `ui-monospace, Menlo, monospace`;
 
 // 统一排版常量（测量 / 绘制必须用同一份，避免高度算错）
 const TYPO = {
-  summarySize: 46,
-  summaryLH: 1.35,
-  bodySize: 38,
-  bodyLH: 1.6,
-  tagSize: 34,
-  tagSizeDense: 30,
-  tagLH: 44,
-  tagGapX: 22,
-  tempSize: 96,
-  tempSize3Digit: 80,
-  tempUnitSize: 34,
+  summarySize: 36,
+  summaryLH: 1.45,
+  bodySize: 30,
+  bodyLH: 1.65,
+  tagSize: 25,
+  tagSizeDense: 23,
+  tagLH: 36,
+  tagGapX: 14,
+  tempSize: 72,
+  tempSize3Digit: 60,
+  tempUnitSize: 24,
   nameLH: 1.1,
-  sceneLH: 28,
-  dateLH: 26,
-  paraGap: 20,
-  blockPad: 40,
+  sceneLH: 26,
+  dateLH: 24,
+  paraGap: 18,
+  blockPad: 34,
 } as const;
 
 function nameFontSizeFor(name: string): number {
-  if (name.length > 22) return 44;
-  if (name.length > 18) return 52;
-  if (name.length > 10) return 60;
-  return 72;
+  if (name.length > 22) return 38;
+  if (name.length > 18) return 44;
+  if (name.length > 10) return 50;
+  return 58;
+}
+
+async function ensureCanvasFonts(input: ExportInput): Promise<void> {
+  if (typeof document === "undefined" || !("fonts" in document)) return;
+  const sample = [
+    input.i18n.cardTitle,
+    input.i18n.cardSubtitle,
+    input.i18n.objectType,
+    input.object.name,
+    input.i18n.scanToView,
+    input.i18n.exportedBy,
+    input.exporterName,
+    ...input.observations.flatMap((o) => [
+      o.scene || "",
+      o.summary || "",
+      o.cleaned_content || o.content || "",
+      ...(o.tags || []).map((tg) => input.i18n.tagLabel(tg)),
+    ]),
+  ].join(" ");
+  try {
+    await Promise.all([
+      document.fonts.load(`700 ${TYPO.summarySize}px "Noto Serif SC"`, sample),
+      document.fonts.load(`500 ${TYPO.bodySize}px "Noto Serif SC"`, sample),
+      document.fonts.load(`400 ${TYPO.bodySize}px "Noto Sans SC"`, sample),
+      document.fonts.load(`500 ${TYPO.tagSize}px "Noto Sans SC"`, sample),
+      document.fonts.load(`700 ${TYPO.tempSize}px "Noto Serif SC"`, sample),
+      document.fonts.ready,
+    ]);
+  } catch {
+    // 字体加载失败时继续使用系统 fallback，不能阻断导出。
+  }
 }
 
 
@@ -196,19 +227,33 @@ function layoutTags(
       lineW += advance;
     }
   }
-  // 最多 3 行
+  // 最多 3 行；额外计数也必须塞进最后一行，不能把行撑宽
   if (lines.length > 3) {
-    const overflow = lines.slice(3).reduce((a, l) => a + l.length, 0);
+    let overflow = lines.slice(3).reduce((a, l) => a + l.length, 0);
     const trimmed = lines.slice(0, 3);
-    const extra = `+${overflow}`;
+    let extra = `+${overflow}`;
     ctx.font = `600 ${size}px ${FONT_SANS}`;
-    trimmed[2].push({ text: extra, w: ctx.measureText(extra).width });
+    let extraW = ctx.measureText(extra).width;
+    const last = trimmed[2];
+    const lineWidth = () => last.reduce((sum, item, index) => sum + item.w + (index > 0 ? TYPO.tagGapX : 0), 0);
+    while (last.length > 0 && lineWidth() + TYPO.tagGapX + extraW > CONTENT_W) {
+      last.pop();
+      overflow += 1;
+      extra = `+${overflow}`;
+      extraW = ctx.measureText(extra).width;
+    }
+    if (extraW > CONTENT_W) {
+      extra = ellipsize(ctx, extra, CONTENT_W);
+      extraW = ctx.measureText(extra).width;
+    }
+    last.push({ text: extra, w: extraW });
     return { lines: trimmed, size, lh: TYPO.tagLH };
   }
   return { lines, size, lh: TYPO.tagLH };
 }
 
 export async function renderExportToPng(input: ExportInput): Promise<string> {
+  await ensureCanvasFonts(input);
   const dpr = Math.min(2, Math.max(1.5, window.devicePixelRatio || 1.5));
 
   // 预加载图片
@@ -224,12 +269,12 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
 
   // 第一次测量：用临时 canvas 算总高度
   const measure = document.createElement("canvas").getContext("2d")!;
-  let y = 56; // top padding
+  let y = 44; // top padding
 
   // Header
-  // pill(34) + 16 gap + title(52) + subtitle(26) + 28 gap + separator + 40
-  const headerH = 34 + 16 + 52 + 26 + 28 + 1 + 40;
-  y += headerH + 24;
+  // pill + title + subtitle + separator
+  const headerH = 30 + 12 + 40 + 22 + 24 + 1 + 34;
+  y += headerH + 20;
 
 
   // Object name + tags + temp
@@ -248,8 +293,8 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   // 温度块度量（决定温度条宽度，影响下方排版高度但不影响高度计算）
   const tempBlock = measureTempBlock(measure, input.object.temperature);
 
-  // 40 top pad + name + 24 + tags + bar(50) + 36 bottom pad
-  y += 40 + nameWrap.height + 24 + tagsH + 50 + 36;
+  // object top pad + name + tags + temperature row + bottom pad
+  y += 34 + nameWrap.height + 20 + tagsH + Math.max(72, tempBlock.numSize + 8) + 28;
 
   // Observations
   const contentLeft = PAD;
@@ -285,7 +330,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     y += h;
   }
 
-  y += 32 + 26 + 24 + 56; // footer (22px) + bottom padding
+  y += 28 + 22 + 22 + 44; // footer + bottom padding
   const totalH = y;
 
   // 真正的 canvas
@@ -298,52 +343,52 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.fillRect(0, 0, W, totalH);
 
   // === Header ===
-  let cy = 56;
+  let cy = 44;
   // pill
-  ctx.font = `700 20px ${FONT_SANS}`;
+  ctx.font = `700 16px ${FONT_SANS}`;
   const typeText = input.i18n.objectType;
-  const typeW = ctx.measureText(typeText).width + 28;
-  const pillH = 34;
+  const typeW = ctx.measureText(typeText).width + 24;
+  const pillH = 30;
   ctx.fillStyle = ACCENT;
   ctx.fillRect(PAD, cy, typeW, pillH);
   ctx.fillStyle = "#fff";
   ctx.textBaseline = "middle";
-  ctx.fillText(typeText, PAD + 14, cy + pillH / 2);
+  ctx.fillText(typeText, PAD + 12, cy + pillH / 2);
   // archive no
   ctx.fillStyle = MUTED;
-  ctx.font = `400 20px ${FONT_MONO}`;
-  ctx.fillText(input.archiveNo, PAD + typeW + 14, cy + pillH / 2);
-  cy += pillH + 16;
+  ctx.font = `400 15px ${FONT_MONO}`;
+  ctx.fillText(input.archiveNo, PAD + typeW + 12, cy + pillH / 2);
+  cy += pillH + 12;
 
   // QR (right side)
   if (qrImg) {
-    const qrSize = 152;
+    const qrSize = 108;
     ctx.fillStyle = "#fff";
-    ctx.fillRect(W - PAD - qrSize, 56, qrSize, qrSize);
-    ctx.drawImage(qrImg, W - PAD - qrSize + 6, 56 + 6, qrSize - 12, qrSize - 12);
+    ctx.fillRect(W - PAD - qrSize, 44, qrSize, qrSize);
+    ctx.drawImage(qrImg, W - PAD - qrSize + 5, 44 + 5, qrSize - 10, qrSize - 10);
     ctx.fillStyle = MUTED;
-    ctx.font = `400 18px ${FONT_SANS}`;
+    ctx.font = `400 14px ${FONT_SANS}`;
     ctx.textBaseline = "top";
     ctx.textAlign = "right";
-    ctx.fillText(input.i18n.scanToView, W - PAD, 56 + qrSize + 10);
+    ctx.fillText(ellipsize(ctx, input.i18n.scanToView, qrSize + 28), W - PAD, 44 + qrSize + 8);
     ctx.textAlign = "left";
   }
 
   // Title
   ctx.fillStyle = INK;
-  ctx.font = `700 44px ${FONT_SERIF}`;
+  ctx.font = `700 32px ${FONT_SERIF}`;
   ctx.textBaseline = "top";
   ctx.fillText(input.i18n.cardTitle, PAD, cy);
-  cy += 52;
+  cy += 40;
   ctx.fillStyle = MUTED;
-  ctx.font = `300 20px ${FONT_SANS}`;
+  ctx.font = `300 16px ${FONT_SANS}`;
   ctx.fillText(input.i18n.cardSubtitle, PAD, cy);
-  cy += 26 + 28;
+  cy += 22 + 24;
 
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.12)";
   ctx.fillRect(PAD, cy, W - PAD * 2, 1);
-  cy += 1 + 40;
+  cy += 1 + 34;
 
 
   // Object name
@@ -352,7 +397,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   for (let i = 0; i < nameWrap.lines.length; i++) {
     ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * TYPO.nameLH);
   }
-  cy += nameWrap.height + 24;
+  cy += nameWrap.height + 20;
 
   // Tags row (band color, 自适应布局)
   if (tagLayout.lines.length > 0) {
@@ -366,47 +411,49 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
         tx += item.w + TYPO.tagGapX;
       }
     }
-    cy += tagLayout.lines.length * tagLayout.lh + 16;
+    cy += tagLayout.lines.length * tagLayout.lh + 14;
   }
 
   // Temperature bar — 动态避让温度块
   const tempBlockW = tempBlock.totalW;
-  const barW = Math.max(320, W - PAD * 2 - tempBlockW - 32);
-  const barH = 10;
+  const tempGap = 18;
+  const barW = Math.max(160, W - PAD * 2 - tempBlockW - tempGap);
+  const barH = 8;
   ctx.fillStyle = "rgba(26,26,26,0.08)";
   const r = barH / 2;
   ctx.beginPath();
-  ctx.moveTo(PAD + r, cy + 35);
-  ctx.arcTo(PAD + barW, cy + 35, PAD + barW, cy + 35 + barH, r);
-  ctx.arcTo(PAD + barW, cy + 35 + barH, PAD, cy + 35 + barH, r);
-  ctx.arcTo(PAD, cy + 35 + barH, PAD, cy + 35, r);
-  ctx.arcTo(PAD, cy + 35, PAD + barW, cy + 35, r);
+  const barY = cy + 30;
+  ctx.moveTo(PAD + r, barY);
+  ctx.arcTo(PAD + barW, barY, PAD + barW, barY + barH, r);
+  ctx.arcTo(PAD + barW, barY + barH, PAD, barY + barH, r);
+  ctx.arcTo(PAD, barY + barH, PAD, barY, r);
+  ctx.arcTo(PAD, barY, PAD + barW, barY, r);
   ctx.closePath();
   ctx.fill();
   // fill
   const fillW = Math.max(barH, (Math.max(0, Math.min(100, input.object.temperature)) / 100) * barW);
   ctx.fillStyle = input.bandHex;
   ctx.beginPath();
-  ctx.moveTo(PAD + r, cy + 35);
-  ctx.arcTo(PAD + fillW, cy + 35, PAD + fillW, cy + 35 + barH, r);
-  ctx.arcTo(PAD + fillW, cy + 35 + barH, PAD, cy + 35 + barH, r);
-  ctx.arcTo(PAD, cy + 35 + barH, PAD, cy + 35, r);
-  ctx.arcTo(PAD, cy + 35, PAD + fillW, cy + 35, r);
+  ctx.moveTo(PAD + r, barY);
+  ctx.arcTo(PAD + fillW, barY, PAD + fillW, barY + barH, r);
+  ctx.arcTo(PAD + fillW, barY + barH, PAD, barY + barH, r);
+  ctx.arcTo(PAD, barY + barH, PAD, barY, r);
+  ctx.arcTo(PAD, barY, PAD + fillW, barY, r);
   ctx.closePath();
   ctx.fill();
   // Temp number + unit（共享 alphabetic baseline，避免单位被裁）
-  const tempBaseline = cy + 35 + barH / 2 + tempBlock.numSize * 0.36;
+  const tempBaseline = barY + barH / 2 + tempBlock.numSize * 0.36;
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = input.bandHex;
   ctx.font = `700 ${tempBlock.numSize}px ${FONT_SERIF}`;
-  const tempX = PAD + barW + 24;
+  const tempX = PAD + barW + tempGap;
   ctx.fillText(tempBlock.tempStr, tempX, tempBaseline);
   const tempNumW = ctx.measureText(tempBlock.tempStr).width;
   ctx.fillStyle = INK;
   ctx.font = `700 ${tempBlock.unitSize}px ${FONT_SERIF}`;
   ctx.fillText("°C", tempX + tempNumW + 4, tempBaseline);
   ctx.textBaseline = "top";
-  cy += Math.max(86, tempBlock.numSize + 8) + 24;
+  cy += Math.max(72, tempBlock.numSize + 8) + 28;
 
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.08)";
@@ -430,7 +477,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     // scene
     if (o.scene) {
       ctx.fillStyle = MUTED;
-      ctx.font = `500 20px ${FONT_SANS}`;
+      ctx.font = `500 18px ${FONT_SANS}`;
       ctx.fillText(ellipsize(ctx, o.scene.toUpperCase(), cw), cl, by);
       by += TYPO.sceneLH;
     }
@@ -482,7 +529,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
 
     by += 20;
     ctx.fillStyle = MUTED;
-    ctx.font = `400 20px ${FONT_SANS}`;
+    ctx.font = `400 18px ${FONT_SANS}`;
     ctx.fillText(
       input.i18n.dateText.replace("{date}", formatShort(o.created_at)) || formatShort(o.created_at),
       cl,
@@ -497,10 +544,10 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   }
 
   // Footer — 截断防溢出
-  cy += 32;
+  cy += 28;
   ctx.fillStyle = INK;
-  ctx.font = `700 22px ${FONT_SANS}`;
-  const rightNameMax = 460;
+  ctx.font = `700 18px ${FONT_SANS}`;
+  const rightNameMax = 200;
   const rightName = ellipsize(ctx, input.object.name.toUpperCase(), rightNameMax);
   const rightNameW = ctx.measureText(rightName).width;
   ctx.textAlign = "right";
@@ -508,8 +555,8 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.textAlign = "left";
 
   ctx.fillStyle = MUTED;
-  ctx.font = `400 22px ${FONT_SANS}`;
-  const leftMax = W - PAD * 2 - rightNameW - 28;
+  ctx.font = `400 18px ${FONT_SANS}`;
+  const leftMax = W - PAD * 2 - rightNameW - 20;
   const leftFull = `${input.i18n.nowText}  |  ${input.i18n.exportedBy}: ${input.exporterName}`;
   ctx.fillText(ellipsize(ctx, leftFull, leftMax), PAD, cy);
 
