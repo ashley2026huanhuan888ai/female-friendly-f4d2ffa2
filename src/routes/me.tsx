@@ -75,25 +75,55 @@ function MePage() {
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             My Observatory
           </div>
-          <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-            <h1 className="font-serif text-4xl">{t("me.title")}</h1>
+          <div className="mt-3 flex flex-wrap items-start justify-between gap-6">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <h1 className="font-serif text-4xl">{t("me.title")}</h1>
+                <button
+                  onClick={() => setEditingProfile(true)}
+                  className="shrink-0 border border-foreground/60 px-3 py-1.5 text-xs hover:border-foreground"
+                >
+                  {t("profile.edit")}
+                </button>
+              </div>
+              <div className="mt-4">
+                <Link
+                  to="/contribution"
+                  className="inline-flex items-center gap-2 border border-accent/40 bg-accent/5 px-3 py-1.5 text-xs text-accent hover:bg-accent hover:text-background"
+                >
+                  我的贡献积分 / 邀请好友 →
+                </Link>
+              </div>
+            </div>
             <button
               onClick={() => setEditingProfile(true)}
-              className="shrink-0 border border-foreground/60 px-3 py-1.5 text-xs hover:border-foreground"
+              title={t("profile.edit")}
+              className="group relative h-28 w-28 shrink-0 overflow-hidden rounded-full border border-border bg-accent/5 hover:border-accent"
             >
-              {t("profile.edit")}
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.display_name ?? ""}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center font-serif text-3xl text-accent">
+                  {(profile?.display_name ?? user?.email ?? "?").trim().charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="absolute inset-x-0 bottom-0 bg-foreground/70 py-1 text-center text-[10px] uppercase tracking-wider text-background opacity-0 group-hover:opacity-100">
+                {t("profile.edit")}
+              </span>
             </button>
           </div>
-          {editingProfile && <ProfileEditor onClose={() => setEditingProfile(false)} />}
-
-          <div className="mt-4">
-            <Link
-              to="/contribution"
-              className="inline-flex items-center gap-2 border border-accent/40 bg-accent/5 px-3 py-1.5 text-xs text-accent hover:bg-accent hover:text-background"
-            >
-              我的贡献积分 / 邀请好友 →
-            </Link>
-          </div>
+          {editingProfile && (
+            <ProfileEditor
+              onClose={() => {
+                setEditingProfile(false);
+                reloadProfile();
+              }}
+            />
+          )}
 
           <MyTags tags={data.my_tags ?? []} />
 
