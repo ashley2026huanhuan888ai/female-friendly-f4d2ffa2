@@ -1,11 +1,17 @@
-在 `src/components/ExportCardDialog.tsx` 中给「选择要导出的观察记录」区域加上**可折叠**能力，并在卡片生成成功后**自动收起**：
+## 目标
+把现有 AI 调用（观察分析 / 对象总结 / 风险审查 / 批量导入等）从 Lovable Gateway 切换到 DeepSeek API。
 
-1. 新增本地状态 `const [selectionOpen, setSelectionOpen] = useState(true)`。
-2. 修改现有标题行（约第 324-335 行）：
-   - 整行改为按钮（`<button onClick={() => setSelectionOpen(v => !v)}>`），左侧文案保留 `选择要导出的观察记录 (x/N)`，右侧加一个 `▾/▸` 指示符；
-   - 「全选 / 全不选」按钮单独保留在右侧（用 `stopPropagation`）。
-3. 列表本体（约第 337-404 行的 `<div className="divide-y …">`）仅在 `selectionOpen` 为 true 时渲染。
-4. 在 `handleExport` 成功调用 `setResult({...})` 之后（约第 217 行）增加 `setSelectionOpen(false)`，实现「生成成功后自动收起」。
-5. 在「重新生成」按钮 `onClick={() => setResult(null)}`（约第 496 行）中同时 `setSelectionOpen(true)`，方便用户调整后重新导出。
+## 现状
+`src/lib/api/platform.functions.ts` 中的 `getAIConfig()` 已经支持 DeepSeek：
+- 设置 `AI_PROVIDER=deepseek` 时，自动使用 `https://api.deepseek.com/chat/completions` 和模型 `deepseek-chat`
+- 读取 `AI_API_KEY` 作为鉴权密钥
+- 可选 `AI_MODEL`（例如 `deepseek-reasoner`）覆盖默认模型
 
-仅前端 UI 行为，无样式系统/状态架构调整。
+所以无需改代码，只需配置两个 Secret。
+
+## 步骤
+1. 用 `set_secret` 设置 `AI_PROVIDER=deepseek`
+2. 用 `add_secret` 让你在安全表单里填入 `AI_API_KEY`（DeepSeek 控制台 → API Keys 生成，格式 `sk-...`）
+3. （可选）若想用推理模型，再加 `AI_MODEL=deepseek-reasoner`
+
+配置完成后所有 AI 流程自动走 DeepSeek，无需重启或改代码。
