@@ -1481,6 +1481,9 @@ const COPY = {
     "export.regenerate": "Regenerate",
     "export.filename": "Filename",
     "export.filenameCopied": "Filename copied",
+    "export.saveToAlbum": "Save to album",
+    "export.saveToAlbumHint": "Long-press the image below and choose “Save Image” to add it to your album",
+    "export.openShareToSave": "Share sheet opened — choose “Save Image” to add to your album",
   },
 
 } as const;
