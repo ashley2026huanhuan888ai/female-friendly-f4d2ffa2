@@ -23,6 +23,7 @@ const COPY = {
     "language.zh": "中文",
     "language.en": "English",
 
+    "nav.home": "首页",
     "nav.objects": "对象",
     "nav.feed": "温度变化",
     "nav.requestObject": "增加\n新测评\n对象",
@@ -680,6 +681,7 @@ const COPY = {
     "language.zh": "中文",
     "language.en": "English",
 
+    "nav.home": "Home",
     "nav.objects": "Objects",
     "nav.feed": "Feed",
     "nav.requestObject": "Add\nObject",
