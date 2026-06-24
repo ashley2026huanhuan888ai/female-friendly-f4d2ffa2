@@ -599,35 +599,6 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 );
               })}
 
-              {/* QR archive entry block */}
-              {qrDataUrl && (
-                <div
-                  style={{
-                    marginTop: 8,
-                    padding: "20px 24px",
-                    border: `1px solid ${INK}`,
-                    background: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 24,
-                  }}
-                >
-                  <img
-                    src={qrDataUrl}
-                    alt="QR"
-                    style={{ width: 140, height: 140, display: "block", flexShrink: 0 }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "inline-block", fontSize: 34, fontWeight: 700, borderBottom: `4px solid ${ACCENT}`, paddingBottom: 2, lineHeight: 1.15 }}>
-                      {t("export.archiveEntry")}
-                    </div>
-                    <div style={{ fontSize: 17, color: MUTED, marginTop: 10 }}>
-                      {t("export.scanToView")}
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 40, color: INK, paddingLeft: 8 }}>→</div>
-                </div>
-              )}
 
               {/* Footer */}
               <div
