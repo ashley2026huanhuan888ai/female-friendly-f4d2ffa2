@@ -26,12 +26,16 @@ export const Route = createFileRoute("/me")({
 function MePage() {
   const { language, t, objectType } = useI18n();
   const [data, setData] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { ready, user } = useAuth();
   const [tab, setTab] = useState<"watch" | "obs" | "notif" | "relations">("watch");
   const [editingProfile, setEditingProfile] = useState(false);
   const fetchDash = useServerFn(getMyDashboard);
+  const fetchProfile = useServerFn(getMyProfile);
   const markRead = useServerFn(markNotificationsRead);
+
+  const reloadProfile = () => fetchProfile().then((p: any) => setProfile(p));
 
   useEffect(() => {
     if (!ready) return;
@@ -39,10 +43,11 @@ function MePage() {
       setLoading(false);
       return;
     }
-    fetchDash()
-      .then((d: any) => setData(d))
-      .finally(() => setLoading(false));
-  }, [ready, user, fetchDash]);
+    Promise.all([fetchDash().then((d: any) => setData(d)), reloadProfile()]).finally(() =>
+      setLoading(false),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, user]);
 
   const onMarkAll = async () => {
     await markRead({ data: {} });
