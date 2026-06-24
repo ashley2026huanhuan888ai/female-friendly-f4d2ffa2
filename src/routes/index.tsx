@@ -111,14 +111,14 @@ function Index() {
                 placeholder={t("home.search.placeholder")}
                 className="flex-1 bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
               />
-              <button className="bg-foreground px-5 py-3 text-sm text-background hover:bg-accent">
+              <button className="bg-accent px-5 py-3 text-sm text-accent-foreground hover:bg-accent/90">
                 {t("home.search.button")}
               </button>
             </form>
             <div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
               <Link
                 to="/objects"
-                className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
+                className="border border-accent bg-accent px-4 py-2 text-xs uppercase tracking-wider text-accent-foreground hover:bg-accent/90"
               >
                 {t("home.cta.browse")}
               </Link>
