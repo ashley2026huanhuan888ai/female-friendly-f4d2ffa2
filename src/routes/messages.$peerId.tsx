@@ -27,6 +27,8 @@ function MessageThread() {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  type Pending = { tempId: string; body: string; created_at: string; status: "sending" | "failed" };
+  const [pending, setPending] = useState<Pending[]>([]);
   const listEndRef = useRef<HTMLDivElement | null>(null);
 
   const load = useCallback(
@@ -56,7 +58,7 @@ function MessageThread() {
 
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ block: "end" });
-  }, [data?.messages?.length]);
+  }, [data?.messages?.length, pending.length]);
 
   if (ready && !user) {
     return (
@@ -68,22 +70,40 @@ function MessageThread() {
     );
   }
 
-  const doSend = async () => {
-    const text = body.trim();
-    if (!text || sending) return;
+  const sendText = async (text: string, tempId: string) => {
+    setPending((prev) =>
+      prev.some((p) => p.tempId === tempId)
+        ? prev.map((p) => (p.tempId === tempId ? { ...p, status: "sending" } : p))
+        : [...prev, { tempId, body: text, created_at: new Date().toISOString(), status: "sending" }],
+    );
     setSending(true);
     try {
       await sendFn({ data: { recipient_id: peerId, body: text } });
-      setBody("");
+      setPending((prev) => prev.filter((p) => p.tempId !== tempId));
+      toast.success(t("messages.sent"));
       load(false);
     } catch (e) {
+      setPending((prev) =>
+        prev.map((p) => (p.tempId === tempId ? { ...p, status: "failed" } : p)),
+      );
       toast.error((e as Error).message || t("messages.sendFailed"), {
-        action: { label: t("common.retry"), onClick: () => doSend() },
+        action: { label: t("common.retry"), onClick: () => sendText(text, tempId) },
       });
     } finally {
       setSending(false);
     }
   };
+
+  const doSend = () => {
+    const text = body.trim();
+    if (!text || sending) return;
+    setBody("");
+    sendText(text, `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  };
+
+  const retryPending = (p: Pending) => sendText(p.body, p.tempId);
+  const removePending = (tempId: string) =>
+    setPending((prev) => prev.filter((p) => p.tempId !== tempId));
 
   return (
     <SiteLayout>
