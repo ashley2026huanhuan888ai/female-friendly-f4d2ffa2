@@ -875,8 +875,9 @@ const COPY = {
     "home.hero.title.before": "Recording changes in ",
     "home.hero.title.accent": "women's experiences",
     "home.hero.title.after": ".",
-    "home.hero.body":
-      "This is not a ranking board or a judgment seat. It is closer to a public observation notebook: when a brand, work, organization, or event makes women's experiences better or worse, we record the sources, evidence, and discussions behind the change.",
+    "home.hero.body.intro": "This is not a ranking board or a judgment seat.",
+    "home.hero.body.main":
+      "It is closer to a public observation notebook: when a brand, work, organization, or event makes women's experiences better or worse, we record the sources, evidence, and discussions behind the change.",
     "home.hero.disclaimer": "No findings of fact. No moral judgment.",
     "home.hero.actions":
       "Create objects, submit observations, keep monitoring, and drive improvement...",
