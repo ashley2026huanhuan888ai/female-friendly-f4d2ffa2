@@ -335,6 +335,32 @@ export type Database = {
         }
         Relationships: []
       }
+      object_boycotts: {
+        Row: {
+          created_at: string
+          object_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          object_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          object_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "object_boycotts_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "objects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       object_comment_reactions: {
         Row: {
           comment_id: string
