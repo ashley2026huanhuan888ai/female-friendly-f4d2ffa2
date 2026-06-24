@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { toPng } from "html-to-image";
+import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 import { getMyProfile } from "@/lib/api/profile.functions";
-import { TempText } from "@/components/TempText";
 import { bandOf } from "@/lib/temperature";
 import { renderExportToPng } from "@/lib/exportCanvas";
 
@@ -37,10 +35,8 @@ type Props = {
 
 const ACCENT = "#e0218a";
 const INK = "#1a1a1a";
-const MUTED = "#6b6b6b";
-const PAPER = "#f5f1ea";
 
-// 导出安全 HEX（避免 oklch / CSS 变量进入 html-to-image）
+// 导出安全 HEX（避免 oklch / CSS 变量进入 Canvas）
 const BAND_HEX: Record<string, string> = {
   comfort: "#4DA6B3",
   minor: "#A89F8A",
@@ -59,7 +55,6 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [nickname, setNickname] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState<{ pct: number; label: string }>({ pct: 0, label: "" });
-  const [shotBlobs, setShotBlobs] = useState<Record<string, string>>({});
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [result, setResult] = useState<{ dataUrl: string; blob: Blob; filename: string } | null>(null);
   const [previewZoom, setPreviewZoom] = useState<number>(1);
@@ -68,8 +63,6 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
     setResult(null);
     onClose();
   };
-
-  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open || observations.length === 0) return;
@@ -154,7 +147,6 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const canGenerate = orderedSelected.length > 0 && hasAnyContent;
 
   const handleExport = async () => {
-    if (!cardRef.current) return;
     if (orderedSelected.length === 0) return toast.error(t("export.empty"));
     if (!hasAnyContent) return toast.error(t("export.needContent"));
 
@@ -164,6 +156,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
     const failedShotIds = new Set<string>();
     try {
       // 1) 预取截图为 blob URL
+      const shotsForCanvas: Record<string, string> = {};
       const shotEntries = orderedSelected
         .filter((o) => o.screenshot_url && configs[o.id]?.includeScreenshot)
         .map((o) => [o.id, o.screenshot_url!] as const);
@@ -186,94 +179,33 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
         );
         const map: Record<string, string> = {};
         for (const [id, u] of fetched) if (u) map[id] = u;
-        setShotBlobs(map);
+        Object.assign(shotsForCanvas, map);
         if (failedShotIds.size > 0) toast.warning(t("export.imageNotReady"));
       }
       setProgress({ pct: 30, label: t("export.progressImages") });
 
-      // 2) 等离屏 <img> 解码完成（失败的截图已不会进入 DOM）
-      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-      const imgs = cardRef.current.querySelectorAll("img");
-      await Promise.all(
-        Array.from(imgs).map(
-          (img) =>
-            new Promise<void>((resolve) => {
-              if (img.complete && img.naturalWidth > 0) return resolve();
-              img.onload = () => resolve();
-              img.onerror = () => resolve();
-            })
-        )
-      );
       setProgress({ pct: 50, label: t("export.progressRender") });
-      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-
-      const dpr =
-        typeof window !== "undefined" && window.devicePixelRatio
-          ? window.devicePixelRatio
-          : 2;
-      const basePixelRatio = Math.min(2.5, Math.max(1.5, dpr));
-
-      const MAX_ATTEMPTS = 3;
-      let dataUrl = "";
-      let lastErr: any = null;
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        try {
-          const pr = attempt === 1 ? basePixelRatio : attempt === 2 ? Math.max(1, basePixelRatio - 0.5) : 1;
-          dataUrl = await toPng(cardRef.current, {
-            pixelRatio: pr,
-            cacheBust: attempt > 1,
-            skipFonts: true,
-            backgroundColor: PAPER,
-            filter: (node: HTMLElement) => {
-              // 第二次起跳过所有 <img>，最大兼容
-              if (attempt >= 2 && node.tagName === "IMG") return false;
-              return true;
-            },
-          });
-          lastErr = null;
-          break;
-        } catch (err) {
-          lastErr = err;
-          console.warn(`[ExportCard] toPng attempt ${attempt}/${MAX_ATTEMPTS} failed`, err);
-          if (attempt < MAX_ATTEMPTS) {
-            setProgress({ pct: 50, label: t("export.progressRetry", { attempt: attempt + 1, total: MAX_ATTEMPTS }) });
-            await new Promise((r) => setTimeout(r, 200 * attempt));
-          }
-        }
-      }
-      if (lastErr) {
-        // 兜底：原生 Canvas 渲染
-        console.warn("[ExportCard] toPng all attempts failed, falling back to native canvas", lastErr);
-        setProgress({ pct: 70, label: t("export.progressRender") });
-        const selectedObs = orderedSelected;
-        const shotsForCanvas: Record<string, string> = {};
-        for (const o of selectedObs) {
-          if (shotBlobs[o.id]) shotsForCanvas[o.id] = shotBlobs[o.id];
-        }
-        dataUrl = await renderExportToPng({
-          object,
-          observations: selectedObs,
-          configs: Object.fromEntries(
-            selectedObs.map((o) => [o.id, configs[o.id]])
-          ),
-          shotBlobs: shotsForCanvas,
-          qrDataUrl,
-          bandHex: BAND_HEX[tempBand.band] || ACCENT,
-          archiveNo,
-          exporterName,
-          i18n: {
-            cardTitle: t("export.cardTitle"),
-            cardSubtitle: t("export.cardSubtitle"),
-            scanToView: t("export.scanToView"),
-            exportedBy: t("export.exportedBy"),
-            objectType: objectType(object.type),
-            dateText: "{date}",
-            nowText: formatDateForLanguage(new Date().toISOString(), language),
-            tagLabel: (tg: string) => tag(tg),
-          },
-        });
-        toast.success(t("export.fallbackUsed"));
-      }
+      const selectedObs = orderedSelected;
+      const dataUrl = await renderExportToPng({
+        object,
+        observations: selectedObs,
+        configs: Object.fromEntries(selectedObs.map((o) => [o.id, configs[o.id]])),
+        shotBlobs: shotsForCanvas,
+        qrDataUrl,
+        bandHex: BAND_HEX[tempBand.band] || ACCENT,
+        archiveNo,
+        exporterName,
+        i18n: {
+          cardTitle: t("export.cardTitle"),
+          cardSubtitle: t("export.cardSubtitle"),
+          scanToView: t("export.scanToView"),
+          exportedBy: t("export.exportedBy"),
+          objectType: objectType(object.type),
+          dateText: "{date}",
+          nowText: formatDateForLanguage(new Date().toISOString(), language),
+          tagLabel: (tg: string) => tag(tg),
+        },
+      });
 
       setProgress({ pct: 85, label: t("export.progressEncode") });
       const blob = await (await fetch(dataUrl)).blob();
@@ -293,7 +225,6 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       });
     } finally {
       for (const u of createdBlobUrls) URL.revokeObjectURL(u);
-      setShotBlobs({});
       setGenerating(false);
       setTimeout(() => setProgress({ pct: 0, label: "" }), 400);
     }
@@ -604,334 +535,6 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
           </button>
         </div>
 
-        {/* Off-screen render target */}
-        {orderedSelected.length > 0 && (
-          <div
-            style={{
-              position: "fixed",
-              left: "-10000px",
-              top: 0,
-              width: "1080px",
-              pointerEvents: "none",
-            }}
-            aria-hidden
-          >
-            <div
-              ref={cardRef}
-              style={{
-                width: "1080px",
-                background: PAPER,
-                color: INK,
-                fontFamily: "ui-serif, Georgia, 'Songti SC', 'Noto Serif SC', serif",
-                padding: "56px 64px 48px",
-                boxSizing: "border-box",
-              }}
-            >
-              {/* Masthead */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: 36,
-                  paddingBottom: 24,
-                  borderBottom: `1px solid ${INK}20`,
-                }}
-              >
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-                    <span
-                      style={{
-                        background: ACCENT,
-                        color: "#fff",
-                        fontSize: 16,
-                        fontWeight: 700,
-                        letterSpacing: "0.04em",
-                        padding: "4px 12px",
-                        fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                      }}
-                    >
-                      {objectType(object.type)}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 15,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.24em",
-                        color: MUTED,
-                        fontFamily: "ui-monospace, monospace",
-                      }}
-                    >
-                      {archiveNo}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: "0.02em", lineHeight: 1.1 }}>
-                    {t("export.cardTitle")}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 15,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.18em",
-                      color: MUTED,
-                      marginTop: 8,
-                      fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                      fontWeight: 300,
-                    }}
-                  >
-                    {t("export.cardSubtitle")}
-                  </div>
-                </div>
-                {qrDataUrl && (
-                  <div style={{ flexShrink: 0, width: 160, textAlign: "right" }}>
-                    <img
-                      src={qrDataUrl}
-                      alt="QR"
-                      style={{
-                        width: 132,
-                        height: 132,
-                        display: "block",
-                        marginLeft: "auto",
-                        background: "#fff",
-                        padding: 6,
-                        border: `1px solid ${INK}20`,
-                        boxSizing: "border-box",
-                      }}
-                    />
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: MUTED,
-                        marginTop: 8,
-                        lineHeight: 1.4,
-                        fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                      }}
-                    >
-                      {t("export.scanToView")}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Object name + thermometer */}
-              {(() => {
-                const tempColor = BAND_HEX[tempBand.band] || ACCENT;
-                const allTags = Array.from(
-                  new Set(orderedSelected.flatMap((o) => Array.from(configs[o.id]?.tags || [])))
-                );
-                return (
-                  <div style={{ padding: "40px 0 36px" }}>
-                    <div
-                      style={{
-                        fontSize: object.name.length > 18 ? 56 : object.name.length > 10 ? 68 : 84,
-                        fontWeight: 700,
-                        lineHeight: 1.05,
-                        wordBreak: "break-word",
-                        overflowWrap: "anywhere",
-                        marginBottom: 24,
-                      }}
-                    >
-                      {object.name}
-                    </div>
-                    {allTags.length > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "8px 18px",
-                          marginBottom: 20,
-                          fontSize: 22,
-                          fontWeight: 600,
-                          color: tempColor,
-                        }}
-                      >
-                        {allTags.map((tg) => (
-                          <span key={tg}>#{tag(tg)}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                      <div
-                        style={{
-                          flex: 1,
-                          height: 10,
-                          background: `${INK}10`,
-                          borderRadius: 9999,
-                          position: "relative",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            height: "100%",
-                            width: `${Math.max(0, Math.min(100, object.temperature))}%`,
-                            background: tempColor,
-                            borderRadius: 9999,
-                          }}
-                        />
-                      </div>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 4, flexShrink: 0 }}>
-                        <span
-                          style={{
-                            fontSize: 84,
-                            fontWeight: 700,
-                            lineHeight: 1,
-                            color: tempColor,
-                            fontVariantNumeric: "tabular-nums",
-                            letterSpacing: "-0.02em",
-                          }}
-                        >
-                          {Math.round(object.temperature)}
-                        </span>
-                        <span style={{ fontSize: 28, fontWeight: 700, color: INK }}>°C</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-
-              {/* Observations */}
-              <div style={{ borderTop: `1px solid ${INK}15` }}>
-                {orderedSelected.map((obs, idx) => {
-                  const cfg = configs[obs.id];
-                  if (!cfg) return null;
-                  const showShot = cfg.includeScreenshot && !!obs.screenshot_url;
-                  if (!showShot && !cfg.includeContent) return null;
-                  return (
-                    <div
-                      key={obs.id}
-                      style={{
-                        display: "flex",
-                        gap: 28,
-                        paddingTop: 36,
-                        paddingBottom: 36,
-                        borderBottom: `1px solid ${INK}10`,
-                      }}
-                    >
-
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {obs.scene && (
-                          <div
-                            style={{
-                              color: MUTED,
-                              fontWeight: 400,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.12em",
-                              fontSize: 13,
-                              marginBottom: 12,
-                              fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                            }}
-                          >
-                            {obs.scene}
-                          </div>
-                        )}
-
-                        {cfg.includeContent && (
-                          <>
-                            {obs.summary && (
-                              <div
-                                style={{
-                                  fontSize: 30,
-                                  fontWeight: 700,
-                                  lineHeight: 1.4,
-                                  marginBottom: 16,
-                                  color: INK,
-                                }}
-                              >
-                                {obs.summary}
-                              </div>
-                            )}
-                            <div
-                              style={{
-                                fontSize: 26,
-                                lineHeight: 1.7,
-                                whiteSpace: "pre-wrap",
-                                color: "#2a2a2a",
-                              }}
-                            >
-                              {obs.cleaned_content || obs.content}
-                            </div>
-                          </>
-                        )}
-
-
-                        {showShot && shotBlobs[obs.id] && (
-                          <div style={{ marginTop: 22 }}>
-                            <img
-                              src={shotBlobs[obs.id]}
-                              alt=""
-                              style={{
-                                width: "100%",
-                                maxHeight: 640,
-                                objectFit: "contain",
-                                display: "block",
-                                background: "#fff",
-                                border: `1px solid ${INK}15`,
-                              }}
-                            />
-                          </div>
-                        )}
-
-                        <div
-                          style={{
-                            marginTop: 16,
-                            fontSize: 13,
-                            color: MUTED,
-                            letterSpacing: "0.14em",
-                            textTransform: "uppercase",
-                            fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                          }}
-                        >
-                          {formatDateForLanguage(obs.created_at, language)}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Footer */}
-              <div
-                style={{
-                  marginTop: 28,
-                  paddingTop: 18,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  fontSize: 14,
-                  color: MUTED,
-                  letterSpacing: "0.06em",
-                  fontFamily: "ui-sans-serif, system-ui, sans-serif",
-                }}
-              >
-                <div>
-                  {formatDateForLanguage(new Date().toISOString(), language)}
-                  <span style={{ opacity: 0.4, margin: "0 12px" }}>|</span>
-                  {t("export.exportedBy")}: <span style={{ fontWeight: 600, color: INK }}>{exporterName}</span>
-                </div>
-                <div
-                  style={{
-                    fontWeight: 700,
-                    color: INK,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                    maxWidth: 360,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {object.name}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
