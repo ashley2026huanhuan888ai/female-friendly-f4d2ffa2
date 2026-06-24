@@ -1,1 +1,13 @@
-把"最新 AI 观察"下每个 `<li>` 卡片改为整体可点击的 `<Link to="/objects/$id" params={{ id: o.object.id }}>`，包裹对象名+证据级+摘要；无关联对象时回退为非链接 `div`。原内嵌的对象名 Link 去掉，避免链接嵌套。仅改 `src/routes/index.tsx`。
+## 目标
+在首页"最新 AI 观察"卡片列表请求失败时，错误提示旁显示"重试加载"按钮；点击后重新拉取数据，期间状态切回 loading（自动隐藏错误提示），成功后展示列表。
+
+## 改动
+
+1. **`src/routes/index.tsx`**
+   - 将 `useEffect` 内的拉取逻辑抽成 `loadSummary` 函数（`useCallback` 包裹，依赖 `fetchSummary`），`useEffect` 调用它一次。
+   - 错误分支由单个 `<p>` 改为容器，包含错误文案 + `<button>`，按钮 `onClick={loadSummary}`，文案使用新 i18n key `common.retry`。
+
+2. **`src/lib/i18n.tsx`**
+   - 新增 `common.retry`：中文 "重试加载"，英文 "Retry"。
+
+无后端变更。
