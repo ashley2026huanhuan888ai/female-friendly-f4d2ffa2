@@ -1191,7 +1191,7 @@ export const getPublicObjects = createServerFn({ method: "GET" })
         .from("observations")
         .select("object_id, created_at")
         .eq("status", "approved")
-        .contains("tags", [tagFilter])
+        .contains("tags", JSON.stringify([tagFilter]))
         .order("created_at", { ascending: false })
         .limit(500);
       if (tagError) throw new Error(tagError.message);
