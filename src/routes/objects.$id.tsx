@@ -69,7 +69,9 @@ function ObjectDetail() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [expl, setExpl] = useState<{ breakdown: any; object: any } | null>(null);
   const [showExpl, setShowExpl] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const fetchExpl = useServerFn(getTemperatureExplanation);
+
   const fetchDetail = useServerFn(getPublicObjectDetail);
   const fetchMoreObservations = useServerFn(getPublicObjectObservations);
 
