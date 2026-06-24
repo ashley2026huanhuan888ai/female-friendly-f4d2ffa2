@@ -124,8 +124,11 @@ export function ObjectComments({ objectId }: { objectId: string }) {
       await createComment({ data: { object_id: objectId, body } });
       setBody("");
       toast.success(t("objectComments.submitted"));
+      await reload();
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error((error as Error).message, {
+        action: { label: t("common.retry"), onClick: () => onSubmit() },
+      });
     } finally {
       setSubmitting(false);
     }
