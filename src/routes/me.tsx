@@ -234,3 +234,104 @@ function StatusChip({ status }: { status: string }) {
     <span className="border border-border px-1.5 py-0.5 text-[10px]">{map[status] ?? status}</span>
   );
 }
+
+function ProfileEditor() {
+  const { t } = useI18n();
+  const fetchProfile = useServerFn(getMyProfile);
+  const saveProfile = useServerFn(updateMyProfile);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+
+  const load = () => {
+    setLoading(true);
+    fetchProfile()
+      .then((p: any) => {
+        if (!p) return;
+        setDisplayName(p.display_name ?? "");
+        setBio(p.bio ?? "");
+        setAvatarUrl(p.avatar_url ?? "");
+      })
+      .finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onSave = async () => {
+    setSaving(true);
+    try {
+      await saveProfile({
+        data: {
+          display_name: displayName.trim(),
+          bio: bio.trim(),
+          avatar_url: avatarUrl.trim() || null,
+        },
+      });
+      toast.success(t("profile.saved"));
+    } catch (e) {
+      toast.error((e as Error).message || t("profile.saveFailed"), {
+        action: { label: t("common.retry"), onClick: () => onSave() },
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 border border-border bg-card p-5">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        {t("profile.title")}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{t("profile.hint")}</p>
+      {loading ? (
+        <p className="mt-4 text-sm text-muted-foreground">{t("common.loading")}</p>
+      ) : (
+        <div className="mt-4 grid gap-3">
+          <label className="grid gap-1 text-xs">
+            <span className="text-muted-foreground">{t("profile.displayName")}</span>
+            <input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={40}
+              placeholder={t("profile.displayNamePlaceholder")}
+              className="border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+            />
+          </label>
+          <label className="grid gap-1 text-xs">
+            <span className="text-muted-foreground">{t("profile.bio")}</span>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              maxLength={300}
+              placeholder={t("profile.bioPlaceholder")}
+              className="min-h-[72px] resize-y border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+            />
+          </label>
+          <label className="grid gap-1 text-xs">
+            <span className="text-muted-foreground">{t("profile.avatarUrl")}</span>
+            <input
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              maxLength={500}
+              placeholder={t("profile.avatarUrlPlaceholder")}
+              className="border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+            />
+          </label>
+          <div>
+            <button
+              onClick={onSave}
+              disabled={saving}
+              className="border border-foreground bg-foreground px-4 py-2 text-xs text-background hover:bg-accent hover:border-accent disabled:opacity-50"
+            >
+              {saving ? t("profile.saving") : t("profile.save")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
