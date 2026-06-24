@@ -1406,6 +1406,11 @@ const COPY = {
     "profile.saving": "Saving...",
     "profile.saved": "Profile updated",
     "profile.saveFailed": "Save failed",
+    "profile.edit": "Edit profile",
+    "profile.cancel": "Cancel",
+    "me.myTags": "Tags I observe",
+    "me.noTags": "No approved observations yet",
+
 
     "messages.title": "Messages",
     "messages.empty": "No conversations yet. Tap a comment author to start one.",
