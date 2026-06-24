@@ -1,35 +1,38 @@
 ## 目标
-在导出长图完成后，提供清晰的下载反馈与一键分享入口。
+按截图反馈调整导出长图 header 与截图区，让"温度"和"二维码"上移到标题区，并彻底删除无附件占位。
 
-## 改动点（仅 `src/components/ExportCardDialog.tsx`）
+## 改动（仅 `src/components/ExportCardDialog.tsx` 的 off-screen 渲染部分）
 
-1. **生成结果状态**：新增 `result: { dataUrl, filename, blob } | null`。`handleExport` 不再立即触发 `<a download>`，而是生成完毕后把结果存入 state，并 `toast.success`。
+### 1. Header 重排
+当前：温度在第二行右侧、档案编号孤立在右上、二维码在卡片底部。
+改为单个 header 区，CSS grid 三列：
 
-2. **文件名规范化**：`${object.name}-${YYYYMMDD}-${count}cards.png`，把对象名里非法字符替换为 `_`。
+```
+左列（auto, 主区）        |  中列（auto, 温度）  |  右列（auto, 二维码）
+女性友好体验存档              [温度数值 + °C]       [80×80 QR]
+Female-Friendly Archive       区间色字            档案入口（小字）
+影视作品                      ─────              ─────
+父母爱情（大字）              档案编号小字 mono     扫码查看（小字）
+```
 
-3. **结果面板**（替换原"生成"按钮区域，仅当 `result` 存在时显示在底部）：
-   - 显示缩略图（max-h 160px）
-   - 显示完整文件名（mono 字体，可点击复制）
-   - 三个按钮：
-     - **下载 PNG**：触发 `<a href=dataUrl download=filename>`
-     - **分享**：优先调用 `navigator.share({ files:[File], title, text })`（Web Share Level 2）；不支持文件分享时回退到复制图片到剪贴板（`navigator.clipboard.write([new ClipboardItem({'image/png': blob})])`）；都不支持就 toast 提示"长按图片保存"。
-     - **重新生成 / 关闭**
+具体：
+- 外层 flex，`alignItems: flex-start, gap: 32, justifyContent: space-between`
+- 左列：标题块（30px bold）+ 副标题 + 间距 16 + 类型小标签 + 对象名（46px bold）
+- 中列：80×120 块，上方"温度"小标 uppercase，下方 `<温度数值 64px tempBand.color> °C`，下方档案编号 mono 小字
+- 右列：100×120 块，QR 图 96×96 + 下方两行 12px "档案入口 / 扫码查看完整档案"
+- 整 header 下方 1px 黑线分割
 
-4. **i18n 新增键**（中/英）：
-   - `export.ready` "长图已生成" / "Image ready"
-   - `export.download` "下载 PNG" / "Download PNG"
-   - `export.share` "分享" / "Share"
-   - `export.shareUnsupported` "当前设备不支持直接分享，已复制到剪贴板" / "Sharing not supported, copied to clipboard"
-   - `export.copyFailed` "复制失败，请长按图片保存" / "Copy failed, long-press the image to save"
-   - `export.regenerate` "重新生成" / "Regenerate"
-   - `export.filename` "文件名" / "Filename"
+### 2. 删除底部独立的 QR 区块（已移至 header）
 
-5. **关闭对话框时**清空 `result`，避免下次打开看到上次结果。
+### 3. 截图区
+确认：当 `cfg.includeScreenshot && !obs.screenshot_url` 时不渲染任何 dashed 占位（当前代码已正确，再次复核 + 截图区外不要任何 fallback DOM）。同时把"包含截图证据"开关在无附件时强制 `includeScreenshot=false`，避免历史 state 残留。
+
+### 4. 档案编号位置
+从中列底部展示（mono 13px），不再单独占右上角；视觉重心交给温度数字。
 
 ## 验收
-- 点击"生成长图"→ 出现结果面板，含缩略图、文件名、下载/分享/重新生成按钮。
-- 下载按钮在桌面/移动端均生效。
-- 移动端 Safari/Chrome 点"分享"调起系统分享面板；不支持时降级到剪贴板或提示。
-- 切换观察项或关闭重开后，旧结果被清空。
+- 顶部一行内同时看到：标题块 / 温度 / 二维码 三块。
+- 没有附件的观察 → 截图区不出现任何虚线框或"无附件证据"文字。
+- 整体保持原有正文卡片、footer 不变。
 
-不涉及任何后端、路由或其他组件改动。
+不涉及业务逻辑或 i18n。
