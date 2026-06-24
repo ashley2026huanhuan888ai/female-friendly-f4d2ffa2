@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { getEvidenceLibrary } from "@/lib/api/archive.functions";
 import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
+import { highlightKeywords } from "@/lib/highlight-keywords";
 
 export const Route = createFileRoute("/archive/evidence")({
   head: () => ({ meta: [{ title: "证据库（A 级） · 女性友好体验测评" }] }),
