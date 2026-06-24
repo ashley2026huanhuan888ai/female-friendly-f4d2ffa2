@@ -1460,6 +1460,8 @@ const COPY = {
     "export.imageNotReady": "Screenshot failed to load — uncheck it or retry",
     "export.selectAll": "Select all",
     "export.deselectAll": "Deselect all",
+    "export.archiveEntry": "Archive Entry",
+    "export.scanToView": "Scan to view full archive",
   },
 
 } as const;
