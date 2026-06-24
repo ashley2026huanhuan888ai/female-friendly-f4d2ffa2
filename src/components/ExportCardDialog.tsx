@@ -517,196 +517,333 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 background: PAPER,
                 color: INK,
                 fontFamily: "ui-serif, Georgia, 'Songti SC', 'Noto Serif SC', serif",
-                padding: "64px 64px 48px",
+                padding: "56px 64px 48px",
                 boxSizing: "border-box",
               }}
             >
-              {/* Header — title left, temperature + QR right */}
-              <div style={{ borderBottom: `1px solid ${INK}`, paddingBottom: 28, marginBottom: 32 }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 36 }}>
-                  {/* Left: title block + object */}
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: "0.04em" }}>
-                      {t("export.cardTitle")}
-                    </div>
-                    <div style={{ fontSize: 14, color: MUTED, marginTop: 4 }}>
-                      {t("export.cardSubtitle")}
-                    </div>
-                    <div style={{ marginTop: 28, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 8 }}>
-                      {objectType(object.type)}
-                    </div>
-                    <div
+              {/* Masthead */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: 36,
+                  paddingBottom: 24,
+                  borderBottom: `1px solid ${INK}20`,
+                }}
+              >
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    <span
                       style={{
-                        fontSize: object.name.length > 18 ? 36 : object.name.length > 10 ? 42 : 50,
+                        background: ACCENT,
+                        color: "#fff",
+                        fontSize: 16,
                         fontWeight: 700,
-                        lineHeight: 1.15,
-                        wordBreak: "break-word",
-                        overflowWrap: "anywhere",
+                        letterSpacing: "0.04em",
+                        padding: "4px 12px",
+                        fontFamily: "ui-sans-serif, system-ui, sans-serif",
                       }}
                     >
-                      {object.name}
+                      {objectType(object.type)}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 15,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.24em",
+                        color: MUTED,
+                        fontFamily: "ui-monospace, monospace",
+                      }}
+                    >
+                      {archiveNo}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 38, fontWeight: 700, letterSpacing: "0.02em", lineHeight: 1.1 }}>
+                    {t("export.cardTitle")}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.18em",
+                      color: MUTED,
+                      marginTop: 8,
+                      fontFamily: "ui-sans-serif, system-ui, sans-serif",
+                      fontWeight: 300,
+                    }}
+                  >
+                    {t("export.cardSubtitle")}
+                  </div>
+                </div>
+                {qrDataUrl && (
+                  <div style={{ flexShrink: 0, width: 160, textAlign: "right" }}>
+                    <img
+                      src={qrDataUrl}
+                      alt="QR"
+                      style={{
+                        width: 132,
+                        height: 132,
+                        display: "block",
+                        marginLeft: "auto",
+                        background: "#fff",
+                        padding: 6,
+                        border: `1px solid ${INK}20`,
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: MUTED,
+                        marginTop: 8,
+                        lineHeight: 1.4,
+                        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+                      }}
+                    >
+                      {t("export.scanToView")}
                     </div>
                   </div>
+                )}
+              </div>
 
-                  {/* Right: temperature + QR stacked */}
-                  <div style={{ flexShrink: 0, width: 260, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 16 }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
-                      {qrDataUrl && (
-                        <div style={{ textAlign: "center" }}>
-                          <img
-                            src={qrDataUrl}
-                            alt="QR"
-                            style={{ width: 104, height: 104, display: "block", background: "#fff", padding: 4, border: `1px solid ${INK}`, boxSizing: "border-box" }}
-                          />
-                        </div>
-                      )}
-                      <div style={{ textAlign: "right", paddingTop: 2 }}>
-                        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 4 }}>
-                          {language === "en" ? "Temperature" : "温度"}
-                        </div>
-                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "flex-end", gap: 3, fontFamily: "ui-serif, Georgia, serif" }}>
-                          <span style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, color: tempBand.color, fontVariantNumeric: "tabular-nums" }}>
-                            {Math.round(object.temperature)}
-                          </span>
-                          <span style={{ fontSize: 20, color: MUTED }}>°C</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ width: "100%", textAlign: "right" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: INK, borderBottom: `2px solid ${ACCENT}`, display: "inline-block", paddingBottom: 1 }}>
-                        {t("export.archiveEntry")}
-                      </div>
-                      <div style={{ marginTop: 4, fontSize: 11, color: MUTED }}>
-                        {t("export.scanToView")}
-                      </div>
-                      <div style={{ marginTop: 6, fontSize: 11, color: MUTED, fontFamily: "ui-monospace, monospace" }}>
-                        {archiveNo}
-                      </div>
-                    </div>
+              {/* Object name + thermometer */}
+              <div style={{ padding: "44px 0 40px" }}>
+                <div
+                  style={{
+                    fontSize: object.name.length > 18 ? 60 : object.name.length > 10 ? 76 : 92,
+                    fontWeight: 700,
+                    lineHeight: 1.05,
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
+                    marginBottom: 32,
+                  }}
+                >
+                  {object.name}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 10,
+                      background: `${INK}10`,
+                      borderRadius: 9999,
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        height: "100%",
+                        width: `${Math.max(0, Math.min(100, object.temperature))}%`,
+                        background: tempBand.color,
+                        borderRadius: 9999,
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, flexShrink: 0 }}>
+                    <span
+                      style={{
+                        fontSize: 72,
+                        fontWeight: 700,
+                        lineHeight: 1,
+                        color: tempBand.color,
+                        fontVariantNumeric: "tabular-nums",
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
+                      {Math.round(object.temperature)}
+                    </span>
+                    <span style={{ fontSize: 26, fontWeight: 700, color: INK }}>°C</span>
                   </div>
                 </div>
               </div>
 
-              {/* Sections per observation */}
-              {orderedSelected.map((obs, idx) => {
-                const cfg = configs[obs.id];
-                if (!cfg) return null;
-                const showShot = cfg.includeScreenshot && !!obs.screenshot_url;
-                if (!showShot && !cfg.includeContent) return null;
-                return (
-                  <div key={obs.id} style={{ marginBottom: 56 }}>
+              {/* Observations */}
+              <div style={{ borderTop: `1px solid ${INK}15` }}>
+                {orderedSelected.map((obs, idx) => {
+                  const cfg = configs[obs.id];
+                  if (!cfg) return null;
+                  const showShot = cfg.includeScreenshot && !!obs.screenshot_url;
+                  if (!showShot && !cfg.includeContent) return null;
+                  const ev = obs.evidence_level;
+                  const evChar = ev != null ? String.fromCharCode(64 + Math.max(1, Math.min(4, ev))) : null;
+                  return (
                     <div
+                      key={obs.id}
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "baseline",
-                        marginBottom: 20,
-                        fontSize: 16,
-                        color: MUTED,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.16em",
+                        gap: 28,
+                        paddingTop: 36,
+                        paddingBottom: 36,
+                        borderBottom: `1px solid ${INK}10`,
                       }}
                     >
-                      <span>
-                        № {String(idx + 1).padStart(2, "0")} / {String(orderedSelected.length).padStart(2, "0")}
-                      </span>
-                      <span>{formatDateForLanguage(obs.created_at, language)}</span>
-                    </div>
-
-                    {showShot && (
-                      <div style={{ marginBottom: 22 }}>
-                        <img
-                          src={obs.screenshot_url!}
-                          alt=""
-                          crossOrigin="anonymous"
-                          style={{
-                            width: "100%",
-                            maxHeight: 720,
-                            objectFit: "contain",
-                            display: "block",
-                            border: `1px solid ${INK}`,
-                            background: "#fff",
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    <div
-                      style={{
-                        border: `1px solid ${INK}`,
-                        padding: "36px 40px",
-                        background: "#fff",
-                      }}
-                    >
-                      {/* Tag bar — 与详情页风格一致 */}
-                      {(obs.evidence_level || cfg.tags.size > 0 || obs.scene) && (
+                      <div style={{ flexShrink: 0, width: 64, paddingTop: 4 }}>
                         <div
                           style={{
+                            width: 52,
+                            height: 52,
+                            borderRadius: "50%",
+                            border: `2px solid ${evChar ? ACCENT : `${INK}30`}`,
+                            color: evChar ? ACCENT : `${INK}80`,
+                            background: "#fff",
                             display: "flex",
-                            flexWrap: "wrap",
                             alignItems: "center",
-                            gap: "10px 18px",
-                            marginBottom: 22,
-                            fontSize: 17,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.12em",
-                            color: MUTED,
+                            justifyContent: "center",
+                            fontSize: evChar ? 24 : 18,
+                            fontWeight: 700,
                           }}
                         >
-                          {obs.evidence_level != null && (
-                            <span style={{ border: `1px solid ${INK}`, color: INK, padding: "3px 10px" }}>
-                              {t("common.evidence")} {obs.evidence_level}
-                            </span>
-                          )}
-                          {Array.from(cfg.tags).map((tg) => (
-                            <span key={tg} style={{ color: ACCENT, fontWeight: 600 }}>
-                              #{tag(tg)}
-                            </span>
-                          ))}
-                          {obs.scene && <span>· {obs.scene}</span>}
+                          {evChar || String(idx + 1).padStart(2, "0")}
                         </div>
-                      )}
+                        <div
+                          style={{
+                            marginTop: 12,
+                            fontSize: 12,
+                            color: MUTED,
+                            textAlign: "center",
+                            letterSpacing: "0.12em",
+                            fontFamily: "ui-monospace, monospace",
+                          }}
+                        >
+                          № {String(idx + 1).padStart(2, "0")}/{String(orderedSelected.length).padStart(2, "0")}
+                        </div>
+                      </div>
 
-                      {cfg.includeContent && (
-                        <div>
-                          {obs.summary && (
-                            <div
-                              style={{ fontSize: 30, fontWeight: 600, marginBottom: 18, lineHeight: 1.45, color: INK }}
-                            >
-                              {obs.summary}
-                            </div>
-                          )}
-                          <div style={{ fontSize: 24, lineHeight: 1.8, whiteSpace: "pre-wrap", color: "#2a2a2a" }}>
-                            {obs.cleaned_content || obs.content}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {(cfg.tags.size > 0 || obs.scene) && (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              alignItems: "center",
+                              gap: "8px 16px",
+                              marginBottom: 16,
+                              fontSize: 18,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {Array.from(cfg.tags).map((tg) => (
+                              <span key={tg} style={{ color: ACCENT }}>
+                                #{tag(tg)}
+                              </span>
+                            ))}
+                            {obs.scene && (
+                              <span
+                                style={{
+                                  color: MUTED,
+                                  fontWeight: 400,
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.12em",
+                                  fontSize: 14,
+                                }}
+                              >
+                                · {obs.scene}
+                              </span>
+                            )}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                        )}
 
+                        {cfg.includeContent && (
+                          <>
+                            {obs.summary && (
+                              <div
+                                style={{
+                                  fontSize: 32,
+                                  fontWeight: 700,
+                                  lineHeight: 1.4,
+                                  marginBottom: 16,
+                                  color: INK,
+                                }}
+                              >
+                                {obs.summary}
+                              </div>
+                            )}
+                            <div
+                              style={{
+                                fontSize: 24,
+                                lineHeight: 1.8,
+                                whiteSpace: "pre-wrap",
+                                color: "#2a2a2a",
+                              }}
+                            >
+                              {obs.cleaned_content || obs.content}
+                            </div>
+                          </>
+                        )}
+
+                        {showShot && (
+                          <div style={{ marginTop: 22 }}>
+                            <img
+                              src={obs.screenshot_url!}
+                              alt=""
+                              crossOrigin="anonymous"
+                              style={{
+                                width: "100%",
+                                maxHeight: 640,
+                                objectFit: "contain",
+                                display: "block",
+                                background: "#fff",
+                                border: `1px solid ${INK}15`,
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        <div
+                          style={{
+                            marginTop: 16,
+                            fontSize: 13,
+                            color: MUTED,
+                            letterSpacing: "0.14em",
+                            textTransform: "uppercase",
+                            fontFamily: "ui-sans-serif, system-ui, sans-serif",
+                          }}
+                        >
+                          {formatDateForLanguage(obs.created_at, language)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
               {/* Footer */}
               <div
                 style={{
-                  marginTop: 24,
+                  marginTop: 28,
                   paddingTop: 18,
-                  borderTop: `1px solid ${INK}`,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  fontSize: 16,
+                  fontSize: 14,
                   color: MUTED,
+                  letterSpacing: "0.06em",
+                  fontFamily: "ui-sans-serif, system-ui, sans-serif",
                 }}
               >
                 <div>
-                  {formatDateForLanguage(new Date().toISOString(), language)} ·{" "}
+                  {formatDateForLanguage(new Date().toISOString(), language)}
+                  <span style={{ opacity: 0.4, margin: "0 12px" }}>|</span>
                   {t("export.exportedBy")}: <span style={{ fontWeight: 600, color: INK }}>{exporterName}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontFamily: "ui-monospace, monospace" }}>{archiveNo}</span>
-                  <span style={{ color: ACCENT, fontWeight: 700 }}>{t("app.name")}</span>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    color: INK,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.14em",
+                    maxWidth: 360,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {object.name}
                 </div>
               </div>
             </div>

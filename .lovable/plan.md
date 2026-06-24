@@ -1,25 +1,32 @@
-## 问题
-当前 `handleDownload` 用 `<a download>` 触发下载。在 iOS Safari / 微信 / 多数 Android 浏览器里，这只会打开图片或存到"文件"，无法直接进相册。相册保存需要走系统原生分享面板（iOS）或长按图片菜单。
+## 选定方向：v1 温度刻度条 · 经典刊物
 
-## 方案
-改造 `ExportCardDialog.tsx` 里结果区的"下载"按钮逻辑，分平台走不同路径：
+按用户选中的 v1 原型，重写 `src/components/ExportCardDialog.tsx` 里的离屏渲染卡片（约第 513–712 行），保留所有现有数据接线（i18n、object/observation 字段、QR、tempBand 颜色、配置选项）。
 
-1. **优先用 Web Share API（iOS / 安卓微信外）**  
-   已有 `handleShare` 用 `navigator.share({ files })`，iOS 分享面板里有"存储图像"可直接进相册。把"下载"按钮在移动端改为先尝试 `navigator.share`，桌面端仍走 `a.download`。
+## 版式改造
 
-2. **回退提示长按保存**  
-   当 `navigator.share` 不可用（如微信内置浏览器），在结果区显示一张可见的大图预览（已有 zoom 预览），并加一行提示文案："长按图片即可保存到相册"。图片需是真实 `<img src=dataURL>`，长按菜单才会出"保存到相册"。
+1. **顶部刊头（更紧凑）**
+   - 左：芭比粉色 BRAND/品牌类型胶囊标签 + 等距字体的档案编号 FF-XXXX
+   - 左下：「女性友好体验存档」大字 + 小写英文副标
+   - 右：缩小的 QR 码（132px）+ "扫码查看完整档案"
+   - 分隔线由黑色实线改为 `INK20` 浅灰
 
-3. **桌面端保持现状**  
-   桌面浏览器无相册概念，继续 `a.download` 触发文件下载。
+2. **对象名 + 温度刻度条（新增主视觉）**
+   - 对象名作为整张图最大标题（92/76/60 三段自适应），不再挤在刊头里
+   - 下方一条横向 thermometer：背景灰条 + `tempBand.color` 按温度百分比填充 + 右侧 72px 温度数字 + °C
+   - 温度数字与刻度条共享 `tempBand.color`，呼应主页温度色
 
-4. **文案 & i18n**  
-   新增 `export.saveToAlbumHint`（中/英）。下载按钮在移动端文案改为"保存到相册"，桌面保持"下载"。
+3. **观察条目（左侧 A/B 标记列 + 右侧内容流）**
+   - 左侧 64px 列：圆形 evidence 字母圈（A/B/C/D，无 evidence 时显示序号）+ 下方 № 01/02 等距编号
+   - 右侧：标签行（粉色 #tag，scene 大写灰字）→ summary 大字 → 正文 → 截图（若有）→ 日期小字
+   - 条目之间用极细分隔线 `INK10`，不再用整块白色卡片
+
+4. **页脚**：日期 | 导出者：xxx ｜ 右侧大写对象名（粗体）。去掉冗余的档案编号重复（已挪到刊头）。
+
+## 不改
+
+- `pixelRatio: 3`、预览缩放控件、移动端「保存到相册」按钮、下载/分享逻辑、i18n key、observation 选择 UI 全保留。
+- 颜色仍用现有 `ACCENT/INK/MUTED/PAPER` 常量，不引入新色。
 
 ## 涉及文件
-- `src/components/ExportCardDialog.tsx`：拆分 `handleSaveToAlbum` 逻辑（检测 `navigator.share + canShare({files})` → `share`；否则 desktop 下走 `a.download`；移动端不支持 share 时仅提示长按）。
-- `src/lib/i18n.tsx`：新增提示与按钮文案 key。
 
-## 不做
-- 不引入原生 App / Capacitor。
-- 不改长图渲染、不改 zoom 控件。
+- `src/components/ExportCardDialog.tsx`：替换第 513–712 行的离屏渲染 JSX。
