@@ -1,17 +1,20 @@
-import a1 from "@/assets/avatars/avatar-01.png";
-import a2 from "@/assets/avatars/avatar-02.png";
-import a3 from "@/assets/avatars/avatar-03.png";
-import a4 from "@/assets/avatars/avatar-04.png";
-import a5 from "@/assets/avatars/avatar-05.png";
-import a6 from "@/assets/avatars/avatar-06.png";
-import a7 from "@/assets/avatars/avatar-07.png";
-import a8 from "@/assets/avatars/avatar-08.png";
-import a9 from "@/assets/avatars/avatar-09.png";
-import a10 from "@/assets/avatars/avatar-10.png";
-import a11 from "@/assets/avatars/avatar-11.png";
-import a12 from "@/assets/avatars/avatar-12.png";
+import a1 from "@/assets/avatars/avatar-01.png.asset.json";
+import a2 from "@/assets/avatars/avatar-02.png.asset.json";
+import a3 from "@/assets/avatars/avatar-03.png.asset.json";
+import a4 from "@/assets/avatars/avatar-04.png.asset.json";
+import a5 from "@/assets/avatars/avatar-05.png.asset.json";
+import a6 from "@/assets/avatars/avatar-06.png.asset.json";
+import a7 from "@/assets/avatars/avatar-07.png.asset.json";
+import a8 from "@/assets/avatars/avatar-08.png.asset.json";
+import a9 from "@/assets/avatars/avatar-09.png.asset.json";
+import a10 from "@/assets/avatars/avatar-10.png.asset.json";
+import a11 from "@/assets/avatars/avatar-11.png.asset.json";
+import a12 from "@/assets/avatars/avatar-12.png.asset.json";
 
-export const PRESET_AVATARS: string[] = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12];
+export const PRESET_AVATARS: string[] = [
+  a1.url, a2.url, a3.url, a4.url, a5.url, a6.url,
+  a7.url, a8.url, a9.url, a10.url, a11.url, a12.url,
+];
 
 type Props = {
   value: string | null;
