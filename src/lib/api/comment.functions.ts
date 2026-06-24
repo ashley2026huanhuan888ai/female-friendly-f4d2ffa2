@@ -132,6 +132,7 @@ function toPublicComment(row: PublicObjectCommentRow & { author_label: string })
     id: row.id,
     body: row.body,
     author_label: row.author_label,
+    author_id: row.user_id,
     helpful_count: Number(row.helpful_count ?? 0),
     created_at: row.created_at,
     ...(row.objects !== undefined

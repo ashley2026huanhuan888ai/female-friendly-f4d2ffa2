@@ -17,6 +17,7 @@ type Comment = {
   id: string;
   body: string;
   author_label: string;
+  author_id: string;
   helpful_count: number;
   created_at: string;
 };
@@ -273,6 +274,16 @@ export function ObjectComments({ objectId }: { objectId: string }) {
                       <Flag className="h-3.5 w-3.5" aria-hidden="true" />
                       {t("objectComments.report")}
                     </button>
+                    {user && comment.author_id && comment.author_id !== user.id && (
+                      <Link
+                        to="/messages/$peerId"
+                        params={{ peerId: comment.author_id }}
+                        className="inline-flex items-center gap-1.5 border border-border px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                        {t("messages.dmAuthor")}
+                      </Link>
+                    )}
                   </div>
 
                   {reportFor === comment.id && (
