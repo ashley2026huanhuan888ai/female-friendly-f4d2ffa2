@@ -49,6 +49,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [generating, setGenerating] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [result, setResult] = useState<{ dataUrl: string; blob: Blob; filename: string } | null>(null);
+  const [previewZoom, setPreviewZoom] = useState<number>(1);
 
   const handleClose = () => {
     setResult(null);
