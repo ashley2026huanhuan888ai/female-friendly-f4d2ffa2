@@ -277,6 +277,9 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               )}
               {email ? (
                 <>
+                  <Link to="/messages" className="border-b border-border/50 py-3 text-foreground">
+                    {t("nav.messages")}
+                  </Link>
                   <Link to="/me" className="border-b border-border/50 py-3 text-foreground">
                     {t("nav.me")}
                     {unread > 0 ? ` (${unread > 99 ? "99+" : unread})` : ""}
