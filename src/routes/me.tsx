@@ -27,6 +27,7 @@ function MePage() {
   const [loading, setLoading] = useState(true);
   const { ready, user } = useAuth();
   const [tab, setTab] = useState<"watch" | "obs" | "notif" | "relations">("watch");
+  const [editingProfile, setEditingProfile] = useState(false);
   const fetchDash = useServerFn(getMyDashboard);
   const markRead = useServerFn(markNotificationsRead);
 
@@ -67,8 +68,16 @@ function MePage() {
           <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
             My Observatory
           </div>
-          <h1 className="mt-3 font-serif text-4xl">{t("me.title")}</h1>
-          <ProfileEditor />
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+            <h1 className="font-serif text-4xl">{t("me.title")}</h1>
+            <button
+              onClick={() => setEditingProfile(true)}
+              className="shrink-0 border border-foreground/60 px-3 py-1.5 text-xs hover:border-foreground"
+            >
+              {t("profile.edit")}
+            </button>
+          </div>
+          {editingProfile && <ProfileEditor onClose={() => setEditingProfile(false)} />}
           <MyTags tags={data.my_tags ?? []} />
 
           <div className="mt-6 inline-flex border border-border">
@@ -100,6 +109,7 @@ function MePage() {
           </div>
         </div>
       </section>
+
 
 
       <section className="py-12">
@@ -242,7 +252,7 @@ function StatusChip({ status }: { status: string }) {
   );
 }
 
-function ProfileEditor() {
+function ProfileEditor({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   const fetchProfile = useServerFn(getMyProfile);
   const saveProfile = useServerFn(updateMyProfile);
@@ -252,7 +262,7 @@ function ProfileEditor() {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
 
-  const load = () => {
+  useEffect(() => {
     setLoading(true);
     fetchProfile()
       .then((p: any) => {
@@ -262,9 +272,6 @@ function ProfileEditor() {
         setAvatarUrl(p.avatar_url ?? "");
       })
       .finally(() => setLoading(false));
-  };
-  useEffect(() => {
-    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -279,6 +286,7 @@ function ProfileEditor() {
         },
       });
       toast.success(t("profile.saved"));
+      onClose();
     } catch (e) {
       toast.error((e as Error).message || t("profile.saveFailed"), {
         action: { label: t("common.retry"), onClick: () => onSave() },
@@ -288,34 +296,15 @@ function ProfileEditor() {
     }
   };
 
-  const [editing, setEditing] = useState(false);
-
-  const onSaveAndClose = async () => {
-    await onSave();
-    setEditing(false);
-  };
-
   return (
     <div className="mt-6 border border-border bg-card p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            {t("profile.title")}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">{t("profile.hint")}</p>
-        </div>
-        {!editing && !loading && (
-          <button
-            onClick={() => setEditing(true)}
-            className="shrink-0 border border-foreground/60 px-3 py-1.5 text-xs hover:border-foreground"
-          >
-            {t("profile.edit")}
-          </button>
-        )}
+      <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        {t("profile.title")}
       </div>
+      <p className="mt-1 text-xs text-muted-foreground">{t("profile.hint")}</p>
       {loading ? (
         <p className="mt-4 text-sm text-muted-foreground">{t("common.loading")}</p>
-      ) : editing ? (
+      ) : (
         <div className="mt-4 grid gap-3">
           <label className="grid gap-1 text-xs">
             <span className="text-muted-foreground">{t("profile.displayName")}</span>
@@ -349,27 +338,25 @@ function ProfileEditor() {
           </label>
           <div className="flex items-center gap-3">
             <button
-              onClick={onSaveAndClose}
+              onClick={onSave}
               disabled={saving}
               className="border border-foreground bg-foreground px-4 py-2 text-xs text-background hover:bg-accent hover:border-accent disabled:opacity-50"
             >
               {saving ? t("profile.saving") : t("profile.save")}
             </button>
             <button
-              onClick={() => {
-                setEditing(false);
-                load();
-              }}
+              onClick={onClose}
               className="text-xs text-muted-foreground hover:text-foreground"
             >
               {t("profile.cancel")}
             </button>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
+
 
 function MyTags({ tags }: { tags: { tag: string; count: number }[] }) {
   const { t, tag: tagLabel } = useI18n();
