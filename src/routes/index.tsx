@@ -7,6 +7,7 @@ import { Thermometer } from "@/components/Thermometer";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
 import { highlightKeywords } from "@/lib/highlight-keywords";
+import { bandOf } from "@/lib/temperature";
 
 const EMPTY_SUMMARY = {
   today_events: [],
@@ -399,16 +400,20 @@ function ColumnList({
                   </Link>
                   {Array.isArray(o.top_tags) && o.top_tags.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      {o.top_tags.slice(0, 2).map((tg: string) => (
-                        <Link
-                          key={tg}
-                          to="/objects"
-                          search={{ tag: tg }}
-                          className="border border-accent bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground hover:bg-accent/90"
-                        >
-                          #{tagLabel(tg)}
-                        </Link>
-                      ))}
+                      {o.top_tags.slice(0, 2).map((tg: string) => {
+                        const tempColor = bandOf(Number(o.temperature_after ?? o.temperature ?? 0)).color;
+                        return (
+                          <Link
+                            key={tg}
+                            to="/objects"
+                            search={{ tag: tg }}
+                            style={{ backgroundColor: tempColor, borderColor: tempColor }}
+                            className="border px-1.5 py-0.5 text-[10px] font-semibold text-white hover:opacity-90"
+                          >
+                            #{tagLabel(tg)}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                   <Link
