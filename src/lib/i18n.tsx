@@ -1413,7 +1413,26 @@ const COPY = {
     "userFollow.empty": "None yet",
     "me.following": "Following",
     "me.followers": "Followers",
+    "export.button": "Export card",
+    "export.title": "Export observation card",
+    "export.selectObservation": "Choose an observation to export",
+    "export.tags": "Select tags to display",
+    "export.includeScreenshot": "Include screenshot evidence",
+    "export.includeContent": "Include observation text",
+    "export.generate": "Generate image",
+    "export.generating": "Generating…",
+    "export.empty": "No observations to export",
+    "export.exportedBy": "Exported by",
+    "export.anonymous": "Anonymous reader",
+    "export.archiveNo": "Archive No.",
+    "export.noScreenshot": "No attached evidence",
+    "export.cardTitle": "Female-Friendly Experience Archive",
+    "export.cardSubtitle": "女性友好体验存档",
+    "export.evidenceLabel": "Triggers",
+    "export.observationLabel": "Observation",
+    "export.failed": "Failed to generate, please retry",
   },
+
 } as const;
 
 
