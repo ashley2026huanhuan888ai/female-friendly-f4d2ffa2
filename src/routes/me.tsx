@@ -340,7 +340,11 @@ function ProfileEditor({ onClose }: { onClose: () => void }) {
           </label>
           <div className="grid gap-2 text-xs">
             <span className="text-muted-foreground">{t("profile.avatarUrl")}</span>
-            <AvatarPicker value={avatarUrl || null} onChange={(v) => setAvatarUrl(v ?? "")} />
+            <AvatarPicker
+              value={avatarUrl || null}
+              onChange={(v) => setAvatarUrl(v ?? "")}
+              displayName={displayName}
+            />
           </div>
 
           <div className="flex items-center gap-3">
