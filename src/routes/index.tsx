@@ -389,18 +389,15 @@ function ColumnList({
               after: after.toFixed(1).replace(/\.0$/, ""),
             });
             return (
-              <li key={o.id} className="flex items-start gap-3 py-3">
-                <Link to="/objects/$id" params={{ id: o.id }} className="shrink-0">
-                  <Thermometer value={o.temperature} size="sm" showLabel={false} />
-                </Link>
-                <div className="min-w-0 flex-1">
+              <li key={o.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 py-3">
+                <div className="min-w-0">
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                     {objectType(o.type)}
                   </div>
                   <Link
                     to="/objects/$id"
                     params={{ id: o.id }}
-                    className="block truncate font-serif hover:text-accent"
+                    className="block font-serif hover:text-accent"
                   >
                     {o.name}
                   </Link>
@@ -421,16 +418,18 @@ function ColumnList({
                   <Link
                     to="/objects/$id"
                     params={{ id: o.id }}
-                    className="mt-1 block text-xs leading-5 text-muted-foreground hover:text-foreground"
+                    className="mt-1 block max-w-[28ch] text-xs leading-5 text-muted-foreground hover:text-foreground"
                   >
                     {detail}
                   </Link>
                 </div>
+                <Link to="/objects/$id" params={{ id: o.id }} className="shrink-0">
+                  <Thermometer value={o.temperature} size="lg" showLabel={false} />
+                </Link>
               </li>
             );
-
-
           })}
+
         </ul>
       )}
     </div>
