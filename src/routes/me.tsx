@@ -404,10 +404,11 @@ function MyTags({ tags }: { tags: { tag: string; count: number }[] }) {
           return (
             <Link
               key={tt.tag}
-              to="/topics"
-              search={{ tag: tt.tag }}
+              to="/topics/$tag"
+              params={{ tag: tt.tag }}
               className={`leading-tight hover:underline ${cls}`}
             >
+
               {tagLabel(tt.tag)}
               <span className="ml-1 text-[10px] text-muted-foreground align-baseline">
                 ·{tt.count}
