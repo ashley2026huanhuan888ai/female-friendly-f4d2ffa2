@@ -417,7 +417,7 @@ export const getMyWatchlist = createServerFn({ method: "GET" })
 export const getMyDashboard = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [watch, myObs, notif] = await Promise.all([
+    const [watch, myObs, notif, myTagsRows] = await Promise.all([
       supabaseAdmin
         .from("watchlist" as never)
         .select("object_id")
@@ -434,6 +434,12 @@ export const getMyDashboard = createServerFn({ method: "GET" })
         .eq("user_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(30),
+      supabaseAdmin
+        .from("observations")
+        .select("tags")
+        .eq("user_id", context.userId)
+        .eq("status", "approved")
+        .limit(500),
     ]);
     const wIds = (watch.data ?? []).map((r: { object_id: string }) => r.object_id);
     const oIds = [
@@ -449,6 +455,17 @@ export const getMyDashboard = createServerFn({ method: "GET" })
       ? await supabaseAdmin.from("objects").select("id, name, type, temperature").in("id", oIds)
       : { data: [] as Array<{ id: string; name: string; type: string; temperature: number }> };
     const oMap = new Map((objs ?? []).map((o) => [o.id, o]));
+
+    const tagCount = new Map<string, number>();
+    for (const r of (myTagsRows.data ?? []) as Array<{ tags: unknown }>) {
+      const tags = Array.isArray(r.tags) ? (r.tags as string[]) : [];
+      for (const tg of tags) tagCount.set(tg, (tagCount.get(tg) ?? 0) + 1);
+    }
+    const my_tags = [...tagCount.entries()]
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 24);
+
     return {
       watching: wIds.map((id) => oMap.get(id)).filter(Boolean),
       my_observations: (myObs.data ?? []).map((o) => ({
@@ -460,8 +477,10 @@ export const getMyDashboard = createServerFn({ method: "GET" })
         object: n.object_id ? (oMap.get(n.object_id) ?? null) : null,
       })),
       unread_count: (notif.data ?? []).filter((n: { read_at: string | null }) => !n.read_at).length,
+      my_tags,
     };
   });
+
 
 export const markNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
