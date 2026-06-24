@@ -7,6 +7,7 @@ import { Thermometer } from "@/components/Thermometer";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
 import { highlightKeywords } from "@/lib/highlight-keywords";
+import { bandOf } from "@/lib/temperature";
 
 const EMPTY_SUMMARY = {
   today_events: [],
