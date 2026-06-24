@@ -401,14 +401,19 @@ function ColumnList({
                   {Array.isArray(o.top_tags) && o.top_tags.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {o.top_tags.slice(0, 2).map((tg: string) => {
-                        const tempColor = bandOf(Number(o.temperature_after ?? o.temperature ?? 0)).color;
+                        const b = bandOf(Number(o.temperature_after ?? o.temperature ?? 0));
                         return (
                           <Link
                             key={tg}
                             to="/objects"
                             search={{ tag: tg }}
-                            style={{ backgroundColor: tempColor, borderColor: tempColor }}
-                            className="border px-1.5 py-0.5 text-[10px] font-semibold text-white hover:opacity-90"
+                            style={{
+                              backgroundColor: b.color,
+                              color: b.fg,
+                              borderColor: `color-mix(in oklab, ${b.color} 70%, black)`,
+                              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${b.color} 60%, black)`,
+                            }}
+                            className="border px-1.5 py-0.5 text-[10px] font-semibold hover:opacity-90"
                           >
                             #{tagLabel(tg)}
                           </Link>
