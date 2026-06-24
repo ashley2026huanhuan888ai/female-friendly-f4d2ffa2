@@ -1,22 +1,28 @@
-# 手机端 Hero：用标签云替换「最新观察」
+# 手机端 Hero 排版重构
 
-## 改动
-仅修改 `src/routes/objects.$id.tsx` 的「最新观察」区块（约第 179–186 行）。
+参考图右侧的草图调整 `src/routes/objects.$id.tsx` 的 hero 区域（仅 `md:` 以下）。
 
-- **移动端（默认 / `md:hidden`）**：渲染标签云，使用已有的 `topTags`（含 `tag` 与 `count`），按 count 排序后映射到 4 档字号：
-  - 最高频 → `text-2xl`
-  - 第二档 → `text-xl`
-  - 第三档 → `text-base`
-  - 第四档 → `text-sm`
-  
-  字重也跟随递减（`font-semibold` → `font-normal`），颜色随热度变化（最高 `text-foreground`，最低 `text-muted-foreground`），点击跳转到 `/topics?tag=xxx`（保持与现有标签链接行为一致，如无则纯展示）。  
-  顶部小标题改为 `objectDetail.topTags`。
+## 移动端新结构（自上而下）
 
-- **桌面端（`hidden md:block`）**：保留现有「最新观察」段落不变。
+1. **第一行**：对象标题（大号）左侧，温度数值「65°C」右侧贴边对齐（去掉温度计图形与「高温争议」标签，只保留数字+°C，红色）。
+2. **第二行**：温度短描述（截断为 1 行，例如「温度越高，性别争议…」）左，「导出卡片」按钮右。
+3. 删除 hero 顶部的「共 X 条已审核观察 · 综艺节目」小标签行（即图中划红线部分）。
+4. 下方保留：描述（如有）、移动端标签云、「为什么这个温度？」入口、提交观察 / 已关注按钮组。
 
-- 若 `topTags` 为空，则移动端回退显示原「最新观察」文本，避免空白。
+## 桌面端
 
-## 不做的事
-- 不新增数据查询，不动 `topTags` 计算逻辑。
-- 不改 hero 其它部分（标题、按钮、温度、案例时间线）。
-- 不新增 i18n 键。
+`md:` 以上完全不变（标题大字 + 右侧温度计 + 现有元数据行保留）。
+
+## 技术实现
+
+- 把现有 hero 的元数据行（159–164 行）包成 `hidden md:flex`。
+- 标题块改为 mobile grid：`grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 md:flex md:flex-wrap`，右侧放手机版温度数字 `<span class="md:hidden font-serif text-3xl text-accent">65°<span class="text-xs">C</span></span>`。
+- 「导出卡片」按钮从标题旁挪到新一行：mobile 与温度描述同行 `grid grid-cols-[minmax(0,1fr)_auto]`，桌面端按钮回到原位置（用 `md:hidden` / `hidden md:inline-flex` 双份渲染）。
+- 温度描述文本沿用现有 `t("objectDetail.tempHint")` 或同等文案，移动端 `truncate text-sm text-muted-foreground`。
+- 右侧温度计列（260–272 行）改为 `hidden md:flex`，避免移动端重复显示。
+
+## 不做
+
+- 不改温度数值/颜色逻辑，不动后端。
+- 不改桌面端布局。
+- 不改其它 section（案例时间线、所有已审核等）。
