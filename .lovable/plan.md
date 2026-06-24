@@ -1,30 +1,22 @@
-# 导出卡片：多选合并长图
+# 手机端 Hero：用标签云替换「最新观察」
 
-## 改动范围
-仅修改 `src/components/ExportCardDialog.tsx` 与 `src/lib/i18n.tsx`，不涉及后端。
+## 改动
+仅修改 `src/routes/objects.$id.tsx` 的「最新观察」区块（约第 179–186 行）。
 
-## 交互改动
-1. **观察列表改为复选多选**：把现有 `<select>` 换成列表，每行带复选框；顶部加「全选 / 反选」。默认勾选第一条。
-2. **每条单独配置**：勾选一条后，下方展开该条的配置块（包含截图开关 + 标签复选框），多条则按顺序堆叠各自的配置块，互不影响。
-3. **校验**：未勾选任何观察、或所有勾选项都关闭了截图和原文时，禁用「生成长图」并 toast 提示。
-4. **按钮文案**：根据勾选数量动态显示「生成长图（N 条）」。
+- **移动端（默认 / `md:hidden`）**：渲染标签云，使用已有的 `topTags`（含 `tag` 与 `count`），按 count 排序后映射到 4 档字号：
+  - 最高频 → `text-2xl`
+  - 第二档 → `text-xl`
+  - 第三档 → `text-base`
+  - 第四档 → `text-sm`
+  
+  字重也跟随递减（`font-semibold` → `font-normal`），颜色随热度变化（最高 `text-foreground`，最低 `text-muted-foreground`），点击跳转到 `/topics?tag=xxx`（保持与现有标签链接行为一致，如无则纯展示）。  
+  顶部小标题改为 `objectDetail.topTags`。
 
-## 长图结构
-顶部统一 Header（对象类型 + 名称 + 档案编号）→ 依次渲染每条观察的 section：
-- 截图（若勾选且存在）
-- 触发点（勾选的 tags）
-- 观察原文（summary + cleaned_content）
-- 条目分隔线 + 该条 `created_at`
+- **桌面端（`hidden md:block`）**：保留现有「最新观察」段落不变。
 
-底部统一 Footer（导出时间 + 导出者昵称 + 品牌）。
-
-## 技术要点
-- 状态：`selectedIds: Set<string>` + `perItemConfig: Record<id, { includeScreenshot; includeContent; tags: Set<string> }>`，进入时按观察 tags 预填。
-- 渲染：off-screen 容器宽度仍 1080px，循环 `selectedIds` 输出 section。
-- 图片预检：对所有勾选且开启截图的 URL 并发 `new Image()` 预加载，失败的条目 toast 提示并中止。
-- 文件名：`${object.name}-cards-${count}.png`。
-- 新增 i18n 键：`export.selectAll` / `export.deselectAll` / `export.selectedCount` / `export.generateN`。
+- 若 `topTags` 为空，则移动端回退显示原「最新观察」文本，避免空白。
 
 ## 不做的事
-- 不实现 zip、PDF、分页或后端导出。
-- 不改导出按钮入口或对象详情页其他部分。
+- 不新增数据查询，不动 `topTags` 计算逻辑。
+- 不改 hero 其它部分（标题、按钮、温度、案例时间线）。
+- 不新增 i18n 键。
