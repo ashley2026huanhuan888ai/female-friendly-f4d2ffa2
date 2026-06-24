@@ -42,10 +42,36 @@ const MUTED = "#6b6b6b";
 const PAPER = "#f5f1ea";
 const W = 1080;
 const PAD = 64;
+const CONTENT_W = W - PAD * 2;
 
 const FONT_SERIF = `"Songti SC", "Noto Serif SC", Georgia, serif`;
 const FONT_SANS = `-apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif`;
 const FONT_MONO = `ui-monospace, Menlo, monospace`;
+
+// 统一排版常量（测量 / 绘制必须用同一份，避免高度算错）
+const TYPO = {
+  summarySize: 30,
+  summaryLH: 1.35,
+  bodySize: 26,
+  bodyLH: 1.65,
+  tagSize: 22,
+  tagSizeDense: 20,
+  tagLH: 32,
+  tagGapX: 18,
+  tempSize: 84,
+  tempSize3Digit: 68,
+  tempUnitSize: 28,
+  nameLH: 1.1,
+  sceneLH: 22,
+  dateLH: 18,
+} as const;
+
+function nameFontSizeFor(name: string): number {
+  if (name.length > 22) return 48;
+  if (name.length > 18) return 56;
+  if (name.length > 10) return 68;
+  return 84;
+}
 
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -73,9 +99,15 @@ function wrapText(
     let cur = "";
     for (const ch of para) {
       const test = cur + ch;
-      if (ctx.measureText(test).width > maxWidth && cur) {
-        lines.push(cur);
-        cur = ch;
+      // 强制断字：即使 cur 为空，单字符若超出也要直接落行，避免极端字号下死循环
+      if (ctx.measureText(test).width > maxWidth) {
+        if (cur) {
+          lines.push(cur);
+          cur = ch;
+        } else {
+          lines.push(ch);
+          cur = "";
+        }
       } else {
         cur = test;
       }
@@ -83,6 +115,19 @@ function wrapText(
     if (cur) lines.push(cur);
   }
   return { lines, height: lines.length * lineHeight };
+}
+
+function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  const ell = "…";
+  let lo = 0;
+  let hi = text.length;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (ctx.measureText(text.slice(0, mid) + ell).width <= maxWidth) lo = mid;
+    else hi = mid - 1;
+  }
+  return text.slice(0, lo) + ell;
 }
 
 function drawText(
@@ -103,6 +148,61 @@ function drawText(
     ctx.fillText(lines[i], x, y + i * lineHeight);
   }
   return lines.length * lineHeight;
+}
+
+/** 计算温度区域宽度（数字 + 单位），以便温度条避让 */
+function measureTempBlock(
+  ctx: CanvasRenderingContext2D,
+  temperature: number
+): { tempStr: string; numSize: number; unitSize: number; totalW: number } {
+  const tempStr = String(Math.round(temperature));
+  const numSize = tempStr.length >= 3 ? TYPO.tempSize3Digit : TYPO.tempSize;
+  const unitSize = TYPO.tempUnitSize;
+  ctx.font = `700 ${numSize}px ${FONT_SERIF}`;
+  const numW = ctx.measureText(tempStr).width;
+  ctx.font = `700 ${unitSize}px ${FONT_SERIF}`;
+  const unitW = ctx.measureText("°C").width;
+  return { tempStr, numSize, unitSize, totalW: numW + 4 + unitW };
+}
+
+/** 计算标签布局 + 自适应字号 */
+function layoutTags(
+  ctx: CanvasRenderingContext2D,
+  tags: string[],
+  i18n: ExportInput["i18n"]
+): { lines: Array<Array<{ text: string; w: number }>>; size: number; lh: number } {
+  if (tags.length === 0) return { lines: [], size: TYPO.tagSize, lh: TYPO.tagLH };
+  const labels = tags.map((tg) => `#${i18n.tagLabel(tg)}`);
+  const maxLen = labels.reduce((m, s) => Math.max(m, s.length), 0);
+  const size = tags.length >= 6 || maxLen >= 10 ? TYPO.tagSizeDense : TYPO.tagSize;
+  ctx.font = `600 ${size}px ${FONT_SANS}`;
+  const lines: Array<Array<{ text: string; w: number }>> = [[]];
+  let lineW = 0;
+  for (let label of labels) {
+    // 单标签若超过整行，截断
+    if (ctx.measureText(label).width > CONTENT_W) {
+      label = ellipsize(ctx, label, CONTENT_W);
+    }
+    const w = ctx.measureText(label).width;
+    const advance = w + TYPO.tagGapX;
+    if (lineW > 0 && lineW + w > CONTENT_W) {
+      lines.push([{ text: label, w }]);
+      lineW = advance;
+    } else {
+      lines[lines.length - 1].push({ text: label, w });
+      lineW += advance;
+    }
+  }
+  // 最多 3 行
+  if (lines.length > 3) {
+    const overflow = lines.slice(3).reduce((a, l) => a + l.length, 0);
+    const trimmed = lines.slice(0, 3);
+    const extra = `+${overflow}`;
+    ctx.font = `600 ${size}px ${FONT_SANS}`;
+    trimmed[2].push({ text: extra, w: ctx.measureText(extra).width });
+    return { lines: trimmed, size, lh: TYPO.tagLH };
+  }
+  return { lines, size, lh: TYPO.tagLH };
 }
 
 export async function renderExportToPng(input: ExportInput): Promise<string> {
@@ -129,53 +229,42 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
 
   // Object name + tags + temp
   const name = input.object.name;
-  const nameFontSize = name.length > 18 ? 56 : name.length > 10 ? 68 : 84;
+  const nameFontSize = nameFontSizeFor(name);
   measure.font = `700 ${nameFontSize}px ${FONT_SERIF}`;
-  const nameWrap = wrapText(measure, name, W - PAD * 2, nameFontSize * 1.1);
+  const nameWrap = wrapText(measure, name, CONTENT_W, nameFontSize * TYPO.nameLH);
 
   // union tags
   const allTags = Array.from(
     new Set(input.observations.flatMap((o) => Array.from(input.configs[o.id]?.tags || [])))
   );
-  measure.font = `600 22px ${FONT_SANS}`;
-  let tagsRowsH = 0;
-  if (allTags.length > 0) {
-    let tx = 0;
-    let rows = 1;
-    for (const tg of allTags) {
-      const w = measure.measureText(`#${input.i18n.tagLabel(tg)}`).width + 18;
-      if (tx + w > W - PAD * 2) { rows++; tx = w; } else { tx += w; }
-    }
-    tagsRowsH = rows * 28 + 20;
-  }
+  const tagLayout = layoutTags(measure, allTags, input.i18n);
+  const tagsH = tagLayout.lines.length > 0 ? tagLayout.lines.length * tagLayout.lh + 16 : 0;
+
+  // 温度块度量（决定温度条宽度，影响下方排版高度但不影响高度计算）
+  const tempBlock = measureTempBlock(measure, input.object.temperature);
+
   // 40 top pad + name + 24 + tags + bar(50) + 36 bottom pad
-  y += 40 + nameWrap.height + 24 + tagsRowsH + 50 + 36;
+  y += 40 + nameWrap.height + 24 + tagsH + 50 + 36;
 
   // Observations
   const contentLeft = PAD;
-  const contentW = W - contentLeft - PAD;
+  const contentW = CONTENT_W;
 
-  const obsBlocks: Array<{ height: number }> = [];
   for (const o of input.observations) {
     const cfg = input.configs[o.id];
-    if (!cfg) {
-      obsBlocks.push({ height: 0 });
-      continue;
-    }
+    if (!cfg) continue;
     const showShot = cfg.includeScreenshot && !!shotImgs[o.id];
-    if (!cfg.includeContent && !showShot) {
-      obsBlocks.push({ height: 0 });
-      continue;
-    }
+    if (!cfg.includeContent && !showShot) continue;
+
     let h = 36; // padding top
-    if (o.scene) h += 22;
+    if (o.scene) h += TYPO.sceneLH;
     if (cfg.includeContent) {
       if (o.summary) {
-        measure.font = `700 30px ${FONT_SERIF}`;
-        h += wrapText(measure, o.summary, contentW, 30 * 1.4).height + 16;
+        measure.font = `700 ${TYPO.summarySize}px ${FONT_SERIF}`;
+        h += wrapText(measure, o.summary, contentW, TYPO.summarySize * TYPO.summaryLH).height + 16;
       }
-      measure.font = `400 26px ${FONT_SERIF}`;
-      h += wrapText(measure, o.cleaned_content || o.content, contentW, 26 * 1.7).height;
+      measure.font = `400 ${TYPO.bodySize}px ${FONT_SERIF}`;
+      h += wrapText(measure, o.cleaned_content || o.content, contentW, TYPO.bodySize * TYPO.bodyLH).height;
     }
     if (showShot) {
       const im = shotImgs[o.id]!;
@@ -185,12 +274,10 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
       if (drawH > 640) drawH = 640;
       h += 22 + drawH;
     }
-    h += 16 + 18; // date + bottom padding
+    h += 16 + TYPO.dateLH;
     h += 36; // padding bottom
-    obsBlocks.push({ height: h });
     y += h;
   }
-
 
   y += 28 + 18 + 24 + 48; // footer + bottom padding
   const totalH = y;
@@ -255,31 +342,30 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.fillStyle = INK;
   ctx.font = `700 ${nameFontSize}px ${FONT_SERIF}`;
   for (let i = 0; i < nameWrap.lines.length; i++) {
-    ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * 1.1);
+    ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * TYPO.nameLH);
   }
   cy += nameWrap.height + 24;
 
-  // Tags row (band color)
-  if (allTags.length > 0) {
+  // Tags row (band color, 自适应布局)
+  if (tagLayout.lines.length > 0) {
     ctx.fillStyle = input.bandHex;
-    ctx.font = `600 22px ${FONT_SANS}`;
-    let tx = PAD;
-    let ty = cy;
-    for (const tg of allTags) {
-      const txt = `#${input.i18n.tagLabel(tg)}`;
-      const tw = ctx.measureText(txt).width;
-      if (tx + tw > W - PAD) { tx = PAD; ty += 28; }
-      ctx.fillText(txt, tx, ty);
-      tx += tw + 18;
+    ctx.font = `600 ${tagLayout.size}px ${FONT_SANS}`;
+    for (let li = 0; li < tagLayout.lines.length; li++) {
+      let tx = PAD;
+      const ty = cy + li * tagLayout.lh;
+      for (const item of tagLayout.lines[li]) {
+        ctx.fillText(item.text, tx, ty);
+        tx += item.w + TYPO.tagGapX;
+      }
     }
-    cy = ty + 28 + 20;
+    cy += tagLayout.lines.length * tagLayout.lh + 16;
   }
 
-  // Temperature bar
-  const barW = W - PAD * 2 - 260;
+  // Temperature bar — 动态避让温度块
+  const tempBlockW = tempBlock.totalW;
+  const barW = Math.max(320, W - PAD * 2 - tempBlockW - 32);
   const barH = 10;
   ctx.fillStyle = "rgba(26,26,26,0.08)";
-  // rounded bg
   const r = barH / 2;
   ctx.beginPath();
   ctx.moveTo(PAD + r, cy + 35);
@@ -300,18 +386,19 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.arcTo(PAD, cy + 35, PAD + fillW, cy + 35, r);
   ctx.closePath();
   ctx.fill();
-  // Temp number
-  ctx.fillStyle = input.bandHex;
-  ctx.font = `700 84px ${FONT_SERIF}`;
+  // Temp number + unit（共享 alphabetic baseline，避免单位被裁）
+  const tempBaseline = cy + 35 + barH / 2 + tempBlock.numSize * 0.36;
   ctx.textBaseline = "alphabetic";
-  const tempStr = String(Math.round(input.object.temperature));
-  ctx.fillText(tempStr, PAD + barW + 24, cy + 78);
-  const tempW = ctx.measureText(tempStr).width;
+  ctx.fillStyle = input.bandHex;
+  ctx.font = `700 ${tempBlock.numSize}px ${FONT_SERIF}`;
+  const tempX = PAD + barW + 24;
+  ctx.fillText(tempBlock.tempStr, tempX, tempBaseline);
+  const tempNumW = ctx.measureText(tempBlock.tempStr).width;
   ctx.fillStyle = INK;
-  ctx.font = `700 28px ${FONT_SERIF}`;
-  ctx.fillText("°C", PAD + barW + 24 + tempW + 4, cy + 78);
+  ctx.font = `700 ${tempBlock.unitSize}px ${FONT_SERIF}`;
+  ctx.fillText("°C", tempX + tempNumW + 4, tempBaseline);
   ctx.textBaseline = "top";
-  cy += 86 + 24;
+  cy += Math.max(86, tempBlock.numSize + 8) + 24;
 
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.08)";
@@ -332,22 +419,39 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     const cl = contentLeft;
     const cw = contentW;
 
-    // scene only (tags moved to header)
+    // scene
     if (o.scene) {
       ctx.fillStyle = MUTED;
       ctx.font = `400 13px ${FONT_SANS}`;
-      ctx.fillText(o.scene.toUpperCase(), cl, by);
-      by += 22;
+      ctx.fillText(ellipsize(ctx, o.scene.toUpperCase(), cw), cl, by);
+      by += TYPO.sceneLH;
     }
 
     if (cfg.includeContent) {
       if (o.summary) {
-        by += drawText(ctx, o.summary, cl, by, cw, 30 * 1.4, INK, `700 30px ${FONT_SERIF}`);
+        by += drawText(
+          ctx,
+          o.summary,
+          cl,
+          by,
+          cw,
+          TYPO.summarySize * TYPO.summaryLH,
+          INK,
+          `700 ${TYPO.summarySize}px ${FONT_SERIF}`
+        );
         by += 16;
       }
-      by += drawText(ctx, o.cleaned_content || o.content, cl, by, cw, 26 * 1.7, "#2a2a2a", `400 26px ${FONT_SERIF}`);
+      by += drawText(
+        ctx,
+        o.cleaned_content || o.content,
+        cl,
+        by,
+        cw,
+        TYPO.bodySize * TYPO.bodyLH,
+        "#2a2a2a",
+        `400 ${TYPO.bodySize}px ${FONT_SERIF}`
+      );
     }
-
 
     if (showShot) {
       const im = shotImgs[o.id]!;
@@ -371,8 +475,12 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     by += 16;
     ctx.fillStyle = MUTED;
     ctx.font = `400 13px ${FONT_SANS}`;
-    ctx.fillText(input.i18n.dateText.replace("{date}", formatShort(o.created_at)) || formatShort(o.created_at), cl, by);
-    by += 18 + 36;
+    ctx.fillText(
+      input.i18n.dateText.replace("{date}", formatShort(o.created_at)) || formatShort(o.created_at),
+      cl,
+      by
+    );
+    by += TYPO.dateLH + 36;
 
     // bottom separator
     ctx.fillStyle = "rgba(26,26,26,0.06)";
@@ -380,19 +488,22 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     cy = by + 1;
   }
 
-  // Footer
+  // Footer — 截断防溢出
   cy += 28;
-  ctx.fillStyle = MUTED;
-  ctx.font = `400 14px ${FONT_SANS}`;
-  ctx.fillText(`${input.i18n.nowText}  |  ${input.i18n.exportedBy}: ${input.exporterName}`, PAD, cy);
   ctx.fillStyle = INK;
   ctx.font = `700 14px ${FONT_SANS}`;
+  const rightNameMax = 360;
+  const rightName = ellipsize(ctx, input.object.name.toUpperCase(), rightNameMax);
+  const rightNameW = ctx.measureText(rightName).width;
   ctx.textAlign = "right";
-  let nm = input.object.name;
-  while (ctx.measureText(nm).width > 360 && nm.length > 4) nm = nm.slice(0, -1);
-  if (nm !== input.object.name) nm += "…";
-  ctx.fillText(nm.toUpperCase(), W - PAD, cy);
+  ctx.fillText(rightName, W - PAD, cy);
   ctx.textAlign = "left";
+
+  ctx.fillStyle = MUTED;
+  ctx.font = `400 14px ${FONT_SANS}`;
+  const leftMax = W - PAD * 2 - rightNameW - 24;
+  const leftFull = `${input.i18n.nowText}  |  ${input.i18n.exportedBy}: ${input.exporterName}`;
+  ctx.fillText(ellipsize(ctx, leftFull, leftMax), PAD, cy);
 
   return canvas.toDataURL("image/png");
 }
