@@ -92,13 +92,15 @@ function Index() {
                 </li>
               ))}
             </ol>
-            <p className="mt-6 max-w-md text-sm text-muted-foreground md:mt-8 md:max-w-2xl md:text-base">
-              {t("home.hero.body")}
-              {sentenceGap}
-              <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
-              {sentenceGap}
-              {t("home.hero.actions")}
-            </p>
+            <div className="mt-6 max-w-md space-y-3 text-sm text-muted-foreground md:mt-8 md:max-w-2xl md:text-base">
+              <p>{t("home.hero.body.intro")}</p>
+              <p>{t("home.hero.body.main")}</p>
+              <p>
+                <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
+                {sentenceGap}
+                {t("home.hero.actions")}
+              </p>
+            </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault();

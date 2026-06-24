@@ -165,8 +165,9 @@ const COPY = {
     "home.hero.title.before": "一起记录",
     "home.hero.title.accent": "女性体验",
     "home.hero.title.after": "的变化。",
-    "home.hero.body":
-      "这里不是打分榜，也不是审判席。它更像一本公开观察笔记：当一个品牌、作品、组织或事件让女性体验变好或变差，我们记录它的来源、证据和讨论。",
+    "home.hero.body.intro": "这里不是打分榜，也不是审判席。",
+    "home.hero.body.main":
+      "它更像一本公开观察笔记：当一个品牌、作品、组织或事件让女性体验变好或变差，我们记录它的来源、证据和讨论。",
     "home.hero.disclaimer": "不做事实认定，也不做道德审判。",
     "home.hero.actions": "创建对象，提交观察，持续监督，推动提升……",
     "home.search.placeholder": "搜索你关心的品牌、影视、组织、事件…",
@@ -874,8 +875,9 @@ const COPY = {
     "home.hero.title.before": "Recording changes in ",
     "home.hero.title.accent": "women's experiences",
     "home.hero.title.after": ".",
-    "home.hero.body":
-      "This is not a ranking board or a judgment seat. It is closer to a public observation notebook: when a brand, work, organization, or event makes women's experiences better or worse, we record the sources, evidence, and discussions behind the change.",
+    "home.hero.body.intro": "This is not a ranking board or a judgment seat.",
+    "home.hero.body.main":
+      "It is closer to a public observation notebook: when a brand, work, organization, or event makes women's experiences better or worse, we record the sources, evidence, and discussions behind the change.",
     "home.hero.disclaimer": "No findings of fact. No moral judgment.",
     "home.hero.actions":
       "Create objects, submit observations, keep monitoring, and drive improvement...",

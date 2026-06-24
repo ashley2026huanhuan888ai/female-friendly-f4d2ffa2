@@ -1,30 +1,17 @@
 ## 目标
-在展示 AI 观察证据摘要文本时，自动加粗领域关键词，便于快速抓取。
+让 hero 段落里 "它更像一本公开观察笔记：…我们记录它的来源、证据和讨论。" 成为独立段落（前后空行），英文版对应句同样处理。
 
-## 方案
-使用前端关键词词典 + 正则匹配，渲染时把命中片段包成 `<strong class="font-semibold text-foreground">`。无需后端改动、无需调用 AI，零成本、即时生效。
+## 改动
+1. `src/lib/i18n.tsx`
+   - 中文 `home.hero.body` 拆成三个键：`home.hero.body.intro`（"这里不是打分榜，也不是审判席。"）、`home.hero.body.main`（"它更像一本公开观察笔记：…讨论。"）。把原 `home.hero.disclaimer` 保持不变。
+   - 英文 `home.hero.body` 同样拆成 `intro` + `main`。
 
-## 关键词词典（初版，可扩展）
-针对项目主题（性别议题观察）的高信息密度短语：
-- 性别刻板印象、刻板印象、性别角色、传统性别角色
-- 物化、工具化、客体化、边缘化、污名化、规训
-- 厌女、仇女、男凝、凝视、爹味
-- 受害者有罪论、贞洁叙事、母职惩罚、容貌焦虑、身材焦虑
-- 权力差、权力不对等、结构性歧视、系统性歧视
-- 沉默、噤声、消音
-- 固化、强化、合理化、美化、浪漫化
+2. `src/routes/index.tsx`（第 95–101 行）
+   - 将单个 `<p>` 替换为三个 `<p>` 段落，中间通过 `space-y-3`（包一层 div）实现段落间距：
+     - 第 1 段：`home.hero.body.intro`
+     - 第 2 段（独立段落）：`home.hero.body.main`
+     - 第 3 段：`<strong>{disclaimer}</strong>` + `sentenceGap` + `home.hero.actions`
+   - 保留原有 `text-sm/md:text-base text-muted-foreground max-w-md/2xl` 样式。
 
-匹配规则：最长优先、不区分大小写、避免重叠。
-
-## 改动文件
-1. **新增** `src/lib/highlight-keywords.tsx`
-   - 导出 `highlightKeywords(text: string): ReactNode`
-   - 内置词典（按长度降序排列），用一次正则切分文本，命中片段包成 `<strong>`
-2. **`src/routes/index.tsx`** L248：`{o.summary ...}` → `{highlightKeywords(o.summary ?? ...)}`
-3. **`src/routes/archive.evidence.tsx`** L77：`{it.summary}` → `{highlightKeywords(it.summary)}`
-
-## 不改动
-- 标签 / 元信息行不加粗（信息密度已经够高，避免视觉噪音）
-- 不引入分词库（jieba 等），保持轻量
-
-如确认，进入 build 后实施。
+## 验证
+preview 首页 hero 区，目标句独占一段，上下有空行。
