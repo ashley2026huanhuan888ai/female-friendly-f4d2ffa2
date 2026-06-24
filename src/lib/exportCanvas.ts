@@ -285,7 +285,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     y += h;
   }
 
-  y += 28 + 18 + 24 + 48; // footer + bottom padding
+  y += 32 + 26 + 24 + 56; // footer (22px) + bottom padding
   const totalH = y;
 
   // 真正的 canvas
