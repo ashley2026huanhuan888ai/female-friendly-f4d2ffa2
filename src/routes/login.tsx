@@ -28,18 +28,20 @@ function LoginPage() {
   const { t } = useI18n();
   usePageMeta("seo.login.title");
   const navigate = useNavigate();
-  const { redirect } = useSearch({ from: "/login" });
+  const { redirect, ref } = useSearch({ from: "/login" });
   const safeRedirect = typeof redirect === "string" && redirect.startsWith("/") ? redirect : "/";
   const { ready, user } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(ref ? "signup" : "signin");
   const [method, setMethod] = useState<"password" | "otp">("password");
   const [otpStep, setOtpStep] = useState<"request" | "verify">("request");
   const [otpCode, setOtpCode] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [pending, setPending] = useState(false);
   const [remember, setRememberState] = useState(true);
+  const bindInviterFn = useServerFn(bindInviter);
   const [errorDetail, setErrorDetail] = useState<null | {
     title: string;
     hint: string;
@@ -49,6 +51,37 @@ function LoginPage() {
     canResend?: boolean;
   }>(null);
 
+  // 初始化邀请码：URL 优先 → localStorage 缓存
+  useEffect(() => {
+    if (ref) {
+      setInviteCode(ref.toUpperCase());
+      try { localStorage.setItem("pending_invite_code", ref.toUpperCase()); } catch {}
+    } else {
+      try {
+        const cached = localStorage.getItem("pending_invite_code");
+        if (cached) setInviteCode(cached);
+      } catch {}
+    }
+  }, [ref]);
+
+  // 登录后若有暂存的邀请码，尝试绑定
+  useEffect(() => {
+    if (!ready || !user) return;
+    let cached = "";
+    try { cached = localStorage.getItem("pending_invite_code") ?? ""; } catch {}
+    if (cached) {
+      bindInviterFn({ data: { code: cached } })
+        .then((r) => {
+          try { localStorage.removeItem("pending_invite_code"); } catch {}
+          if (r.ok) toast.success("邀请绑定成功，邀请人获得 5 分积分");
+        })
+        .catch(() => { try { localStorage.removeItem("pending_invite_code"); } catch {} })
+        .finally(() => navigate({ to: safeRedirect, replace: true }));
+    } else {
+      navigate({ to: safeRedirect, replace: true });
+    }
+  }, [ready, user, navigate, safeRedirect, bindInviterFn]);
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const id = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
@@ -56,14 +89,11 @@ function LoginPage() {
   }, [resendCooldown]);
 
   useEffect(() => {
-    if (ready && user) navigate({ to: safeRedirect, replace: true });
-  }, [ready, user, navigate, safeRedirect]);
-
-  useEffect(() => {
     if (consumeExpiredNotice()) {
       toast.info(t("login.expired"));
     }
   }, [t]);
+
 
   const PASSWORD_MIN_LENGTH = 8;
   const passwordValid = password.length >= PASSWORD_MIN_LENGTH;
