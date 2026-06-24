@@ -39,6 +39,16 @@ const INK = "#1a1a1a";
 const MUTED = "#6b6b6b";
 const PAPER = "#f5f1ea";
 
+// 导出安全 HEX（避免 oklch / CSS 变量进入 html-to-image）
+const BAND_HEX: Record<string, string> = {
+  comfort: "#4DA6B3",
+  minor: "#A89F8A",
+  notable: "#D89B5A",
+  high: "#C95A3F",
+  critical: "#8E2A1F",
+};
+
+
 export function ExportCardDialog({ open, onClose, object, observations }: Props) {
   const { language, t, tag, objectType } = useI18n();
   const fetchProfile = useServerFn(getMyProfile);
