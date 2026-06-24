@@ -623,7 +623,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  fontSize: 13,
+                  fontSize: 16,
                   color: MUTED,
                 }}
               >
