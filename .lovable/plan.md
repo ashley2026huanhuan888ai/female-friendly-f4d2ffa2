@@ -1,17 +1,31 @@
-# 强化主色为芭比粉
+# 批量通过按钮强化
 
-将当前深红 accent 与黑色 CTA 全部改为芭比粉（Barbie pink，#E0218A 系），加强视觉表现。
+适用于 `src/routes/admin.observations.tsx` 和 `src/routes/admin.requests.tsx`（两个管理列表用同一交互模式）。
 
-## src/styles.css
-- `--accent: oklch(0.65 0.27 350);`（替换原 `oklch(0.55 0.18 25)`）
-- `--ring: oklch(0.65 0.27 350);`
-- `--destructive` 保留不变（语义不同）
+## 行为
 
-→ 标题强调字 `女性 / 体验`、步骤编号 `01/02/03` 自动变芭比粉。
+「批量通过」按钮单击：
+- 若当前没有任何选中 → 自动全选（等同 `toggleAll` 选全），不执行操作
+- 若已经全选或部分选中 → 执行 `runBatch("approve")`
 
-## src/routes/index.tsx
-将两个黑底 CTA 改为芭比粉底：
-- 第 114 行「查询」按钮：`bg-foreground … hover:bg-accent` → `bg-accent text-accent-foreground hover:bg-accent/90`
-- 第 121 行「大家在观察的性别争议对象」：`border-foreground bg-foreground … hover:bg-accent hover:border-accent` → `border-accent bg-accent text-accent-foreground hover:bg-accent/90`
+## 样式
 
-不动其它文案、布局、其它路由的按钮样式。
+按钮尺寸增大 1 倍：
+- padding 从 `px-3 py-1` → `px-6 py-3`
+- 字号显式 `text-base font-semibold`
+- 保持芭比粉主题：`border-accent bg-accent text-accent-foreground hover:bg-accent/90`（替换原 `bg-foreground`）
+
+## 实现
+
+新增 handler：
+```ts
+const onBulkApprove = () => {
+  if (selected.size === 0) {
+    setSelected(new Set(items.map((i) => i.id)));
+    return;
+  }
+  void runBatch("approve");
+};
+```
+按钮 `disabled` 条件移除 `selected.size === 0`，只保留 `batchBusy`。
+不动「批量驳回」、全选 checkbox、其它筛选 UI。

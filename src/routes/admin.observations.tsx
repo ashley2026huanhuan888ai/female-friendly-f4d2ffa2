@@ -86,6 +86,14 @@ function ObsAdmin() {
     });
   const toggleAll = () =>
     setSelected((s) => (s.size === items.length ? new Set() : new Set(items.map((i) => i.id))));
+  const onBulkApprove = () => {
+    if (selected.size === 0) {
+      setSelected(new Set(items.map((i) => i.id)));
+      return;
+    }
+    void runBatch("approve");
+  };
+
 
   const runBatch = async (action: "approve" | "reject") => {
     if (selected.size === 0) return;
@@ -268,12 +276,13 @@ function ObsAdmin() {
               className="min-w-[200px] flex-1 border border-border bg-background px-2 py-1"
             />
             <button
-              onClick={() => runBatch("approve")}
-              disabled={batchBusy || selected.size === 0}
-              className="border border-foreground bg-foreground px-3 py-1 text-background disabled:opacity-40"
+              onClick={onBulkApprove}
+              disabled={batchBusy}
+              className="border border-accent bg-accent px-6 py-3 text-base font-semibold text-accent-foreground hover:bg-accent/90 disabled:opacity-40"
             >
               批量通过
             </button>
+
             <button
               onClick={() => runBatch("reject")}
               disabled={batchBusy || selected.size === 0}
