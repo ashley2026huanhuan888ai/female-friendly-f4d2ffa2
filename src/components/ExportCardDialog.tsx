@@ -491,6 +491,21 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
           </div>
         )}
 
+        {generating && (
+          <div className="border-t border-border px-5 py-3">
+            <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>{progress.label || t("export.generating")}</span>
+              <span className="font-mono">{progress.pct}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden bg-muted">
+              <div
+                className="h-full bg-accent transition-[width] duration-200 ease-out"
+                style={{ width: `${progress.pct}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
           <button
             onClick={handleClose}
