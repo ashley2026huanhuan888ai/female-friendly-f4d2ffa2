@@ -209,7 +209,7 @@ const COPY = {
     "home.coolingDetail.countOnly":
       "因新增 {count} 条新证据，争议温度由 {before}°C 降至 {after}°C。",
     "home.coolingDetail.minimal": "争议温度由 {before}°C 降至 {after}°C。",
-    "home.noWeeklyChange": "本周无变化。",
+    "home.noWeeklyChange": "性别争议热议中。",
     "home.latestEvents": "最新观察事件",
     "home.noEvents24h": "过去 24 小时暂无温度变化。",
     "home.latestAI": "最新 AI 观察",
@@ -922,7 +922,7 @@ const COPY = {
     "home.coolingDetail.countOnly":
       "{count} new pieces of evidence cooled the controversy from {before}°C to {after}°C.",
     "home.coolingDetail.minimal": "Controversy moved from {before}°C to {after}°C.",
-    "home.noWeeklyChange": "No change this week.",
+    "home.noWeeklyChange": "Gender debates heating up.",
     "home.latestEvents": "Latest observation events",
     "home.noEvents24h": "No temperature changes in the past 24 hours.",
     "home.latestAI": "Latest AI observations",
