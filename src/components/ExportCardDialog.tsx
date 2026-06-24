@@ -775,8 +775,6 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                   if (!cfg) return null;
                   const showShot = cfg.includeScreenshot && !!obs.screenshot_url;
                   if (!showShot && !cfg.includeContent) return null;
-                  const ev = obs.evidence_level;
-                  const evChar = ev != null ? String.fromCharCode(64 + Math.max(1, Math.min(4, ev))) : null;
                   return (
                     <div
                       key={obs.id}
@@ -788,37 +786,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                         borderBottom: `1px solid ${INK}10`,
                       }}
                     >
-                      <div style={{ flexShrink: 0, width: 64, paddingTop: 4 }}>
-                        <div
-                          style={{
-                            width: 52,
-                            height: 52,
-                            borderRadius: "50%",
-                            border: `2px solid ${evChar ? ACCENT : `${INK}30`}`,
-                            color: evChar ? ACCENT : `${INK}80`,
-                            background: "#fff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: evChar ? 24 : 18,
-                            fontWeight: 700,
-                          }}
-                        >
-                          {evChar || String(idx + 1).padStart(2, "0")}
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 12,
-                            fontSize: 12,
-                            color: MUTED,
-                            textAlign: "center",
-                            letterSpacing: "0.12em",
-                            fontFamily: "ui-monospace, monospace",
-                          }}
-                        >
-                          № {String(idx + 1).padStart(2, "0")}/{String(orderedSelected.length).padStart(2, "0")}
-                        </div>
-                      </div>
+
 
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {(cfg.tags.size > 0 || obs.scene) && (
