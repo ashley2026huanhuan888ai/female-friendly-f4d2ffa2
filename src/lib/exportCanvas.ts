@@ -387,18 +387,25 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   }
   cy += nameWrap.height + 20;
 
-  // Tags row (band color, 自适应布局)
+  // Tags row — 与主页 ObjectCard 一致的描边胶囊
   if (tagLayout.lines.length > 0) {
-    ctx.fillStyle = input.bandHex;
-    ctx.font = `600 ${tagLayout.size}px ${FONT_SANS}`;
+    const rectH = tagLayout.size + 18;
+    ctx.font = `500 ${tagLayout.size}px ${FONT_SANS}`;
+    ctx.lineWidth = 1;
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
     for (let li = 0; li < tagLayout.lines.length; li++) {
       let tx = PAD;
-      const ty = cy + li * tagLayout.lh;
+      const rowCenter = cy + li * tagLayout.lh + tagLayout.lh / 2;
       for (const item of tagLayout.lines[li]) {
-        ctx.fillText(item.text, tx, ty);
+        ctx.strokeStyle = BORDER;
+        ctx.strokeRect(tx + 0.5, rowCenter - rectH / 2 + 0.5, item.w - 1, rectH - 1);
+        ctx.fillStyle = MUTED;
+        ctx.fillText(item.text, tx + TYPO.tagPadX, rowCenter);
         tx += item.w + TYPO.tagGapX;
       }
     }
+    ctx.textBaseline = "alphabetic";
     cy += tagLayout.lines.length * tagLayout.lh + 14;
   }
 
