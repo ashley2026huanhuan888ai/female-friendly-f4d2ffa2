@@ -48,7 +48,6 @@ const COPY = {
     "common.noObservations": "我们不是记性不好，我们只是没有记录。",
     "common.noSummary": "（无摘要）",
     "common.loadError": "加载失败，请稍后重试。",
-    "common.retry": "重试加载",
     "common.noTemperature": "暂无温度",
     "common.unmeasured": "待测评",
     "common.viewAll": "查看全部 →",
