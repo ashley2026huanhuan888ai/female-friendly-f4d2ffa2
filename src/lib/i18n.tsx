@@ -179,7 +179,7 @@ const COPY = {
     "home.topicWall.title": "正在被观察",
     "home.topicWall.hint": "字越大，最近 30 天性别争议升温。点击查看相关对象。",
     "home.topicWall.trust": "来源可追溯 · AI 辅助整理 · 人工审核 · 支持纠错",
-    "home.topicWall.empty": "还没有足够的近期议题。我们等第一条观察。",
+    "home.topicWall.empty": "大量性别争议议题等你来观察……",
     "home.topicWall.active": "近期活跃议题",
     "home.topicWall.objects": "观察对象",
     "home.topicWall.viewTopic": "查看与「{tag}」相关的对象",
@@ -891,8 +891,7 @@ const COPY = {
       "Larger words were mentioned more often in the past 30 days. Select a topic to view related observations.",
     "home.topicWall.trust":
       "Traceable sources · AI-assisted · Human-reviewed · Corrections welcome",
-    "home.topicWall.empty":
-      "Not enough recent topics yet. We are waiting for the first observation.",
+    "home.topicWall.empty": "Plenty of gender debates waiting for your observations…",
     "home.topicWall.active": "Active topics",
     "home.topicWall.objects": "Observed objects",
     "home.topicWall.viewTopic": 'View objects related to "{tag}"',
