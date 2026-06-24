@@ -266,7 +266,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     if (cfg.includeContent) {
       if (o.summary) {
         measure.font = `700 ${TYPO.summarySize}px ${FONT_SERIF}`;
-        h += wrapText(measure, o.summary, contentW, TYPO.summarySize * TYPO.summaryLH).height + 16;
+        h += wrapText(measure, o.summary, contentW, TYPO.summarySize * TYPO.summaryLH).height + TYPO.paraGap;
       }
       measure.font = `400 ${TYPO.bodySize}px ${FONT_SERIF}`;
       h += wrapText(measure, o.cleaned_content || o.content, contentW, TYPO.bodySize * TYPO.bodyLH).height;
@@ -277,10 +277,11 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
       const drawW = contentW;
       let drawH = drawW * ratio;
       if (drawH > 640) drawH = 640;
-      h += 22 + drawH;
+      h += 26 + drawH;
     }
-    h += 16 + TYPO.dateLH;
-    h += 36; // padding bottom
+    h += 20 + TYPO.dateLH;
+    h += TYPO.blockPad;
+
     y += h;
   }
 
