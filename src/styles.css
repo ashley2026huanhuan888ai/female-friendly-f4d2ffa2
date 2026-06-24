@@ -94,6 +94,13 @@
   --border: oklch(1 0 0 / 12%);
   --muted: oklch(0.25 0.01 60);
   --muted-foreground: oklch(0.7 0.01 60);
+
+  /* 暗色模式下提升明度 / 降低饱和度，保证在深色背景上仍有足够对比度且层级清晰 */
+  --temp-cool: oklch(0.78 0.1 200);
+  --temp-neutral: oklch(0.82 0.04 80);
+  --temp-warm: oklch(0.8 0.16 60);
+  --temp-hot: oklch(0.72 0.2 35);
+  --temp-critical: oklch(0.68 0.24 25);
 }
 
 @layer base {
