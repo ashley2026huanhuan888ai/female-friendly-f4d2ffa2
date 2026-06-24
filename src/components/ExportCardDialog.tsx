@@ -362,9 +362,54 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
           )}
         </div>
 
+        {result && (
+          <div className="border-t border-border bg-muted/30 px-5 py-4">
+            <div className="mb-3 flex items-start gap-4">
+              <img
+                src={result.dataUrl}
+                alt=""
+                className="max-h-40 w-24 border border-border object-cover object-top"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {t("export.ready")} · {t("export.filename")}
+                </div>
+                <button
+                  type="button"
+                  onClick={copyFilename}
+                  className="mt-1 block w-full truncate text-left font-mono text-xs text-foreground hover:text-accent"
+                  title={result.filename}
+                >
+                  {result.filename}
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleDownload}
+                className="border border-accent bg-accent px-4 py-2 text-xs uppercase tracking-wider text-accent-foreground hover:opacity-90"
+              >
+                {t("export.download")}
+              </button>
+              <button
+                onClick={handleShare}
+                className="border border-foreground px-4 py-2 text-xs uppercase tracking-wider hover:bg-foreground hover:text-background"
+              >
+                {t("export.share")}
+              </button>
+              <button
+                onClick={() => setResult(null)}
+                className="ml-auto border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:border-foreground hover:text-foreground"
+              >
+                {t("export.regenerate")}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="border border-border px-4 py-2 text-xs uppercase tracking-wider hover:border-foreground"
           >
             ✕
