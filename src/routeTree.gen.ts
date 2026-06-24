@@ -31,6 +31,7 @@ import { Route as TopicsTagRouteImport } from './routes/topics.$tag'
 import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
 import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages.$peerId'
+import { Route as DevExportPreviewRouteImport } from './routes/dev.export-preview'
 import { Route as ArchiveEvidenceRouteImport } from './routes/archive.evidence'
 import { Route as ArchiveCaseCodeRouteImport } from './routes/archive.$caseCode'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -155,6 +156,11 @@ const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
   path: '/messages/$peerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevExportPreviewRoute = DevExportPreviewRouteImport.update({
+  id: '/dev/export-preview',
+  path: '/dev/export-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArchiveEvidenceRoute = ArchiveEvidenceRouteImport.update({
   id: '/archive/evidence',
   path: '/archive/evidence',
@@ -249,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
+  '/dev/export-preview': typeof DevExportPreviewRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
@@ -285,6 +292,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
+  '/dev/export-preview': typeof DevExportPreviewRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
@@ -323,6 +331,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
+  '/dev/export-preview': typeof DevExportPreviewRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
+    | '/dev/export-preview'
     | '/messages/$peerId'
     | '/objects/$id'
     | '/submit/$objectId'
@@ -398,6 +408,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
+    | '/dev/export-preview'
     | '/messages/$peerId'
     | '/objects/$id'
     | '/submit/$objectId'
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/archive/$caseCode'
     | '/archive/evidence'
+    | '/dev/export-preview'
     | '/messages/$peerId'
     | '/objects/$id'
     | '/submit/$objectId'
@@ -462,6 +474,7 @@ export interface RootRouteChildren {
   TopicsRoute: typeof TopicsRouteWithChildren
   ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
   ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
+  DevExportPreviewRoute: typeof DevExportPreviewRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   ObjectsIdRoute: typeof ObjectsIdRoute
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
@@ -626,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesPeerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/export-preview': {
+      id: '/dev/export-preview'
+      path: '/dev/export-preview'
+      fullPath: '/dev/export-preview'
+      preLoaderRoute: typeof DevExportPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/archive/evidence': {
       id: '/archive/evidence'
       path: '/archive/evidence'
@@ -780,6 +800,7 @@ const rootRouteChildren: RootRouteChildren = {
   TopicsRoute: TopicsRouteWithChildren,
   ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
   ArchiveEvidenceRoute: ArchiveEvidenceRoute,
+  DevExportPreviewRoute: DevExportPreviewRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   ObjectsIdRoute: ObjectsIdRoute,
   SubmitObjectIdRoute: SubmitObjectIdRoute,
