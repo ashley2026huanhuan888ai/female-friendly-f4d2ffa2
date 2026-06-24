@@ -7,6 +7,7 @@ import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 import { getMyProfile } from "@/lib/api/profile.functions";
 import { TempText } from "@/components/TempText";
 import { bandOf } from "@/lib/temperature";
+import { renderExportToPng } from "@/lib/exportCanvas";
 
 type Observation = {
   id: string;
@@ -240,7 +241,39 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
           }
         }
       }
-      if (lastErr) throw lastErr;
+      if (lastErr) {
+        // 兜底：原生 Canvas 渲染
+        console.warn("[ExportCard] toPng all attempts failed, falling back to native canvas", lastErr);
+        setProgress({ pct: 70, label: t("export.progressRender") });
+        const selectedObs = orderedSelected;
+        const shotsForCanvas: Record<string, string> = {};
+        for (const o of selectedObs) {
+          if (shotBlobs[o.id]) shotsForCanvas[o.id] = shotBlobs[o.id];
+        }
+        dataUrl = await renderExportToPng({
+          object,
+          observations: selectedObs,
+          configs: Object.fromEntries(
+            selectedObs.map((o) => [o.id, configs[o.id]])
+          ),
+          shotBlobs: shotsForCanvas,
+          qrDataUrl,
+          bandHex: BAND_HEX[tempBand.band] || ACCENT,
+          archiveNo,
+          exporterName,
+          i18n: {
+            cardTitle: t("export.cardTitle"),
+            cardSubtitle: t("export.cardSubtitle"),
+            scanToView: t("export.scanToView"),
+            exportedBy: t("export.exportedBy"),
+            objectType: objectType(object.type),
+            dateText: "{date}",
+            nowText: formatDateForLanguage(new Date().toISOString(), language),
+            tagLabel: (tg: string) => tag(tg),
+          },
+        });
+        toast.success(t("export.fallbackUsed"));
+      }
 
       setProgress({ pct: 85, label: t("export.progressEncode") });
       const blob = await (await fetch(dataUrl)).blob();
@@ -252,7 +285,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       setResult({ dataUrl, blob, filename });
       toast.success(t("export.ready"));
     } catch (e: any) {
-      console.error("[ExportCard] toPng failed after retries", e);
+      console.error("[ExportCard] export failed entirely", e);
       const msg = e?.message ? `: ${String(e.message).slice(0, 120)}` : "";
       toast.error(t("export.failedFinal") + msg, {
         description: t("export.failedHint"),
