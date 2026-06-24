@@ -1,1 +1,5 @@
-将 `src/lib/i18n.tsx` 中的 `objectComments.title` 改为 "给性别争议对象留言"（英文 "Leave a comment on this gender-controversy object"），并将 `objectComments.body` 置空字符串（中英文都置空），以去掉"留言用于补充讨论，不参与温度计算。"那行说明。
+在 `src/components/ObjectComments.tsx` 的 `onSubmit` 中：
+- 成功：保留 `toast.success(t("objectComments.submitted"))`，并调用 `reload()` 刷新列表。
+- 失败：改为 `toast.error(message, { action: { label: t("common.retry"), onClick: () => onSubmit() } })`，让用户一键重试。
+
+仅前端改动，无 i18n 新增（复用已有 `common.retry`、`objectComments.submitted`）。
