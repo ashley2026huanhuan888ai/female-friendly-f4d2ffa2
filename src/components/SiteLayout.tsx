@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import type { ReactNode } from "react";
 import { BackToHome } from "@/components/BackToHome";
+import { FloatingHomeButton } from "@/components/FloatingHomeButton";
 
 import { useAuth } from "@/components/auth-context";
 import { recordPresence } from "@/lib/api/presence.functions";
@@ -324,6 +325,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </footer>
+      <FloatingHomeButton />
       <Toaster position="top-center" theme="light" />
     </div>
   );
