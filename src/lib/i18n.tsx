@@ -1022,6 +1022,10 @@ const COPY = {
     "objectDetail.showing": "Showing {shown} / {total} approved observations.",
     "objectDetail.addObservation": "Add observation",
     "objectDetail.noReviewed": "No approved observations yet.",
+    "objectDetail.deleteObservation": "Delete",
+    "objectDetail.deleteConfirm": "Delete this observation? This cannot be undone.",
+    "objectDetail.deleteSuccess": "Observation deleted",
+
     "objectDetail.loadMore": "Load more observations",
     "objectDetail.sourceLink": "Source link",
     "objectDetail.screenshotEvidence": "Screenshot evidence",
