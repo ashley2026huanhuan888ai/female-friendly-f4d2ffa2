@@ -468,7 +468,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                   {/* Middle: temperature */}
                   <div style={{ flexShrink: 0, textAlign: "center", paddingTop: 4 }}>
                     <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 6 }}>
-                      {t("objectDetail.temperatureLabel") || "温度"}
+                      {language === "en" ? "Temperature" : "温度"}
                     </div>
                     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4, fontFamily: "ui-serif, Georgia, serif" }}>
                       <span style={{ fontSize: 64, fontWeight: 700, lineHeight: 1, color: tempBand.color, fontVariantNumeric: "tabular-nums" }}>
