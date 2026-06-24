@@ -448,55 +448,69 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 boxSizing: "border-box",
               }}
             >
-              {/* Header — title / temperature / QR in one row */}
+              {/* Header — title left, temperature + QR right */}
               <div style={{ borderBottom: `1px solid ${INK}`, paddingBottom: 28, marginBottom: 32 }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 32 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 36 }}>
                   {/* Left: title block + object */}
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.04em" }}>
+                    <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: "0.04em" }}>
                       {t("export.cardTitle")}
                     </div>
-                    <div style={{ fontSize: 15, color: MUTED, marginTop: 6 }}>
+                    <div style={{ fontSize: 14, color: MUTED, marginTop: 4 }}>
                       {t("export.cardSubtitle")}
                     </div>
-                    <div style={{ marginTop: 24, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 6 }}>
+                    <div style={{ marginTop: 28, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 8 }}>
                       {objectType(object.type)}
                     </div>
-                    <div style={{ fontSize: 46, fontWeight: 700, lineHeight: 1.1 }}>{object.name}</div>
-                  </div>
-
-                  {/* Middle: temperature */}
-                  <div style={{ flexShrink: 0, textAlign: "center", paddingTop: 4 }}>
-                    <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 6 }}>
-                      {language === "en" ? "Temperature" : "温度"}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4, fontFamily: "ui-serif, Georgia, serif" }}>
-                      <span style={{ fontSize: 64, fontWeight: 700, lineHeight: 1, color: tempBand.color, fontVariantNumeric: "tabular-nums" }}>
-                        {Math.round(object.temperature)}
-                      </span>
-                      <span style={{ fontSize: 22, color: MUTED }}>°C</span>
-                    </div>
-                    <div style={{ marginTop: 10, fontSize: 12, color: MUTED, fontFamily: "ui-monospace, monospace" }}>
-                      {archiveNo}
+                    <div
+                      style={{
+                        fontSize: object.name.length > 18 ? 36 : object.name.length > 10 ? 42 : 50,
+                        fontWeight: 700,
+                        lineHeight: 1.15,
+                        wordBreak: "break-word",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
+                      {object.name}
                     </div>
                   </div>
 
-                  {/* Right: QR archive entry */}
-                  {qrDataUrl && (
-                    <div style={{ flexShrink: 0, textAlign: "center", paddingTop: 4 }}>
-                      <img
-                        src={qrDataUrl}
-                        alt="QR"
-                        style={{ width: 104, height: 104, display: "block", background: "#fff", padding: 4, border: `1px solid ${INK}` }}
-                      />
-                      <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: INK, borderBottom: `2px solid ${ACCENT}`, display: "inline-block", paddingBottom: 1 }}>
+                  {/* Right: temperature + QR stacked */}
+                  <div style={{ flexShrink: 0, width: 260, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 16 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
+                      {qrDataUrl && (
+                        <div style={{ textAlign: "center" }}>
+                          <img
+                            src={qrDataUrl}
+                            alt="QR"
+                            style={{ width: 104, height: 104, display: "block", background: "#fff", padding: 4, border: `1px solid ${INK}`, boxSizing: "border-box" }}
+                          />
+                        </div>
+                      )}
+                      <div style={{ textAlign: "right", paddingTop: 2 }}>
+                        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 4 }}>
+                          {language === "en" ? "Temperature" : "温度"}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "flex-end", gap: 3, fontFamily: "ui-serif, Georgia, serif" }}>
+                          <span style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, color: tempBand.color, fontVariantNumeric: "tabular-nums" }}>
+                            {Math.round(object.temperature)}
+                          </span>
+                          <span style={{ fontSize: 20, color: MUTED }}>°C</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ width: "100%", textAlign: "right" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: INK, borderBottom: `2px solid ${ACCENT}`, display: "inline-block", paddingBottom: 1 }}>
                         {t("export.archiveEntry")}
                       </div>
-                      <div style={{ marginTop: 4, fontSize: 10, color: MUTED, maxWidth: 110, lineHeight: 1.3 }}>
+                      <div style={{ marginTop: 4, fontSize: 11, color: MUTED }}>
                         {t("export.scanToView")}
                       </div>
+                      <div style={{ marginTop: 6, fontSize: 11, color: MUTED, fontFamily: "ui-monospace, monospace" }}>
+                        {archiveNo}
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
