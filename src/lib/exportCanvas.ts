@@ -272,8 +272,8 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   let y = 44; // top padding
 
   // Header
-  // pill + title + subtitle + separator
-  const headerH = 30 + 12 + 40 + 22 + 24 + 1 + 34;
+  // title + subtitle + separator（已移除品牌徽标行）
+  const headerH = 40 + 22 + 24 + 1 + 34;
   y += headerH + 20;
 
 
@@ -342,23 +342,9 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, totalH);
 
-  // === Header ===
+  // === Header ===（已移除品牌徽标 + 档案号行）
   let cy = 44;
-  // pill
-  ctx.font = `700 16px ${FONT_SANS}`;
-  const typeText = input.i18n.objectType;
-  const typeW = ctx.measureText(typeText).width + 24;
-  const pillH = 30;
-  ctx.fillStyle = ACCENT;
-  ctx.fillRect(PAD, cy, typeW, pillH);
-  ctx.fillStyle = "#fff";
   ctx.textBaseline = "middle";
-  ctx.fillText(typeText, PAD + 12, cy + pillH / 2);
-  // archive no
-  ctx.fillStyle = MUTED;
-  ctx.font = `400 15px ${FONT_MONO}`;
-  ctx.fillText(input.archiveNo, PAD + typeW + 12, cy + pillH / 2);
-  cy += pillH + 12;
 
   // QR (right side)
   if (qrImg) {
