@@ -8,6 +8,7 @@ import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { retryObservationAnalysis, submitObservation } from "@/lib/api/platform.functions";
 import { Thermometer } from "@/components/Thermometer";
+import { TempText } from "@/components/TempText";
 import { bandOf } from "@/lib/temperature";
 import { toast } from "sonner";
 import { formatTimeForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
@@ -327,13 +328,8 @@ function SubmitPage() {
                 <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                   {t("submit.temperatureContribution")}
                 </div>
-                <div
-                  className={`mt-2 font-serif text-lg tabular-nums ${
-                    delta > 0 ? "text-accent" : delta < 0 ? "text-muted-foreground" : ""
-                  }`}
-                >
-                  {delta > 0 ? "+" : ""}
-                  {delta}°C
+                <div className="mt-2">
+                  <TempText value={delta} size="sm" delta />
                 </div>
               </div>
             </div>
@@ -345,10 +341,10 @@ function SubmitPage() {
                   <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                     {t("submit.currentTemperature")}
                   </div>
-                  <div className="mt-1 font-serif text-2xl tabular-nums">
-                    {newTemp}°C
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <TempText value={newTemp} size="md" />
                     {band && (
-                      <span className="ml-2 text-sm text-muted-foreground">
+                      <span className="text-sm text-muted-foreground">
                         {bandLabel(band.band, band.label)}
                       </span>
                     )}

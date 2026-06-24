@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { bandOf } from "@/lib/temperature";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
+import { TempText } from "@/components/TempText";
 
 interface Event {
   id: string;
@@ -16,7 +17,6 @@ interface Event {
 export function FeedEventCard({ ev }: { ev: Event }) {
   const { language, t, objectType, band: bandLabel } = useI18n();
   if (!ev.object) return null;
-  const heating = ev.delta > 0;
   const band = bandOf(ev.temperature_after);
   const reasonKey = `feed.reason.${ev.reason}` as Parameters<typeof t>[0];
   const rawReason = t(reasonKey);
@@ -49,19 +49,14 @@ export function FeedEventCard({ ev }: { ev: Event }) {
             <span>{date}</span>
           </div>
           <h3 className="mt-1.5 font-serif text-xl leading-tight">{ev.object.name}</h3>
-          <div className="mt-2 flex items-baseline gap-2 font-mono text-sm tabular-nums">
-            <span className="text-muted-foreground">{ev.before.toFixed(0)}°C</span>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="opacity-60">
+              <TempText value={ev.before} size="xs" />
+            </span>
             <span className="text-muted-foreground">→</span>
-            <span className="text-foreground">{Number(ev.temperature_after).toFixed(0)}°C</span>
-            <span
-              className={`ml-1 px-1.5 py-0.5 text-xs ${
-                heating
-                  ? "bg-[color-mix(in_oklab,var(--temp-hot)_18%,transparent)] text-foreground"
-                  : "bg-[color-mix(in_oklab,var(--temp-cool)_18%,transparent)] text-foreground"
-              }`}
-            >
-              {heating ? "+" : ""}
-              {ev.delta}°C
+            <TempText value={Number(ev.temperature_after)} size="xs" />
+            <span className="ml-1">
+              <TempText value={Number(ev.delta)} size="xs" delta precision={1} />
             </span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">

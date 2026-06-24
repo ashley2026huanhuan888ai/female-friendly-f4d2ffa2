@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Thermometer } from "@/components/Thermometer";
+import { TempText } from "@/components/TempText";
 import { ObjectTimeline } from "@/components/ObjectTimeline";
 import { TemperatureBreakdown } from "@/components/TemperatureBreakdown";
 import { HeatSources } from "@/components/HeatSources";
@@ -184,10 +185,7 @@ function ObjectDetail() {
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 md:hidden">
               <h1 className="font-serif text-3xl text-balance">{obj.name}</h1>
               {obj.observation_count > 0 && (
-                <span className="font-serif text-3xl leading-none text-accent tabular-nums">
-                  {Math.round(obj.temperature)}
-                  <span className="text-sm align-top">°C</span>
-                </span>
+                <TempText value={obj.temperature} size="md" />
               )}
             </div>
 
