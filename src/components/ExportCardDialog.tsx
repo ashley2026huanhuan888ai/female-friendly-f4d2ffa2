@@ -160,12 +160,12 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
     setGenerating(true);
     setProgress({ pct: 5, label: t("export.progressPrepare") });
     const createdBlobUrls: string[] = [];
+    const failedShotIds = new Set<string>();
     try {
-      // 1) 预取截图为 blob URL，规避 html-to-image 内联跨域图片失败
+      // 1) 预取截图为 blob URL
       const shotEntries = orderedSelected
-        .filter((o) => o.screenshot_url)
+        .filter((o) => o.screenshot_url && configs[o.id]?.includeScreenshot)
         .map((o) => [o.id, o.screenshot_url!] as const);
-      let failedCount = 0;
       if (shotEntries.length) {
         const fetched = await Promise.all(
           shotEntries.map(async ([id, url]) => {
@@ -178,7 +178,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
               return [id, objUrl] as const;
             } catch (err) {
               console.warn("[ExportCard] screenshot fetch failed", url, err);
-              failedCount += 1;
+              failedShotIds.add(id);
               return [id, ""] as const;
             }
           })
@@ -186,11 +186,11 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
         const map: Record<string, string> = {};
         for (const [id, u] of fetched) if (u) map[id] = u;
         setShotBlobs(map);
-        if (failedCount > 0) toast.warning(t("export.imageNotReady"));
+        if (failedShotIds.size > 0) toast.warning(t("export.imageNotReady"));
       }
       setProgress({ pct: 30, label: t("export.progressImages") });
 
-      // 2) 等离屏 <img> 解码完成
+      // 2) 等离屏 <img> 解码完成（失败的截图已不会进入 DOM）
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
       const imgs = cardRef.current.querySelectorAll("img");
       await Promise.all(
@@ -206,23 +206,28 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       setProgress({ pct: 50, label: t("export.progressRender") });
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 
-      // 3) 自适应像素比（避免 3x 过度采样）
       const dpr =
         typeof window !== "undefined" && window.devicePixelRatio
           ? window.devicePixelRatio
           : 2;
-      const pixelRatio = Math.min(2.5, Math.max(1.5, dpr));
+      const basePixelRatio = Math.min(2.5, Math.max(1.5, dpr));
 
       const MAX_ATTEMPTS = 3;
       let dataUrl = "";
       let lastErr: any = null;
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
+          const pr = attempt === 1 ? basePixelRatio : attempt === 2 ? Math.max(1, basePixelRatio - 0.5) : 1;
           dataUrl = await toPng(cardRef.current, {
-            pixelRatio: attempt === MAX_ATTEMPTS ? Math.max(1, pixelRatio - 0.5) : pixelRatio,
+            pixelRatio: pr,
             cacheBust: attempt > 1,
             skipFonts: true,
             backgroundColor: PAPER,
+            filter: (node: HTMLElement) => {
+              // 第二次起跳过所有 <img>，最大兼容
+              if (attempt >= 2 && node.tagName === "IMG") return false;
+              return true;
+            },
           });
           lastErr = null;
           break;
@@ -231,7 +236,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
           console.warn(`[ExportCard] toPng attempt ${attempt}/${MAX_ATTEMPTS} failed`, err);
           if (attempt < MAX_ATTEMPTS) {
             setProgress({ pct: 50, label: t("export.progressRetry", { attempt: attempt + 1, total: MAX_ATTEMPTS }) });
-            await new Promise((r) => setTimeout(r, 300 * attempt));
+            await new Promise((r) => setTimeout(r, 200 * attempt));
           }
         }
       }
@@ -254,13 +259,13 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
         duration: 8000,
       });
     } finally {
-      // 回收 blob URL
       for (const u of createdBlobUrls) URL.revokeObjectURL(u);
       setShotBlobs({});
       setGenerating(false);
       setTimeout(() => setProgress({ pct: 0, label: "" }), 400);
     }
   };
+
 
   const isMobile =
     typeof navigator !== "undefined" &&
