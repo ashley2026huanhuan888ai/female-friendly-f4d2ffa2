@@ -147,9 +147,10 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
     if (!hasAnyContent) return toast.error(t("export.needContent"));
 
     setGenerating(true);
+    setProgress({ pct: 5, label: t("export.progressPrepare") });
     try {
       const urlsToCheck = orderedSelected
-        .filter((o) => configs[o.id]?.includeScreenshot && o.screenshot_url)
+        .filter((o) => o.screenshot_url)
         .map((o) => o.screenshot_url!);
       if (urlsToCheck.length) {
         const results = await Promise.all(
@@ -167,9 +168,11 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
         if (results.some((ok) => !ok)) {
           toast.error(t("export.imageNotReady"));
           setGenerating(false);
+          setProgress({ pct: 0, label: "" });
           return;
         }
       }
+      setProgress({ pct: 25, label: t("export.progressImages") });
 
       const imgs = cardRef.current.querySelectorAll("img");
       await Promise.all(
@@ -182,17 +185,30 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
             })
         )
       );
+      setProgress({ pct: 45, label: t("export.progressRender") });
+
+      // 让出一帧，进度条能绘制出来
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+
+      // 自适应像素比：跟随设备 DPR，限制 1.5–2.5，避免移动端 3x 过度采样
+      const dpr =
+        typeof window !== "undefined" && window.devicePixelRatio
+          ? window.devicePixelRatio
+          : 2;
+      const pixelRatio = Math.min(2.5, Math.max(1.5, dpr));
 
       const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 3,
+        pixelRatio,
         cacheBust: true,
         backgroundColor: PAPER,
       });
+      setProgress({ pct: 85, label: t("export.progressEncode") });
       const blob = await (await fetch(dataUrl)).blob();
       const d = new Date();
       const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
       const safeName = object.name.replace(/[\\/:*?"<>|\s]+/g, "_");
       const filename = `${safeName}-${ymd}-${orderedSelected.length}cards.png`;
+      setProgress({ pct: 100, label: t("export.progressDone") });
       setResult({ dataUrl, blob, filename });
       toast.success(t("export.ready"));
     } catch (e: any) {
@@ -200,6 +216,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       toast.error(t("export.failed"));
     } finally {
       setGenerating(false);
+      setTimeout(() => setProgress({ pct: 0, label: "" }), 400);
     }
   };
 
