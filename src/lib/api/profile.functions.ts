@@ -26,7 +26,7 @@ export const updateMyProfile = createServerFn({ method: "POST" })
           .string()
           .trim()
           .max(500)
-          .url()
+          .regex(/^(https?:\/\/|\/)/, "Invalid avatar url")
           .nullable()
           .optional()
           .or(z.literal("").transform(() => null)),
