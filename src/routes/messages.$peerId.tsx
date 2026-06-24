@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
+import { UserFollowButton } from "@/components/UserFollowButton";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import {
@@ -111,7 +112,10 @@ function MessageThread() {
         <Link to="/messages" className="text-xs text-muted-foreground hover:text-foreground">
           {t("messages.backToList")}
         </Link>
-        <h1 className="mt-3 font-serif text-2xl">{data?.peer?.label ?? t("messages.title")}</h1>
+        <div className="mt-3 flex items-center gap-3">
+          <h1 className="font-serif text-2xl">{data?.peer?.label ?? t("messages.title")}</h1>
+          <UserFollowButton userId={peerId} />
+        </div>
 
         <div className="mt-6 max-h-[55vh] min-h-[240px] overflow-y-auto border border-border bg-card p-4">
           {status === "loading" && (
