@@ -79,6 +79,77 @@ export type Database = {
         }
         Relationships: []
       }
+      contribution_events: {
+        Row: {
+          created_at: string
+          delta: number
+          depth: number | null
+          id: string
+          kind: Database["public"]["Enums"]["contribution_kind"]
+          metadata: Json
+          observation_id: string | null
+          reason: string
+          source_user_id: string | null
+          temperature_event_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          depth?: number | null
+          id?: string
+          kind: Database["public"]["Enums"]["contribution_kind"]
+          metadata?: Json
+          observation_id?: string | null
+          reason?: string
+          source_user_id?: string | null
+          temperature_event_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          depth?: number | null
+          id?: string
+          kind?: Database["public"]["Enums"]["contribution_kind"]
+          metadata?: Json
+          observation_id?: string | null
+          reason?: string
+          source_user_id?: string | null
+          temperature_event_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contribution_events_temperature_event_id_fkey"
+            columns: ["temperature_event_id"]
+            isOneToOne: false
+            referencedRelation: "temperature_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contribution_levels: {
+        Row: {
+          badge: string
+          level: number
+          min_points: number
+          title: string
+        }
+        Insert: {
+          badge?: string
+          level: number
+          min_points: number
+          title: string
+        }
+        Update: {
+          badge?: string
+          level?: number
+          min_points?: number
+          title?: string
+        }
+        Relationships: []
+      }
       direct_messages: {
         Row: {
           body: string
@@ -103,6 +174,27 @@ export type Database = {
           read_at?: string | null
           recipient_id?: string
           sender_id?: string
+        }
+        Relationships: []
+      }
+      invite_relations: {
+        Row: {
+          ancestor_id: string
+          created_at: string
+          depth: number
+          descendant_id: string
+        }
+        Insert: {
+          ancestor_id: string
+          created_at?: string
+          depth: number
+          descendant_id: string
+        }
+        Update: {
+          ancestor_id?: string
+          created_at?: string
+          depth?: number
+          descendant_id?: string
         }
         Relationships: []
       }
@@ -679,30 +771,45 @@ export type Database = {
           auto_approve: boolean
           avatar_url: string | null
           bio: string | null
+          contribution_points: number
           created_at: string
           display_name: string | null
           email: string | null
           id: string
+          invite_code: string | null
+          inviter_id: string | null
+          level: number
+          level_title: string
           reputation: number
         }
         Insert: {
           auto_approve?: boolean
           avatar_url?: string | null
           bio?: string | null
+          contribution_points?: number
           created_at?: string
           display_name?: string | null
           email?: string | null
           id: string
+          invite_code?: string | null
+          inviter_id?: string | null
+          level?: number
+          level_title?: string
           reputation?: number
         }
         Update: {
           auto_approve?: boolean
           avatar_url?: string | null
           bio?: string | null
+          contribution_points?: number
           created_at?: string
           display_name?: string | null
           email?: string | null
           id?: string
+          invite_code?: string | null
+          inviter_id?: string | null
+          level?: number
+          level_title?: string
           reputation?: number
         }
         Relationships: []
@@ -908,15 +1015,42 @@ export type Database = {
       }
     }
     Functions: {
+      add_contribution: {
+        Args: {
+          _delta: number
+          _depth: number
+          _kind: Database["public"]["Enums"]["contribution_kind"]
+          _meta: Json
+          _obs: string
+          _reason: string
+          _source: string
+          _temp: string
+          _user: string
+        }
+        Returns: undefined
+      }
       apply_reputation_delta: {
         Args: { _delta: number; _obs: string; _reason: string; _user: string }
         Returns: number
+      }
+      bind_inviter: { Args: { _code: string }; Returns: Json }
+      calc_level: {
+        Args: { _points: number }
+        Returns: {
+          level: number
+          title: string
+        }[]
+      }
+      cascade_referral_bonus: {
+        Args: { _gained: number; _obs: string; _temp: string; _user: string }
+        Returns: undefined
       }
       check_user_submit_limit: {
         Args: { _object: string; _user: string }
         Returns: Json
       }
       derive_archive_category: { Args: { _type: string }; Returns: string }
+      gen_invite_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -929,6 +1063,11 @@ export type Database = {
       app_role: "admin" | "user"
       case_polarity: "positive" | "negative" | "controversial"
       case_status: "draft" | "published" | "archived"
+      contribution_kind:
+        | "observation_temp"
+        | "invite_signup"
+        | "referral_bonus"
+        | "admin_adjust"
       evidence_level: "A" | "B" | "C" | "D"
       object_status: "published" | "draft"
       object_type:
@@ -1088,6 +1227,12 @@ export const Constants = {
       app_role: ["admin", "user"],
       case_polarity: ["positive", "negative", "controversial"],
       case_status: ["draft", "published", "archived"],
+      contribution_kind: [
+        "observation_temp",
+        "invite_signup",
+        "referral_bonus",
+        "admin_adjust",
+      ],
       evidence_level: ["A", "B", "C", "D"],
       object_status: ["published", "draft"],
       object_type: [
