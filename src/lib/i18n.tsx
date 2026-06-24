@@ -722,6 +722,9 @@ const COPY = {
     "export.regenerate": "重新生成",
     "export.filename": "文件名",
     "export.filenameCopied": "文件名已复制",
+    "export.saveToAlbum": "保存到相册",
+    "export.saveToAlbumHint": "长按下方图片，选择「存储图像」即可保存到相册",
+    "export.openShareToSave": "已唤起系统分享面板，选择「存储图像」保存到相册",
   },
 
   en: {
@@ -1478,6 +1481,9 @@ const COPY = {
     "export.regenerate": "Regenerate",
     "export.filename": "Filename",
     "export.filenameCopied": "Filename copied",
+    "export.saveToAlbum": "Save to album",
+    "export.saveToAlbumHint": "Long-press the image below and choose “Save Image” to add it to your album",
+    "export.openShareToSave": "Share sheet opened — choose “Save Image” to add to your album",
   },
 
 } as const;

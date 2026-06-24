@@ -193,8 +193,29 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
     }
   };
 
-  const handleDownload = () => {
+  const isMobile =
+    typeof navigator !== "undefined" &&
+    /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  const handleDownload = async () => {
     if (!result) return;
+    // Mobile: try native share sheet first (iOS "Save Image" saves to album).
+    if (isMobile) {
+      const file = new File([result.blob], result.filename, { type: "image/png" });
+      const nav: any = navigator;
+      try {
+        if (nav.canShare && nav.canShare({ files: [file] })) {
+          await nav.share({ files: [file], title: object.name, text: t("export.cardTitle") });
+          toast.success(t("export.openShareToSave"));
+          return;
+        }
+      } catch {
+        // user cancelled or share failed — fall through to long-press hint
+      }
+      toast.message(t("export.saveToAlbumHint"));
+      return;
+    }
+    // Desktop: regular file download.
     const a = document.createElement("a");
     a.href = result.dataUrl;
     a.download = result.filename;
@@ -419,6 +440,11 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 className="mb-3 w-full accent-accent"
                 aria-label="preview zoom"
               />
+              {isMobile && (
+                <p className="mb-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {t("export.saveToAlbumHint")}
+                </p>
+              )}
               <div className="max-h-[60vh] overflow-auto border border-border bg-background">
                 <img
                   src={result.dataUrl}
@@ -436,7 +462,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 onClick={handleDownload}
                 className="border border-accent bg-accent px-4 py-2 text-xs uppercase tracking-wider text-accent-foreground hover:opacity-90"
               >
-                {t("export.download")}
+                {isMobile ? t("export.saveToAlbum") : t("export.download")}
               </button>
               <button
                 onClick={handleShare}
