@@ -187,24 +187,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
               </Link>
             )}
             <LanguageToggle language={language} setLanguage={setLanguage} />
-            <button
-              aria-label={t("nav.menu")}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex h-9 w-9 items-center justify-center border border-border text-foreground"
-            >
-              <span className="relative block h-3 w-4">
-                <span
-                  className={`absolute left-0 top-0 h-0.5 w-4 bg-current transition ${menuOpen ? "translate-y-1.5 rotate-45" : ""}`}
-                />
-                <span
-                  className={`absolute left-0 top-1.5 h-0.5 w-4 bg-current transition ${menuOpen ? "opacity-0" : ""}`}
-                />
-                <span
-                  className={`absolute left-0 top-3 h-0.5 w-4 bg-current transition ${menuOpen ? "-translate-y-1.5 -rotate-45" : ""}`}
-                />
-              </span>
-            </button>
           </div>
         </div>
 
