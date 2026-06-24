@@ -521,14 +521,14 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 const showShot = cfg.includeScreenshot && !!obs.screenshot_url;
                 if (!showShot && !cfg.includeContent) return null;
                 return (
-                  <div key={obs.id} style={{ marginBottom: 44 }}>
+                  <div key={obs.id} style={{ marginBottom: 56 }}>
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "baseline",
-                        marginBottom: 16,
-                        fontSize: 13,
+                        marginBottom: 20,
+                        fontSize: 16,
                         color: MUTED,
                         textTransform: "uppercase",
                         letterSpacing: "0.16em",
