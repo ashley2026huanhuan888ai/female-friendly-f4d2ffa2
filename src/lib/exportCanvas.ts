@@ -287,7 +287,6 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   cy += 1;
 
   // === Observations ===
-  const total = input.observations.length;
   for (let idx = 0; idx < input.observations.length; idx++) {
     const o = input.observations[idx];
     const cfg = input.configs[o.id];
@@ -296,40 +295,12 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     if (!cfg.includeContent && !showShot) continue;
 
     const blockTop = cy + 36;
-    const ev = o.evidence_level;
-    const evChar = ev != null ? String.fromCharCode(64 + Math.max(1, Math.min(4, ev))) : null;
-
-    // index circle
-    const cx = PAD + 32;
-    const cyy = blockTop + 26;
-    ctx.beginPath();
-    ctx.arc(cx, cyy, 26, 0, Math.PI * 2);
-    ctx.fillStyle = "#fff";
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = evChar ? ACCENT : "rgba(26,26,26,0.3)";
-    ctx.stroke();
-    ctx.fillStyle = evChar ? ACCENT : "rgba(26,26,26,0.5)";
-    ctx.font = `700 ${evChar ? 24 : 18}px ${FONT_SERIF}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(evChar || String(idx + 1).padStart(2, "0"), cx, cyy);
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    // № label
-    ctx.fillStyle = MUTED;
-    ctx.font = `400 12px ${FONT_MONO}`;
-    ctx.textAlign = "center";
-    ctx.fillText(
-      `№ ${String(idx + 1).padStart(2, "0")}/${String(total).padStart(2, "0")}`,
-      cx,
-      cyy + 26 + 12
-    );
-    ctx.textAlign = "left";
 
     let by = blockTop;
     const cl = contentLeft;
     const cw = contentW;
+
+
 
     // tags
     if (cfg.tags.size > 0 || o.scene) {
