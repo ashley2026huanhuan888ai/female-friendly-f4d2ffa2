@@ -741,7 +741,7 @@ const COPY = {
     "nav.me": "Me",
     "nav.messages": "Messages",
     "nav.signOut": "Sign out",
-    "nav.loginRegister": "Log in / Sign up",
+    "nav.loginRegister": "Log in",
     "nav.menu": "Menu",
 
     "common.loading": "Loading...",
