@@ -922,7 +922,7 @@ const COPY = {
     "home.coolingDetail.countOnly":
       "{count} new pieces of evidence cooled the controversy from {before}°C to {after}°C.",
     "home.coolingDetail.minimal": "Controversy moved from {before}°C to {after}°C.",
-    "home.noWeeklyChange": "No change this week.",
+    "home.noWeeklyChange": "Gender debates heating up.",
     "home.latestEvents": "Latest observation events",
     "home.noEvents24h": "No temperature changes in the past 24 hours.",
     "home.latestAI": "Latest AI observations",
