@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Thermometer } from "./Thermometer";
 import { FollowButton } from "./FollowButton";
+import { BoycottButton } from "./BoycottButton";
 import { formatRelativeDate, useI18n } from "@/lib/i18n";
 
 interface Props {
@@ -40,13 +41,13 @@ export function ObjectCard({
 
   return (
     <article className="group border border-border bg-card transition-all hover:border-foreground/40 hover:shadow-sm focus-within:border-foreground/60">
-      <Link
-        to="/objects/$id"
-        params={{ id }}
-        aria-label={`${t("objects.viewDetail")}: ${name}`}
-        className="flex items-start justify-between gap-6 p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        <div className="pointer-events-none min-w-0 flex-1">
+      <div className="flex items-start justify-between gap-6 p-6">
+        <Link
+          to="/objects/$id"
+          params={{ id }}
+          aria-label={`${t("objects.viewDetail")}: ${name}`}
+          className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
           <div>
             <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
               <span className="font-mono tabular-nums text-foreground">
@@ -87,10 +88,13 @@ export function ObjectCard({
               </div>
             )}
           </div>
-        </div>
+        </Link>
 
-        <Thermometer value={temperature} size="lg" showLabel={false} unmeasured={observation_count === 0} />
-      </Link>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <Thermometer value={temperature} size="lg" showLabel={false} unmeasured={observation_count === 0} />
+          <BoycottButton objectId={id} />
+        </div>
+      </div>
 
       {tags.length > 0 && (
         <div className="-mt-3 flex flex-wrap gap-1.5 px-6 pb-4">
