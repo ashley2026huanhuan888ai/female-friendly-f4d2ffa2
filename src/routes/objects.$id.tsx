@@ -12,7 +12,9 @@ import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
 import { getPublicObjectDetail, getPublicObjectObservations } from "@/lib/api/platform.functions";
 import { FollowButton } from "@/components/FollowButton";
 import { ObjectComments } from "@/components/ObjectComments";
+import { ExportCardDialog } from "@/components/ExportCardDialog";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
+
 
 export const Route = createFileRoute("/objects/$id")({
   loader: async ({ params }) => {
