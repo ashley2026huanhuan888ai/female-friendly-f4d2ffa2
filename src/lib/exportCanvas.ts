@@ -136,8 +136,9 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
 
   // Observations
   const obsTop = y;
-  const contentLeft = PAD + 92; // index circle 64 + gap 28
+  const contentLeft = PAD;
   const contentW = W - contentLeft - PAD;
+
 
   const obsBlocks: Array<{ height: number }> = [];
   for (const o of input.observations) {
