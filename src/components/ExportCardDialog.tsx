@@ -331,22 +331,6 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
                       {checked && cfg && (
                         <div className="ml-6 mt-3 space-y-2 border-l-2 border-border pl-3">
-                          <label className={`flex items-center gap-2 text-xs ${!hasShot ? "opacity-50" : ""}`}>
-                            <input
-                              type="checkbox"
-                              disabled={!hasShot}
-                              checked={cfg.includeScreenshot && hasShot}
-                              onChange={(e) =>
-                                updateConfig(o.id, { includeScreenshot: e.target.checked })
-                              }
-                            />
-                            {t("export.includeScreenshot")}
-                            {!hasShot && (
-                              <span className="text-muted-foreground">
-                                ({t("export.noScreenshot")})
-                              </span>
-                            )}
-                          </label>
                           <label className="flex items-center gap-2 text-xs">
                             <input
                               type="checkbox"
