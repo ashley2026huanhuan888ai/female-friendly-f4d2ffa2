@@ -1470,6 +1470,14 @@ const COPY = {
     "export.deselectAll": "Deselect all",
     "export.archiveEntry": "Archive Entry",
     "export.scanToView": "Scan to view full archive",
+    "export.ready": "Image ready",
+    "export.download": "Download PNG",
+    "export.share": "Share",
+    "export.shareUnsupported": "Sharing not supported, copied to clipboard",
+    "export.copyFailed": "Copy failed, long-press the image to save",
+    "export.regenerate": "Regenerate",
+    "export.filename": "Filename",
+    "export.filenameCopied": "Filename copied",
   },
 
 } as const;
