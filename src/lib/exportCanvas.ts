@@ -177,7 +177,7 @@ function layoutTags(
   if (tags.length === 0) return { lines: [], size: TYPO.tagSize, lh: TYPO.tagLH };
   const labels = tags.map((tg) => `#${i18n.tagLabel(tg)}`);
   const maxLen = labels.reduce((m, s) => Math.max(m, s.length), 0);
-  const size = tags.length >= 6 || maxLen >= 10 ? TYPO.tagSizeDense : TYPO.tagSize;
+  const size = tags.length >= 5 || maxLen >= 9 ? TYPO.tagSizeDense : TYPO.tagSize;
   ctx.font = `600 ${size}px ${FONT_SANS}`;
   const lines: Array<Array<{ text: string; w: number }>> = [[]];
   let lineW = 0;
