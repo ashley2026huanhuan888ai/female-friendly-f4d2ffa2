@@ -815,9 +815,8 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                         {showShot && (
                           <div style={{ marginTop: 22 }}>
                             <img
-                              src={obs.screenshot_url!}
+                              src={shotBlobs[obs.id] || obs.screenshot_url!}
                               alt=""
-                              crossOrigin="anonymous"
                               style={{
                                 width: "100%",
                                 maxHeight: 640,
