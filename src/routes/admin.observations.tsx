@@ -347,14 +347,14 @@ function ObsAdmin() {
               </p>
             )}
 
-            {o.facts?.length > 0 && (
+            {Array.isArray(o.facts) && o.facts.length > 0 && (
               <div className="mt-3 border-l-2 border-accent/40 pl-3">
                 <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">
                   提取事实
                 </div>
                 <ul className="space-y-0.5 text-sm">
                   {o.facts.map((f, i) => (
-                    <li key={i}>· {f}</li>
+                    <li key={i}>· {typeof f === "string" ? f : JSON.stringify(f)}</li>
                   ))}
                 </ul>
               </div>

@@ -148,11 +148,11 @@ function CaseDetail() {
               <p className="text-base leading-relaxed">{c.summary || t("common.noSummary")}</p>
             </Section>
 
-            {c.facts.length > 0 && (
+            {Array.isArray(c.facts) && c.facts.length > 0 && (
               <Section title={t("archive.aiFacts")}>
                 <ul className="space-y-1 border-l-2 border-accent/40 pl-4 text-sm">
                   {c.facts.map((f, i) => (
-                    <li key={i}>· {f}</li>
+                    <li key={i}>· {typeof f === "string" ? f : JSON.stringify(f)}</li>
                   ))}
                 </ul>
               </Section>
