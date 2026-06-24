@@ -103,7 +103,7 @@ function Index() {
                 e.preventDefault();
                 window.location.href = `/objects?q=${encodeURIComponent(q)}`;
               }}
-              className="mx-auto mt-8 flex w-full max-w-sm border border-foreground md:mx-0 md:mt-10 md:max-w-lg"
+              className="mt-8 flex w-full max-w-md border border-foreground md:mt-10 md:max-w-lg"
             >
               <input
                 value={q}
@@ -115,7 +115,7 @@ function Index() {
                 {t("home.search.button")}
               </button>
             </form>
-            <div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
+            <div className="mt-6 flex max-w-md flex-wrap gap-3">
               <Link
                 to="/objects"
                 className="border border-accent bg-accent px-4 py-2 text-xs uppercase tracking-wider text-accent-foreground hover:bg-accent/90"
