@@ -440,6 +440,11 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 className="mb-3 w-full accent-accent"
                 aria-label="preview zoom"
               />
+              {isMobile && (
+                <p className="mb-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {t("export.saveToAlbumHint")}
+                </p>
+              )}
               <div className="max-h-[60vh] overflow-auto border border-border bg-background">
                 <img
                   src={result.dataUrl}
@@ -457,7 +462,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 onClick={handleDownload}
                 className="border border-accent bg-accent px-4 py-2 text-xs uppercase tracking-wider text-accent-foreground hover:opacity-90"
               >
-                {t("export.download")}
+                {isMobile ? t("export.saveToAlbum") : t("export.download")}
               </button>
               <button
                 onClick={handleShare}
