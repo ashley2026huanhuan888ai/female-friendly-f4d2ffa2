@@ -74,7 +74,7 @@ function EvidenceLib() {
                       </span>
                     </div>
                     <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
-                      {it.summary}
+                      {highlightKeywords(it.summary)}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
                       {it.tags.slice(0, 6).map((t: string) => (

@@ -245,7 +245,7 @@ function Index() {
                     <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
                       {o.object ? o.object.name : "—"} · {t("common.evidence")} {o.evidence_level ?? "—"}
                     </div>
-                    <p className="mt-1 text-sm">{o.summary ?? t("common.noSummary")}</p>
+                    <p className="mt-1 text-sm">{o.summary ? highlightKeywords(o.summary) : t("common.noSummary")}</p>
                   </>
                 );
                 return (
