@@ -297,49 +297,51 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   // === Header ===
   let cy = 56;
   // pill
-  ctx.font = `700 16px ${FONT_SANS}`;
+  ctx.font = `700 20px ${FONT_SANS}`;
   const typeText = input.i18n.objectType;
-  const typeW = ctx.measureText(typeText).width + 24;
+  const typeW = ctx.measureText(typeText).width + 28;
+  const pillH = 34;
   ctx.fillStyle = ACCENT;
-  ctx.fillRect(PAD, cy, typeW, 26);
+  ctx.fillRect(PAD, cy, typeW, pillH);
   ctx.fillStyle = "#fff";
   ctx.textBaseline = "middle";
-  ctx.fillText(typeText, PAD + 12, cy + 14);
+  ctx.fillText(typeText, PAD + 14, cy + pillH / 2);
   // archive no
   ctx.fillStyle = MUTED;
-  ctx.font = `400 15px ${FONT_MONO}`;
-  ctx.fillText(input.archiveNo, PAD + typeW + 12, cy + 14);
-  cy += 26 + 14;
+  ctx.font = `400 20px ${FONT_MONO}`;
+  ctx.fillText(input.archiveNo, PAD + typeW + 14, cy + pillH / 2);
+  cy += pillH + 16;
 
   // QR (right side)
   if (qrImg) {
-    const qrSize = 132;
+    const qrSize = 152;
     ctx.fillStyle = "#fff";
     ctx.fillRect(W - PAD - qrSize, 56, qrSize, qrSize);
     ctx.drawImage(qrImg, W - PAD - qrSize + 6, 56 + 6, qrSize - 12, qrSize - 12);
     ctx.fillStyle = MUTED;
-    ctx.font = `400 12px ${FONT_SANS}`;
+    ctx.font = `400 18px ${FONT_SANS}`;
     ctx.textBaseline = "top";
     ctx.textAlign = "right";
-    ctx.fillText(input.i18n.scanToView, W - PAD, 56 + qrSize + 8);
+    ctx.fillText(input.i18n.scanToView, W - PAD, 56 + qrSize + 10);
     ctx.textAlign = "left";
   }
 
   // Title
   ctx.fillStyle = INK;
-  ctx.font = `700 38px ${FONT_SERIF}`;
+  ctx.font = `700 44px ${FONT_SERIF}`;
   ctx.textBaseline = "top";
   ctx.fillText(input.i18n.cardTitle, PAD, cy);
-  cy += 44;
+  cy += 52;
   ctx.fillStyle = MUTED;
-  ctx.font = `300 15px ${FONT_SANS}`;
+  ctx.font = `300 20px ${FONT_SANS}`;
   ctx.fillText(input.i18n.cardSubtitle, PAD, cy);
-  cy += 20 + 24;
+  cy += 26 + 28;
 
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.12)";
   ctx.fillRect(PAD, cy, W - PAD * 2, 1);
   cy += 1 + 40;
+
 
   // Object name
   ctx.fillStyle = INK;
