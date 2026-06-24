@@ -311,8 +311,8 @@ const COPY = {
     "objectDetail.screenshotEvidence": "截图证据",
 
     "objectComments.eyebrow": "Discussion",
-    "objectComments.title": "对象留言",
-    "objectComments.body": "留言用于补充讨论，不参与温度计算。",
+    "objectComments.title": "给性别争议对象留言",
+    "objectComments.body": "",
     "objectComments.publicCount": "已公开 {count} 条",
     "objectComments.placeholder": "写下补充、疑问或相关背景。",
     "objectComments.submit": "提交留言",
@@ -959,8 +959,8 @@ const COPY = {
     "objectDetail.screenshotEvidence": "Screenshot evidence",
 
     "objectComments.eyebrow": "Discussion",
-    "objectComments.title": "Object Comments",
-    "objectComments.body": "Comments add context for discussion and do not affect temperature.",
+    "objectComments.title": "Leave a comment on this gender-controversy object",
+    "objectComments.body": "",
     "objectComments.publicCount": "{count} public",
     "objectComments.placeholder": "Add context, a question, or relevant background.",
     "objectComments.submit": "Submit comment",
