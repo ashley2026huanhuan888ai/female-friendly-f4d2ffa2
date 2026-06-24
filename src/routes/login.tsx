@@ -480,7 +480,17 @@ function LoginPage() {
               className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
             />
             {mode === "signup" && (
-              <p className="text-xs text-muted-foreground">{t("login.passwordRule")}</p>
+              <>
+                <p className="text-xs text-muted-foreground">{t("login.passwordRule")}</p>
+                <input
+                  type="text"
+                  placeholder="邀请码（选填）"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  maxLength={20}
+                  className="w-full border border-border bg-card p-3 text-sm uppercase tracking-widest outline-none focus:border-foreground"
+                />
+              </>
             )}
             <label className="flex cursor-pointer select-none items-center gap-2 py-1 text-sm text-muted-foreground">
               <input
