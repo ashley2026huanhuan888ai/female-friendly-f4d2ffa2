@@ -50,28 +50,31 @@ const FONT_MONO = `ui-monospace, Menlo, monospace`;
 
 // 统一排版常量（测量 / 绘制必须用同一份，避免高度算错）
 const TYPO = {
-  summarySize: 30,
+  summarySize: 46,
   summaryLH: 1.35,
-  bodySize: 26,
-  bodyLH: 1.65,
-  tagSize: 22,
-  tagSizeDense: 20,
-  tagLH: 32,
-  tagGapX: 18,
-  tempSize: 84,
-  tempSize3Digit: 68,
-  tempUnitSize: 28,
+  bodySize: 38,
+  bodyLH: 1.6,
+  tagSize: 34,
+  tagSizeDense: 30,
+  tagLH: 44,
+  tagGapX: 22,
+  tempSize: 96,
+  tempSize3Digit: 80,
+  tempUnitSize: 34,
   nameLH: 1.1,
-  sceneLH: 22,
-  dateLH: 18,
+  sceneLH: 28,
+  dateLH: 26,
+  paraGap: 20,
+  blockPad: 40,
 } as const;
 
 function nameFontSizeFor(name: string): number {
-  if (name.length > 22) return 48;
-  if (name.length > 18) return 56;
-  if (name.length > 10) return 68;
-  return 84;
+  if (name.length > 22) return 44;
+  if (name.length > 18) return 52;
+  if (name.length > 10) return 60;
+  return 72;
 }
+
 
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
