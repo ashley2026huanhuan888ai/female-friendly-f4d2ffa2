@@ -50,28 +50,31 @@ const FONT_MONO = `ui-monospace, Menlo, monospace`;
 
 // 统一排版常量（测量 / 绘制必须用同一份，避免高度算错）
 const TYPO = {
-  summarySize: 30,
+  summarySize: 46,
   summaryLH: 1.35,
-  bodySize: 26,
-  bodyLH: 1.65,
-  tagSize: 22,
-  tagSizeDense: 20,
-  tagLH: 32,
-  tagGapX: 18,
-  tempSize: 84,
-  tempSize3Digit: 68,
-  tempUnitSize: 28,
+  bodySize: 38,
+  bodyLH: 1.6,
+  tagSize: 34,
+  tagSizeDense: 30,
+  tagLH: 44,
+  tagGapX: 22,
+  tempSize: 96,
+  tempSize3Digit: 80,
+  tempUnitSize: 34,
   nameLH: 1.1,
-  sceneLH: 22,
-  dateLH: 18,
+  sceneLH: 28,
+  dateLH: 26,
+  paraGap: 20,
+  blockPad: 40,
 } as const;
 
 function nameFontSizeFor(name: string): number {
-  if (name.length > 22) return 48;
-  if (name.length > 18) return 56;
-  if (name.length > 10) return 68;
-  return 84;
+  if (name.length > 22) return 44;
+  if (name.length > 18) return 52;
+  if (name.length > 10) return 60;
+  return 72;
 }
+
 
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -174,7 +177,7 @@ function layoutTags(
   if (tags.length === 0) return { lines: [], size: TYPO.tagSize, lh: TYPO.tagLH };
   const labels = tags.map((tg) => `#${i18n.tagLabel(tg)}`);
   const maxLen = labels.reduce((m, s) => Math.max(m, s.length), 0);
-  const size = tags.length >= 6 || maxLen >= 10 ? TYPO.tagSizeDense : TYPO.tagSize;
+  const size = tags.length >= 5 || maxLen >= 9 ? TYPO.tagSizeDense : TYPO.tagSize;
   ctx.font = `600 ${size}px ${FONT_SANS}`;
   const lines: Array<Array<{ text: string; w: number }>> = [[]];
   let lineW = 0;
@@ -224,8 +227,10 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   let y = 56; // top padding
 
   // Header
-  const headerH = 24 + 38 * 1.1 + 8 + 15 + 24; // pill + title + sub + bottom border padding
+  // pill(34) + 16 gap + title(52) + subtitle(26) + 28 gap + separator + 40
+  const headerH = 34 + 16 + 52 + 26 + 28 + 1 + 40;
   y += headerH + 24;
+
 
   // Object name + tags + temp
   const name = input.object.name;
@@ -261,7 +266,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     if (cfg.includeContent) {
       if (o.summary) {
         measure.font = `700 ${TYPO.summarySize}px ${FONT_SERIF}`;
-        h += wrapText(measure, o.summary, contentW, TYPO.summarySize * TYPO.summaryLH).height + 16;
+        h += wrapText(measure, o.summary, contentW, TYPO.summarySize * TYPO.summaryLH).height + TYPO.paraGap;
       }
       measure.font = `400 ${TYPO.bodySize}px ${FONT_SERIF}`;
       h += wrapText(measure, o.cleaned_content || o.content, contentW, TYPO.bodySize * TYPO.bodyLH).height;
@@ -272,14 +277,15 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
       const drawW = contentW;
       let drawH = drawW * ratio;
       if (drawH > 640) drawH = 640;
-      h += 22 + drawH;
+      h += 26 + drawH;
     }
-    h += 16 + TYPO.dateLH;
-    h += 36; // padding bottom
+    h += 20 + TYPO.dateLH;
+    h += TYPO.blockPad;
+
     y += h;
   }
 
-  y += 28 + 18 + 24 + 48; // footer + bottom padding
+  y += 32 + 26 + 24 + 56; // footer (22px) + bottom padding
   const totalH = y;
 
   // 真正的 canvas
@@ -294,49 +300,51 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   // === Header ===
   let cy = 56;
   // pill
-  ctx.font = `700 16px ${FONT_SANS}`;
+  ctx.font = `700 20px ${FONT_SANS}`;
   const typeText = input.i18n.objectType;
-  const typeW = ctx.measureText(typeText).width + 24;
+  const typeW = ctx.measureText(typeText).width + 28;
+  const pillH = 34;
   ctx.fillStyle = ACCENT;
-  ctx.fillRect(PAD, cy, typeW, 26);
+  ctx.fillRect(PAD, cy, typeW, pillH);
   ctx.fillStyle = "#fff";
   ctx.textBaseline = "middle";
-  ctx.fillText(typeText, PAD + 12, cy + 14);
+  ctx.fillText(typeText, PAD + 14, cy + pillH / 2);
   // archive no
   ctx.fillStyle = MUTED;
-  ctx.font = `400 15px ${FONT_MONO}`;
-  ctx.fillText(input.archiveNo, PAD + typeW + 12, cy + 14);
-  cy += 26 + 14;
+  ctx.font = `400 20px ${FONT_MONO}`;
+  ctx.fillText(input.archiveNo, PAD + typeW + 14, cy + pillH / 2);
+  cy += pillH + 16;
 
   // QR (right side)
   if (qrImg) {
-    const qrSize = 132;
+    const qrSize = 152;
     ctx.fillStyle = "#fff";
     ctx.fillRect(W - PAD - qrSize, 56, qrSize, qrSize);
     ctx.drawImage(qrImg, W - PAD - qrSize + 6, 56 + 6, qrSize - 12, qrSize - 12);
     ctx.fillStyle = MUTED;
-    ctx.font = `400 12px ${FONT_SANS}`;
+    ctx.font = `400 18px ${FONT_SANS}`;
     ctx.textBaseline = "top";
     ctx.textAlign = "right";
-    ctx.fillText(input.i18n.scanToView, W - PAD, 56 + qrSize + 8);
+    ctx.fillText(input.i18n.scanToView, W - PAD, 56 + qrSize + 10);
     ctx.textAlign = "left";
   }
 
   // Title
   ctx.fillStyle = INK;
-  ctx.font = `700 38px ${FONT_SERIF}`;
+  ctx.font = `700 44px ${FONT_SERIF}`;
   ctx.textBaseline = "top";
   ctx.fillText(input.i18n.cardTitle, PAD, cy);
-  cy += 44;
+  cy += 52;
   ctx.fillStyle = MUTED;
-  ctx.font = `300 15px ${FONT_SANS}`;
+  ctx.font = `300 20px ${FONT_SANS}`;
   ctx.fillText(input.i18n.cardSubtitle, PAD, cy);
-  cy += 20 + 24;
+  cy += 26 + 28;
 
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.12)";
   ctx.fillRect(PAD, cy, W - PAD * 2, 1);
   cy += 1 + 40;
+
 
   // Object name
   ctx.fillStyle = INK;
@@ -422,7 +430,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     // scene
     if (o.scene) {
       ctx.fillStyle = MUTED;
-      ctx.font = `400 13px ${FONT_SANS}`;
+      ctx.font = `500 20px ${FONT_SANS}`;
       ctx.fillText(ellipsize(ctx, o.scene.toUpperCase(), cw), cl, by);
       by += TYPO.sceneLH;
     }
@@ -439,7 +447,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
           INK,
           `700 ${TYPO.summarySize}px ${FONT_SERIF}`
         );
-        by += 16;
+        by += TYPO.paraGap;
       }
       by += drawText(
         ctx,
@@ -462,7 +470,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
         dh = 640;
         dw = dh / ratio;
       }
-      by += 22;
+      by += 26;
       ctx.fillStyle = "#fff";
       ctx.fillRect(cl, by, dw, dh);
       ctx.drawImage(im, cl, by, dw, dh);
@@ -472,15 +480,15 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
       by += dh;
     }
 
-    by += 16;
+    by += 20;
     ctx.fillStyle = MUTED;
-    ctx.font = `400 13px ${FONT_SANS}`;
+    ctx.font = `400 20px ${FONT_SANS}`;
     ctx.fillText(
       input.i18n.dateText.replace("{date}", formatShort(o.created_at)) || formatShort(o.created_at),
       cl,
       by
     );
-    by += TYPO.dateLH + 36;
+    by += TYPO.dateLH + TYPO.blockPad;
 
     // bottom separator
     ctx.fillStyle = "rgba(26,26,26,0.06)";
@@ -489,10 +497,10 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   }
 
   // Footer — 截断防溢出
-  cy += 28;
+  cy += 32;
   ctx.fillStyle = INK;
-  ctx.font = `700 14px ${FONT_SANS}`;
-  const rightNameMax = 360;
+  ctx.font = `700 22px ${FONT_SANS}`;
+  const rightNameMax = 460;
   const rightName = ellipsize(ctx, input.object.name.toUpperCase(), rightNameMax);
   const rightNameW = ctx.measureText(rightName).width;
   ctx.textAlign = "right";
@@ -500,10 +508,11 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.textAlign = "left";
 
   ctx.fillStyle = MUTED;
-  ctx.font = `400 14px ${FONT_SANS}`;
-  const leftMax = W - PAD * 2 - rightNameW - 24;
+  ctx.font = `400 22px ${FONT_SANS}`;
+  const leftMax = W - PAD * 2 - rightNameW - 28;
   const leftFull = `${input.i18n.nowText}  |  ${input.i18n.exportedBy}: ${input.exporterName}`;
   ctx.fillText(ellipsize(ctx, leftFull, leftMax), PAD, cy);
+
 
   return canvas.toDataURL("image/png");
 }
