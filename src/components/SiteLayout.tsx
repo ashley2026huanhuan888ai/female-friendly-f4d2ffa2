@@ -185,6 +185,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 )}
               </Link>
             )}
+            <LanguageToggle language={language} setLanguage={setLanguage} />
             <button
               aria-label={t("nav.menu")}
               aria-expanded={menuOpen}
@@ -214,7 +215,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <Link to="/topics" className="text-muted-foreground hover:text-foreground">
             {t("nav.topics")}
           </Link>
-          <LanguageToggle language={language} setLanguage={setLanguage} />
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="text-muted-foreground hover:text-foreground"
