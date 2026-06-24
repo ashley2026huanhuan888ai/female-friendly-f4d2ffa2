@@ -714,59 +714,85 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
               </div>
 
               {/* Object name + thermometer */}
-              <div style={{ padding: "44px 0 40px" }}>
-                <div
-                  style={{
-                    fontSize: object.name.length > 18 ? 60 : object.name.length > 10 ? 76 : 92,
-                    fontWeight: 700,
-                    lineHeight: 1.05,
-                    wordBreak: "break-word",
-                    overflowWrap: "anywhere",
-                    marginBottom: 32,
-                  }}
-                >
-                  {object.name}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 10,
-                      background: `${INK}10`,
-                      borderRadius: 9999,
-                      position: "relative",
-                      overflow: "hidden",
-                    }}
-                  >
+              {(() => {
+                const tempColor = BAND_HEX[tempBand.band] || ACCENT;
+                const allTags = Array.from(
+                  new Set(orderedSelected.flatMap((o) => Array.from(configs[o.id]?.tags || [])))
+                );
+                return (
+                  <div style={{ padding: "40px 0 36px" }}>
                     <div
                       style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        height: "100%",
-                        width: `${Math.max(0, Math.min(100, object.temperature))}%`,
-                        background: BAND_HEX[tempBand.band] || ACCENT,
-                        borderRadius: 9999,
-                      }}
-                    />
-                  </div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, flexShrink: 0 }}>
-                    <span
-                      style={{
-                        fontSize: 72,
+                        fontSize: object.name.length > 18 ? 56 : object.name.length > 10 ? 68 : 84,
                         fontWeight: 700,
-                        lineHeight: 1,
-                        color: BAND_HEX[tempBand.band] || ACCENT,
-                        fontVariantNumeric: "tabular-nums",
-                        letterSpacing: "-0.02em",
+                        lineHeight: 1.05,
+                        wordBreak: "break-word",
+                        overflowWrap: "anywhere",
+                        marginBottom: 24,
                       }}
                     >
-                      {Math.round(object.temperature)}
-                    </span>
-                    <span style={{ fontSize: 26, fontWeight: 700, color: INK }}>°C</span>
+                      {object.name}
+                    </div>
+                    {allTags.length > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "8px 18px",
+                          marginBottom: 20,
+                          fontSize: 22,
+                          fontWeight: 600,
+                          color: tempColor,
+                        }}
+                      >
+                        {allTags.map((tg) => (
+                          <span key={tg}>#{tag(tg)}</span>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+                      <div
+                        style={{
+                          flex: 1,
+                          height: 10,
+                          background: `${INK}10`,
+                          borderRadius: 9999,
+                          position: "relative",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            height: "100%",
+                            width: `${Math.max(0, Math.min(100, object.temperature))}%`,
+                            background: tempColor,
+                            borderRadius: 9999,
+                          }}
+                        />
+                      </div>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 4, flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: 84,
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            color: tempColor,
+                            fontVariantNumeric: "tabular-nums",
+                            letterSpacing: "-0.02em",
+                          }}
+                        >
+                          {Math.round(object.temperature)}
+                        </span>
+                        <span style={{ fontSize: 28, fontWeight: 700, color: INK }}>°C</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
+
 
               {/* Observations */}
               <div style={{ borderTop: `1px solid ${INK}15` }}>
