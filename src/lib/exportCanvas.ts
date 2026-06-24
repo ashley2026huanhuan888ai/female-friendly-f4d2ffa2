@@ -249,7 +249,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.12)";
   ctx.fillRect(PAD, cy, W - PAD * 2, 1);
-  cy += 1 + 44;
+  cy += 1 + 40;
 
   // Object name
   ctx.fillStyle = INK;
@@ -257,10 +257,26 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   for (let i = 0; i < nameWrap.lines.length; i++) {
     ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * 1.1);
   }
-  cy += nameWrap.height + 32;
+  cy += nameWrap.height + 24;
+
+  // Tags row (band color)
+  if (allTags.length > 0) {
+    ctx.fillStyle = input.bandHex;
+    ctx.font = `600 22px ${FONT_SANS}`;
+    let tx = PAD;
+    let ty = cy;
+    for (const tg of allTags) {
+      const txt = `#${input.i18n.tagLabel(tg)}`;
+      const tw = ctx.measureText(txt).width;
+      if (tx + tw > W - PAD) { tx = PAD; ty += 28; }
+      ctx.fillText(txt, tx, ty);
+      tx += tw + 18;
+    }
+    cy = ty + 28 + 20;
+  }
 
   // Temperature bar
-  const barW = W - PAD * 2 - 240;
+  const barW = W - PAD * 2 - 260;
   const barH = 10;
   ctx.fillStyle = "rgba(26,26,26,0.08)";
   // rounded bg
@@ -286,16 +302,16 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.fill();
   // Temp number
   ctx.fillStyle = input.bandHex;
-  ctx.font = `700 72px ${FONT_SERIF}`;
+  ctx.font = `700 84px ${FONT_SERIF}`;
   ctx.textBaseline = "alphabetic";
   const tempStr = String(Math.round(input.object.temperature));
-  ctx.fillText(tempStr, PAD + barW + 24, cy + 72);
+  ctx.fillText(tempStr, PAD + barW + 24, cy + 78);
   const tempW = ctx.measureText(tempStr).width;
   ctx.fillStyle = INK;
-  ctx.font = `700 26px ${FONT_SERIF}`;
-  ctx.fillText("°C", PAD + barW + 24 + tempW + 4, cy + 72);
+  ctx.font = `700 28px ${FONT_SERIF}`;
+  ctx.fillText("°C", PAD + barW + 24 + tempW + 4, cy + 78);
   ctx.textBaseline = "top";
-  cy += 80 + 24;
+  cy += 86 + 24;
 
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.08)";
@@ -316,38 +332,22 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     const cl = contentLeft;
     const cw = contentW;
 
-
-
-    // tags
-    if (cfg.tags.size > 0 || o.scene) {
-      ctx.fillStyle = ACCENT;
-      ctx.font = `600 18px ${FONT_SANS}`;
-      let tx = cl;
-      for (const tg of cfg.tags) {
-        const txt = `#${input.i18n.tagLabel(tg)}`;
-        const tw = ctx.measureText(txt).width;
-        if (tx + tw > cl + cw) {
-          tx = cl;
-          by += 22;
-        }
-        ctx.fillText(txt, tx, by);
-        tx += tw + 16;
-      }
-      if (o.scene) {
-        ctx.fillStyle = MUTED;
-        ctx.font = `400 14px ${FONT_SANS}`;
-        ctx.fillText(`· ${o.scene}`, tx, by + 3);
-      }
-      by += 24;
+    // scene only (tags moved to header)
+    if (o.scene) {
+      ctx.fillStyle = MUTED;
+      ctx.font = `400 13px ${FONT_SANS}`;
+      ctx.fillText(o.scene.toUpperCase(), cl, by);
+      by += 22;
     }
 
     if (cfg.includeContent) {
       if (o.summary) {
-        by += drawText(ctx, o.summary, cl, by, cw, 32 * 1.4, INK, `700 32px ${FONT_SERIF}`);
+        by += drawText(ctx, o.summary, cl, by, cw, 30 * 1.4, INK, `700 30px ${FONT_SERIF}`);
         by += 16;
       }
-      by += drawText(ctx, o.cleaned_content || o.content, cl, by, cw, 24 * 1.8, "#2a2a2a", `400 24px ${FONT_SERIF}`);
+      by += drawText(ctx, o.cleaned_content || o.content, cl, by, cw, 26 * 1.7, "#2a2a2a", `400 26px ${FONT_SERIF}`);
     }
+
 
     if (showShot) {
       const im = shotImgs[o.id]!;
