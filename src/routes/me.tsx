@@ -78,6 +78,16 @@ function MePage() {
             </button>
           </div>
           {editingProfile && <ProfileEditor onClose={() => setEditingProfile(false)} />}
+
+          <div className="mt-4">
+            <Link
+              to="/contribution"
+              className="inline-flex items-center gap-2 border border-accent/40 bg-accent/5 px-3 py-1.5 text-xs text-accent hover:bg-accent hover:text-background"
+            >
+              我的贡献积分 / 邀请好友 →
+            </Link>
+          </div>
+
           <MyTags tags={data.my_tags ?? []} />
 
           <div className="mt-6 inline-flex border border-border">

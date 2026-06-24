@@ -1,20 +1,24 @@
 import * as React from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useAuth } from "@/components/auth-context";
 import { toast } from "sonner";
 import { setRemember, consumeExpiredNotice } from "@/lib/remember-login";
 import { useI18n, usePageMeta } from "@/lib/i18n";
+import { bindInviter } from "@/lib/api/contribution.functions";
 
 type LoginSearch = {
   redirect?: string;
+  ref?: string;
 };
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): LoginSearch => ({
     redirect: typeof s.redirect === "string" ? s.redirect : undefined,
+    ref: typeof s.ref === "string" ? s.ref : undefined,
   }),
   head: () => ({ meta: [{ title: "登录 · 女性友好体验测评" }] }),
   component: LoginPage,
@@ -24,18 +28,20 @@ function LoginPage() {
   const { t } = useI18n();
   usePageMeta("seo.login.title");
   const navigate = useNavigate();
-  const { redirect } = useSearch({ from: "/login" });
+  const { redirect, ref } = useSearch({ from: "/login" });
   const safeRedirect = typeof redirect === "string" && redirect.startsWith("/") ? redirect : "/";
   const { ready, user } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(ref ? "signup" : "signin");
   const [method, setMethod] = useState<"password" | "otp">("password");
   const [otpStep, setOtpStep] = useState<"request" | "verify">("request");
   const [otpCode, setOtpCode] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [pending, setPending] = useState(false);
   const [remember, setRememberState] = useState(true);
+  const bindInviterFn = useServerFn(bindInviter);
   const [errorDetail, setErrorDetail] = useState<null | {
     title: string;
     hint: string;
@@ -45,6 +51,37 @@ function LoginPage() {
     canResend?: boolean;
   }>(null);
 
+  // 初始化邀请码：URL 优先 → localStorage 缓存
+  useEffect(() => {
+    if (ref) {
+      setInviteCode(ref.toUpperCase());
+      try { localStorage.setItem("pending_invite_code", ref.toUpperCase()); } catch {}
+    } else {
+      try {
+        const cached = localStorage.getItem("pending_invite_code");
+        if (cached) setInviteCode(cached);
+      } catch {}
+    }
+  }, [ref]);
+
+  // 登录后若有暂存的邀请码，尝试绑定
+  useEffect(() => {
+    if (!ready || !user) return;
+    let cached = "";
+    try { cached = localStorage.getItem("pending_invite_code") ?? ""; } catch {}
+    if (cached) {
+      bindInviterFn({ data: { code: cached } })
+        .then((r) => {
+          try { localStorage.removeItem("pending_invite_code"); } catch {}
+          if (r.ok) toast.success("邀请绑定成功，邀请人获得 5 分积分");
+        })
+        .catch(() => { try { localStorage.removeItem("pending_invite_code"); } catch {} })
+        .finally(() => navigate({ to: safeRedirect, replace: true }));
+    } else {
+      navigate({ to: safeRedirect, replace: true });
+    }
+  }, [ready, user, navigate, safeRedirect, bindInviterFn]);
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const id = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
@@ -52,14 +89,11 @@ function LoginPage() {
   }, [resendCooldown]);
 
   useEffect(() => {
-    if (ready && user) navigate({ to: safeRedirect, replace: true });
-  }, [ready, user, navigate, safeRedirect]);
-
-  useEffect(() => {
     if (consumeExpiredNotice()) {
       toast.info(t("login.expired"));
     }
   }, [t]);
+
 
   const PASSWORD_MIN_LENGTH = 8;
   const passwordValid = password.length >= PASSWORD_MIN_LENGTH;
@@ -280,6 +314,10 @@ function LoginPage() {
     setPending(true);
     try {
       if (mode === "signup") {
+        // 暂存邀请码，等待登录会话建立后由上方 useEffect 调用 bindInviter
+        if (inviteCode.trim()) {
+          try { localStorage.setItem("pending_invite_code", inviteCode.trim().toUpperCase()); } catch {}
+        }
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -446,7 +484,17 @@ function LoginPage() {
               className="w-full border border-border bg-card p-3 text-sm outline-none focus:border-foreground"
             />
             {mode === "signup" && (
-              <p className="text-xs text-muted-foreground">{t("login.passwordRule")}</p>
+              <>
+                <p className="text-xs text-muted-foreground">{t("login.passwordRule")}</p>
+                <input
+                  type="text"
+                  placeholder="邀请码（选填）"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  maxLength={20}
+                  className="w-full border border-border bg-card p-3 text-sm uppercase tracking-widest outline-none focus:border-foreground"
+                />
+              </>
             )}
             <label className="flex cursor-pointer select-none items-center gap-2 py-1 text-sm text-muted-foreground">
               <input

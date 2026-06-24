@@ -15,11 +15,13 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RequestObjectRouteImport } from './routes/request-object'
 import { Route as MeRouteImport } from './routes/me'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as HowWeJudgeRouteImport } from './routes/how-we-judge'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
+import { Route as ContributionRouteImport } from './routes/contribution'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -42,6 +44,7 @@ import { Route as AdminObservationsRouteImport } from './routes/admin.observatio
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
 import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
 import { Route as AdminFeedbackRouteImport } from './routes/admin.feedback'
+import { Route as AdminContributionRouteImport } from './routes/admin.contribution'
 import { Route as AdminCommentsRouteImport } from './routes/admin.comments'
 import { Route as AdminBulkImportRouteImport } from './routes/admin.bulk-import'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
@@ -77,6 +80,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeaderboardRoute = LeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KnowledgeRoute = KnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
@@ -100,6 +108,11 @@ const FeedRoute = FeedRouteImport.update({
 const DiscussionsRoute = DiscussionsRouteImport.update({
   id: '/discussions',
   path: '/discussions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContributionRoute = ContributionRouteImport.update({
+  id: '/contribution',
+  path: '/contribution',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -212,6 +225,11 @@ const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
   path: '/feedback',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContributionRoute = AdminContributionRouteImport.update({
+  id: '/contribution',
+  path: '/contribution',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCommentsRoute = AdminCommentsRouteImport.update({
   id: '/comments',
   path: '/comments',
@@ -237,11 +255,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/contribution': typeof ContributionRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
   '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
@@ -252,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/contribution': typeof AdminContributionRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
@@ -275,11 +296,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/contribution': typeof ContributionRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
   '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
@@ -290,6 +313,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/contribution': typeof AdminContributionRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
@@ -315,11 +339,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/contribution': typeof ContributionRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
   '/how-we-judge': typeof HowWeJudgeRoute
   '/knowledge': typeof KnowledgeRoute
+  '/leaderboard': typeof LeaderboardRoute
   '/login': typeof LoginRoute
   '/me': typeof MeRoute
   '/request-object': typeof RequestObjectRoute
@@ -330,6 +356,7 @@ export interface FileRoutesById {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/contribution': typeof AdminContributionRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
@@ -356,11 +383,13 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/contribution'
     | '/discussions'
     | '/feed'
     | '/feedback'
     | '/how-we-judge'
     | '/knowledge'
+    | '/leaderboard'
     | '/login'
     | '/me'
     | '/request-object'
@@ -371,6 +400,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/contribution'
     | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
@@ -394,11 +424,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/contribution'
     | '/discussions'
     | '/feed'
     | '/feedback'
     | '/how-we-judge'
     | '/knowledge'
+    | '/leaderboard'
     | '/login'
     | '/me'
     | '/request-object'
@@ -409,6 +441,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/contribution'
     | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
@@ -433,11 +466,13 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/contribution'
     | '/discussions'
     | '/feed'
     | '/feedback'
     | '/how-we-judge'
     | '/knowledge'
+    | '/leaderboard'
     | '/login'
     | '/me'
     | '/request-object'
@@ -448,6 +483,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/contribution'
     | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
@@ -473,11 +509,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ContributionRoute: typeof ContributionRoute
   DiscussionsRoute: typeof DiscussionsRoute
   FeedRoute: typeof FeedRoute
   FeedbackRoute: typeof FeedbackRoute
   HowWeJudgeRoute: typeof HowWeJudgeRoute
   KnowledgeRoute: typeof KnowledgeRoute
+  LeaderboardRoute: typeof LeaderboardRoute
   LoginRoute: typeof LoginRoute
   MeRoute: typeof MeRoute
   RequestObjectRoute: typeof RequestObjectRoute
@@ -540,6 +578,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leaderboard': {
+      id: '/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof LeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/knowledge': {
       id: '/knowledge'
       path: '/knowledge'
@@ -573,6 +618,13 @@ declare module '@tanstack/react-router' {
       path: '/discussions'
       fullPath: '/discussions'
       preLoaderRoute: typeof DiscussionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contribution': {
+      id: '/contribution'
+      path: '/contribution'
+      fullPath: '/contribution'
+      preLoaderRoute: typeof ContributionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -729,6 +781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFeedbackRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contribution': {
+      id: '/admin/contribution'
+      path: '/contribution'
+      fullPath: '/admin/contribution'
+      preLoaderRoute: typeof AdminContributionRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/comments': {
       id: '/admin/comments'
       path: '/comments'
@@ -765,6 +824,7 @@ interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBulkImportRoute: typeof AdminBulkImportRoute
   AdminCommentsRoute: typeof AdminCommentsRoute
+  AdminContributionRoute: typeof AdminContributionRoute
   AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminKnowledgeRoute: typeof AdminKnowledgeRoute
   AdminObjectsRoute: typeof AdminObjectsRoute
@@ -780,6 +840,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminBulkImportRoute: AdminBulkImportRoute,
   AdminCommentsRoute: AdminCommentsRoute,
+  AdminContributionRoute: AdminContributionRoute,
   AdminFeedbackRoute: AdminFeedbackRoute,
   AdminKnowledgeRoute: AdminKnowledgeRoute,
   AdminObjectsRoute: AdminObjectsRoute,
@@ -807,11 +868,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  ContributionRoute: ContributionRoute,
   DiscussionsRoute: DiscussionsRoute,
   FeedRoute: FeedRoute,
   FeedbackRoute: FeedbackRoute,
   HowWeJudgeRoute: HowWeJudgeRoute,
   KnowledgeRoute: KnowledgeRoute,
+  LeaderboardRoute: LeaderboardRoute,
   LoginRoute: LoginRoute,
   MeRoute: MeRoute,
   RequestObjectRoute: RequestObjectRoute,

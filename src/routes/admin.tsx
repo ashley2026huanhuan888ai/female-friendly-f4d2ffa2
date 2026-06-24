@@ -108,6 +108,7 @@ function AdminLayout() {
             { to: "/admin/bulk-import", label: "批量导入" },
             { to: "/admin/requests", label: "对象申请" },
             { to: "/admin/users", label: "用户信誉" },
+            { to: "/admin/contribution", label: "积分" },
             { to: "/admin/audit", label: "审计日志" },
           ].map((t) => (
             <Link
