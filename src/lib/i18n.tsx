@@ -308,6 +308,10 @@ const COPY = {
     "objectDetail.showing": "当前展示 {shown} / {total} 条已审核观察。",
     "objectDetail.addObservation": "添加观察",
     "objectDetail.noReviewed": "尚无已审核的观察记录。",
+    "objectDetail.deleteObservation": "删除",
+    "objectDetail.deleteConfirm": "确认删除该观察？此操作不可撤销。",
+    "objectDetail.deleteSuccess": "已删除观察",
+
     "objectDetail.loadMore": "加载更多观察",
     "objectDetail.sourceLink": "来源链接",
     "objectDetail.screenshotEvidence": "截图证据",
