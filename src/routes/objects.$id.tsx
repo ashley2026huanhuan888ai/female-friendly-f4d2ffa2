@@ -237,12 +237,17 @@ function ObjectDetail() {
                         "text-sm text-muted-foreground",
                       ][tier];
                       return (
-                        <span key={tt.tag} className={`leading-tight ${cls}`}>
+                        <Link
+                          key={tt.tag}
+                          to="/objects"
+                          search={{ tag: tt.tag }}
+                          className={`leading-tight hover:text-accent ${cls}`}
+                        >
                           {tag(tt.tag)}
                           <span className="ml-1 text-[10px] text-muted-foreground align-baseline">
                             ·{tt.count}
                           </span>
-                        </span>
+                        </Link>
                       );
                     });
                   })()}
@@ -276,9 +281,14 @@ function ObjectDetail() {
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {topTags.map((tt) => (
-                    <span key={tt.tag} className="border border-border px-3 py-1 text-xs">
+                    <Link
+                      key={tt.tag}
+                      to="/objects"
+                      search={{ tag: tt.tag }}
+                      className="border border-border px-3 py-1 text-xs hover:border-accent hover:text-accent"
+                    >
                       {tag(tt.tag)} <span className="text-muted-foreground">· {tt.count}</span>
-                    </span>
+                    </Link>
                   ))}
                 </div>
               </div>
