@@ -37,8 +37,9 @@ export function Thermometer({ value, size = "md", showLabel = true, unmeasured =
   return (
     <div className="flex flex-col">
       <div
-        className={`font-serif tabular-nums ${numCls}`}
+        className={`font-serif font-bold tabular-nums ${numCls}`}
         style={{ color: band.color }}
+
       >
         {v.toFixed(0)}
         <span className="ml-0.5 text-base text-muted-foreground">°C</span>
