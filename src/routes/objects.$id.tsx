@@ -176,31 +176,74 @@ function ObjectDetail() {
               <p className="mt-6 max-w-2xl text-base text-muted-foreground">{obj.description}</p>
             )}
 
-            <div className="mt-4 rounded-sm bg-card/40 px-4 py-5 md:mt-10 md:bg-transparent md:px-0 md:py-0">
+            {/* Mobile: tag cloud sized by mention count */}
+            {topTags.length > 0 ? (
+              <div className="mt-4 rounded-sm bg-card/40 px-4 py-5 md:hidden">
+                <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+                  {t("objectDetail.topTags")}
+                </div>
+                <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-2">
+                  {(() => {
+                    const max = topTags[0]?.count ?? 1;
+                    const min = topTags[topTags.length - 1]?.count ?? 1;
+                    const range = Math.max(max - min, 1);
+                    return topTags.map((tt) => {
+                      const ratio = (tt.count - min) / range; // 0..1
+                      const tier = ratio > 0.75 ? 0 : ratio > 0.5 ? 1 : ratio > 0.25 ? 2 : 3;
+                      const cls = [
+                        "text-2xl font-semibold text-foreground",
+                        "text-xl font-semibold text-foreground/90",
+                        "text-base font-medium text-foreground/75",
+                        "text-sm text-muted-foreground",
+                      ][tier];
+                      return (
+                        <span key={tt.tag} className={`leading-tight ${cls}`}>
+                          {tag(tt.tag)}
+                          <span className="ml-1 text-[10px] text-muted-foreground align-baseline">
+                            ·{tt.count}
+                          </span>
+                        </span>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-sm bg-card/40 px-4 py-5 md:hidden">
+                <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+                  {t("objectDetail.latestObservation")}
+                </div>
+                <p className="mt-2 text-[15px] leading-7 whitespace-pre-wrap">
+                  {obs[0]?.content ?? t("objectDetail.noObservation")}
+                </p>
+              </div>
+            )}
+
+            {/* Desktop: latest observation */}
+            <div className="mt-10 hidden md:block">
               <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
                 {t("objectDetail.latestObservation")}
               </div>
-              <p className="mt-2 text-[15px] leading-7 whitespace-pre-wrap md:mt-3 md:max-w-2xl md:text-base md:leading-relaxed">
+              <p className="mt-3 max-w-2xl text-base leading-relaxed whitespace-pre-wrap">
                 {obs[0]?.content ?? t("objectDetail.noObservation")}
               </p>
             </div>
 
-
-
             {topTags.length > 0 && (
-              <div className="mt-10">
+              <div className="mt-10 hidden md:block">
                 <div className="text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
                   {t("objectDetail.topTags")}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {topTags.map((t) => (
-                    <span key={t.tag} className="border border-border px-3 py-1 text-xs">
-                      {tag(t.tag)} <span className="text-muted-foreground">· {t.count}</span>
+                  {topTags.map((tt) => (
+                    <span key={tt.tag} className="border border-border px-3 py-1 text-xs">
+                      {tag(tt.tag)} <span className="text-muted-foreground">· {tt.count}</span>
                     </span>
                   ))}
                 </div>
               </div>
             )}
+
 
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Link
