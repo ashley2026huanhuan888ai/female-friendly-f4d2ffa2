@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { getEvidenceLibrary } from "@/lib/api/archive.functions";
 import { formatDateForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
+import { highlightKeywords } from "@/lib/highlight-keywords";
 
 export const Route = createFileRoute("/archive/evidence")({
   head: () => ({ meta: [{ title: "证据库（A 级） · 女性友好体验测评" }] }),
@@ -74,7 +75,7 @@ function EvidenceLib() {
                       </span>
                     </div>
                     <p className="mt-2 text-base leading-relaxed group-hover:text-accent">
-                      {it.summary}
+                      {highlightKeywords(it.summary)}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-x-3 text-xs text-muted-foreground">
                       {it.tags.slice(0, 6).map((t: string) => (
