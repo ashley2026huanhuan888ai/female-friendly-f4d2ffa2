@@ -31,6 +31,7 @@ import { Route as TopicsTagRouteImport } from './routes/topics.$tag'
 import { Route as SubmitObjectIdRouteImport } from './routes/submit.$objectId'
 import { Route as ObjectsIdRouteImport } from './routes/objects.$id'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages.$peerId'
+import { Route as DevLongImagePreviewRouteImport } from './routes/dev.long-image-preview'
 import { Route as DevExportPreviewRouteImport } from './routes/dev.export-preview'
 import { Route as ArchiveEvidenceRouteImport } from './routes/archive.evidence'
 import { Route as ArchiveCaseCodeRouteImport } from './routes/archive.$caseCode'
@@ -156,6 +157,11 @@ const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
   path: '/messages/$peerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevLongImagePreviewRoute = DevLongImagePreviewRouteImport.update({
+  id: '/dev/long-image-preview',
+  path: '/dev/long-image-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevExportPreviewRoute = DevExportPreviewRouteImport.update({
   id: '/dev/export-preview',
   path: '/dev/export-preview',
@@ -256,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
   '/dev/export-preview': typeof DevExportPreviewRoute
+  '/dev/long-image-preview': typeof DevLongImagePreviewRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
   '/dev/export-preview': typeof DevExportPreviewRoute
+  '/dev/long-image-preview': typeof DevLongImagePreviewRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
@@ -332,6 +340,7 @@ export interface FileRoutesById {
   '/archive/$caseCode': typeof ArchiveCaseCodeRoute
   '/archive/evidence': typeof ArchiveEvidenceRoute
   '/dev/export-preview': typeof DevExportPreviewRoute
+  '/dev/long-image-preview': typeof DevLongImagePreviewRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/objects/$id': typeof ObjectsIdRoute
   '/submit/$objectId': typeof SubmitObjectIdRoute
@@ -372,6 +381,7 @@ export interface FileRouteTypes {
     | '/archive/$caseCode'
     | '/archive/evidence'
     | '/dev/export-preview'
+    | '/dev/long-image-preview'
     | '/messages/$peerId'
     | '/objects/$id'
     | '/submit/$objectId'
@@ -409,6 +419,7 @@ export interface FileRouteTypes {
     | '/archive/$caseCode'
     | '/archive/evidence'
     | '/dev/export-preview'
+    | '/dev/long-image-preview'
     | '/messages/$peerId'
     | '/objects/$id'
     | '/submit/$objectId'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/archive/$caseCode'
     | '/archive/evidence'
     | '/dev/export-preview'
+    | '/dev/long-image-preview'
     | '/messages/$peerId'
     | '/objects/$id'
     | '/submit/$objectId'
@@ -475,6 +487,7 @@ export interface RootRouteChildren {
   ArchiveCaseCodeRoute: typeof ArchiveCaseCodeRoute
   ArchiveEvidenceRoute: typeof ArchiveEvidenceRoute
   DevExportPreviewRoute: typeof DevExportPreviewRoute
+  DevLongImagePreviewRoute: typeof DevLongImagePreviewRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   ObjectsIdRoute: typeof ObjectsIdRoute
   SubmitObjectIdRoute: typeof SubmitObjectIdRoute
@@ -639,6 +652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesPeerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dev/long-image-preview': {
+      id: '/dev/long-image-preview'
+      path: '/dev/long-image-preview'
+      fullPath: '/dev/long-image-preview'
+      preLoaderRoute: typeof DevLongImagePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dev/export-preview': {
       id: '/dev/export-preview'
       path: '/dev/export-preview'
@@ -801,6 +821,7 @@ const rootRouteChildren: RootRouteChildren = {
   ArchiveCaseCodeRoute: ArchiveCaseCodeRoute,
   ArchiveEvidenceRoute: ArchiveEvidenceRoute,
   DevExportPreviewRoute: DevExportPreviewRoute,
+  DevLongImagePreviewRoute: DevLongImagePreviewRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   ObjectsIdRoute: ObjectsIdRoute,
   SubmitObjectIdRoute: SubmitObjectIdRoute,
