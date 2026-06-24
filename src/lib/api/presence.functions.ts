@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
 
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 const VISITOR_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -33,6 +33,7 @@ export const recordPresence = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const now = new Date();
     const { error } = await supabaseAdmin.from("presence_sessions" as never).upsert(
       {
@@ -47,6 +48,7 @@ export const recordPresence = createServerFn({ method: "POST" })
   });
 
 export async function getPresenceCounts() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const now = new Date();
   const [online, today] = await Promise.all([
     supabaseAdmin
