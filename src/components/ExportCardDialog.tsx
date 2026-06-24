@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
+import QRCode from "qrcode";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 import { getMyProfile } from "@/lib/api/profile.functions";
+import { TempText } from "@/components/TempText";
+import { bandOf } from "@/lib/temperature";
 
 type Observation = {
   id: string;
@@ -27,9 +30,14 @@ type ItemConfig = {
 type Props = {
   open: boolean;
   onClose: () => void;
-  object: { id: string; name: string; type: string };
+  object: { id: string; name: string; type: string; temperature: number };
   observations: Observation[];
 };
+
+const ACCENT = "#e0218a";
+const INK = "#1a1a1a";
+const MUTED = "#6b6b6b";
+const PAPER = "#f5f1ea";
 
 export function ExportCardDialog({ open, onClose, object, observations }: Props) {
   const { language, t, tag, objectType } = useI18n();
@@ -39,10 +47,10 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [configs, setConfigs] = useState<Record<string, ItemConfig>>({});
   const [nickname, setNickname] = useState<string>("");
   const [generating, setGenerating] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Initialize on open
   useEffect(() => {
     if (!open || observations.length === 0) return;
     setSelectedIds((prev) => (prev.size ? prev : new Set([observations[0].id])));
@@ -51,7 +59,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       for (const o of observations) {
         if (!next[o.id]) {
           next[o.id] = {
-            includeScreenshot: true,
+            includeScreenshot: !!o.screenshot_url,
             includeContent: true,
             tags: new Set(o.tags || []),
           };
@@ -68,9 +76,20 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       .catch(() => {});
   }, [open, fetchProfile]);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) return;
+    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/objects/${object.id}`;
+    QRCode.toDataURL(url, { margin: 1, width: 320, color: { dark: INK, light: "#ffffff" } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(""));
+  }, [open, object.id]);
 
-  const orderedSelected = observations.filter((o) => selectedIds.has(o.id));
+  const orderedSelected = useMemo(
+    () => observations.filter((o) => selectedIds.has(o.id)),
+    [observations, selectedIds]
+  );
+
+  if (!open) return null;
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -103,23 +122,15 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
     const c = configs[o.id];
     return c && (c.includeContent || (c.includeScreenshot && o.screenshot_url));
   });
-
   const canGenerate = orderedSelected.length > 0 && hasAnyContent;
 
   const handleExport = async () => {
     if (!cardRef.current) return;
-    if (orderedSelected.length === 0) {
-      toast.error(t("export.empty"));
-      return;
-    }
-    if (!hasAnyContent) {
-      toast.error(t("export.needContent"));
-      return;
-    }
+    if (orderedSelected.length === 0) return toast.error(t("export.empty"));
+    if (!hasAnyContent) return toast.error(t("export.needContent"));
 
     setGenerating(true);
     try {
-      // Pre-check all screenshot URLs in parallel
       const urlsToCheck = orderedSelected
         .filter((o) => configs[o.id]?.includeScreenshot && o.screenshot_url)
         .map((o) => o.screenshot_url!);
@@ -158,7 +169,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio: 2,
         cacheBust: true,
-        backgroundColor: "#f5f1ea",
+        backgroundColor: PAPER,
       });
       const a = document.createElement("a");
       a.href = dataUrl;
@@ -176,6 +187,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const archiveNo = `FF-2026-${object.id.slice(0, 6).toUpperCase()}`;
   const exporterName = nickname || t("export.anonymous");
   const allSelected = selectedIds.size === observations.length && observations.length > 0;
+  const tempBand = bandOf(object.temperature);
 
   return (
     <div
@@ -218,6 +230,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 {observations.map((o) => {
                   const checked = selectedIds.has(o.id);
                   const cfg = configs[o.id];
+                  const hasShot = !!o.screenshot_url;
                   return (
                     <div key={o.id} className="p-3">
                       <label className="flex cursor-pointer items-start gap-2 text-sm">
@@ -239,16 +252,17 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
                       {checked && cfg && (
                         <div className="ml-6 mt-3 space-y-2 border-l-2 border-border pl-3">
-                          <label className="flex items-center gap-2 text-xs">
+                          <label className={`flex items-center gap-2 text-xs ${!hasShot ? "opacity-50" : ""}`}>
                             <input
                               type="checkbox"
-                              checked={cfg.includeScreenshot}
+                              disabled={!hasShot}
+                              checked={cfg.includeScreenshot && hasShot}
                               onChange={(e) =>
                                 updateConfig(o.id, { includeScreenshot: e.target.checked })
                               }
                             />
                             {t("export.includeScreenshot")}
-                            {!o.screenshot_url && (
+                            {!hasShot && (
                               <span className="text-muted-foreground">
                                 ({t("export.noScreenshot")})
                               </span>
@@ -279,11 +293,11 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                                       onClick={() => toggleTag(o.id, tg)}
                                       className={`border px-2 py-0.5 text-[11px] ${
                                         on
-                                          ? "border-foreground bg-foreground text-background"
+                                          ? "border-accent bg-accent text-accent-foreground"
                                           : "border-border text-foreground"
                                       }`}
                                     >
-                                      {on ? "☑ " : "☐ "} {tag(tg)}
+                                      {on ? "☑ " : "☐ "} #{tag(tg)}
                                     </button>
                                   );
                                 })}
@@ -334,40 +348,41 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
               ref={cardRef}
               style={{
                 width: "1080px",
-                background: "#f5f1ea",
-                color: "#1a1a1a",
-                fontFamily: "ui-serif, Georgia, 'Songti SC', serif",
-                padding: "56px 56px 40px",
+                background: PAPER,
+                color: INK,
+                fontFamily: "ui-serif, Georgia, 'Songti SC', 'Noto Serif SC', serif",
+                padding: "64px 64px 48px",
                 boxSizing: "border-box",
               }}
             >
               {/* Header */}
-              <div style={{ borderBottom: "2px solid #1a1a1a", paddingBottom: 20, marginBottom: 28 }}>
+              <div style={{ borderBottom: `1px solid ${INK}`, paddingBottom: 24, marginBottom: 32 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <div>
-                    <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: "0.04em" }}>
+                    <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "0.04em" }}>
                       {t("export.cardTitle")}
                     </div>
-                    <div style={{ fontSize: 16, color: "#666", marginTop: 4 }}>
+                    <div style={{ fontSize: 15, color: MUTED, marginTop: 6 }}>
                       {t("export.cardSubtitle")}
                     </div>
                   </div>
-                  <div style={{ fontSize: 14, color: "#666", fontFamily: "ui-monospace, monospace" }}>
+                  <div style={{ fontSize: 13, color: MUTED, fontFamily: "ui-monospace, monospace" }}>
                     {t("export.archiveNo")}: {archiveNo}
                   </div>
                 </div>
-                <div style={{ marginTop: 18, display: "flex", alignItems: "baseline", gap: 16 }}>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.2em",
-                      color: "#999",
-                    }}
-                  >
-                    {objectType(object.type)}
+                <div style={{ marginTop: 22, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.2em", color: MUTED, marginBottom: 6 }}>
+                      {objectType(object.type)}
+                    </div>
+                    <div style={{ fontSize: 46, fontWeight: 700, lineHeight: 1.1 }}>{object.name}</div>
                   </div>
-                  <div style={{ fontSize: 44, fontWeight: 700, lineHeight: 1.1 }}>{object.name}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, fontFamily: "ui-serif, Georgia, serif" }}>
+                    <span style={{ fontSize: 64, fontWeight: 700, lineHeight: 1, color: tempBand.color, fontVariantNumeric: "tabular-nums" }}>
+                      {Math.round(object.temperature)}
+                    </span>
+                    <span style={{ fontSize: 22, color: MUTED }}>°C</span>
+                  </div>
                 </div>
               </div>
 
@@ -375,16 +390,18 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
               {orderedSelected.map((obs, idx) => {
                 const cfg = configs[obs.id];
                 if (!cfg) return null;
+                const showShot = cfg.includeScreenshot && !!obs.screenshot_url;
+                if (!showShot && !cfg.includeContent) return null;
                 return (
-                  <div key={obs.id} style={{ marginBottom: 36 }}>
+                  <div key={obs.id} style={{ marginBottom: 44 }}>
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "baseline",
-                        marginBottom: 14,
+                        marginBottom: 16,
                         fontSize: 13,
-                        color: "#999",
+                        color: MUTED,
                         textTransform: "uppercase",
                         letterSpacing: "0.16em",
                       }}
@@ -395,104 +412,70 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                       <span>{formatDateForLanguage(obs.created_at, language)}</span>
                     </div>
 
-                    {cfg.includeScreenshot && (
-                      <div style={{ marginBottom: 20 }}>
-                        {obs.screenshot_url ? (
-                          <img
-                            src={obs.screenshot_url}
-                            alt=""
-                            crossOrigin="anonymous"
-                            style={{
-                              width: "100%",
-                              display: "block",
-                              border: "1px solid #1a1a1a",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              border: "1px dashed #999",
-                              padding: "48px 0",
-                              textAlign: "center",
-                              color: "#999",
-                              fontSize: 18,
-                            }}
-                          >
-                            {t("export.noScreenshot")}
-                          </div>
-                        )}
+                    {showShot && (
+                      <div style={{ marginBottom: 22 }}>
+                        <img
+                          src={obs.screenshot_url!}
+                          alt=""
+                          crossOrigin="anonymous"
+                          style={{
+                            width: "100%",
+                            maxHeight: 720,
+                            objectFit: "contain",
+                            display: "block",
+                            border: `1px solid ${INK}`,
+                            background: "#fff",
+                          }}
+                        />
                       </div>
                     )}
 
                     <div
                       style={{
-                        border: "1px solid #1a1a1a",
-                        padding: "24px 28px",
+                        border: `1px solid ${INK}`,
+                        padding: "28px 32px",
                         background: "#fff",
                       }}
                     >
-                      {cfg.tags.size > 0 && (
-                        <div style={{ marginBottom: 20 }}>
-                          <div
-                            style={{
-                              fontSize: 14,
-                              fontWeight: 700,
-                              marginBottom: 10,
-                              borderBottom: "1px solid #1a1a1a",
-                              paddingBottom: 6,
-                            }}
-                          >
-                            {t("export.evidenceLabel")}
-                          </div>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 22px" }}>
-                            {Array.from(cfg.tags).map((tg) => (
-                              <div
-                                key={tg}
-                                style={{ fontSize: 17, display: "flex", alignItems: "center", gap: 8 }}
-                              >
-                                <span
-                                  style={{
-                                    display: "inline-block",
-                                    width: 18,
-                                    height: 18,
-                                    border: "2px solid #1a1a1a",
-                                    textAlign: "center",
-                                    lineHeight: "14px",
-                                    fontSize: 14,
-                                    color: "#e91e63",
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  ✓
-                                </span>
-                                {tag(tg)}
-                              </div>
-                            ))}
-                          </div>
+                      {/* Tag bar — 与详情页风格一致 */}
+                      {(obs.evidence_level || cfg.tags.size > 0 || obs.scene) && (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                            gap: "8px 14px",
+                            marginBottom: 16,
+                            fontSize: 13,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.12em",
+                            color: MUTED,
+                          }}
+                        >
+                          {obs.evidence_level != null && (
+                            <span style={{ border: `1px solid ${INK}`, color: INK, padding: "2px 8px" }}>
+                              {t("common.evidence")} {obs.evidence_level}
+                            </span>
+                          )}
+                          {Array.from(cfg.tags).map((tg) => (
+                            <span key={tg} style={{ color: ACCENT, fontWeight: 600 }}>
+                              #{tag(tg)}
+                            </span>
+                          ))}
+                          {obs.scene && <span>· {obs.scene}</span>}
                         </div>
                       )}
 
                       {cfg.includeContent && (
                         <div>
-                          <div
-                            style={{
-                              fontSize: 14,
-                              fontWeight: 700,
-                              marginBottom: 10,
-                              borderBottom: "1px solid #1a1a1a",
-                              paddingBottom: 6,
-                            }}
-                          >
-                            {t("export.observationLabel")}
-                          </div>
                           {obs.summary && (
                             <div
-                              style={{ fontSize: 21, fontWeight: 600, marginBottom: 10, lineHeight: 1.4 }}
+                              style={{ fontSize: 22, fontWeight: 600, marginBottom: 12, lineHeight: 1.5, color: INK }}
                             >
                               {obs.summary}
                             </div>
                           )}
-                          <div style={{ fontSize: 17, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                          <div style={{ fontSize: 19, lineHeight: 1.8, whiteSpace: "pre-wrap", color: "#2a2a2a" }}>
                             {obs.cleaned_content || obs.content}
                           </div>
                         </div>
@@ -502,23 +485,57 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 );
               })}
 
+              {/* QR archive entry block */}
+              {qrDataUrl && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: "20px 24px",
+                    border: `1px solid ${INK}`,
+                    background: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 24,
+                  }}
+                >
+                  <img
+                    src={qrDataUrl}
+                    alt="QR"
+                    style={{ width: 140, height: 140, display: "block", flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "inline-block", fontSize: 34, fontWeight: 700, borderBottom: `4px solid ${ACCENT}`, paddingBottom: 2, lineHeight: 1.15 }}>
+                      {t("export.archiveEntry")}
+                    </div>
+                    <div style={{ fontSize: 17, color: MUTED, marginTop: 10 }}>
+                      {t("export.scanToView")}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 40, color: INK, paddingLeft: 8 }}>→</div>
+                </div>
+              )}
+
               {/* Footer */}
               <div
                 style={{
-                  marginTop: 12,
-                  paddingTop: 16,
-                  borderTop: "2px solid #1a1a1a",
+                  marginTop: 24,
+                  paddingTop: 18,
+                  borderTop: `1px solid ${INK}`,
                   display: "flex",
                   justifyContent: "space-between",
-                  fontSize: 14,
-                  color: "#444",
+                  alignItems: "center",
+                  fontSize: 13,
+                  color: MUTED,
                 }}
               >
                 <div>
                   {formatDateForLanguage(new Date().toISOString(), language)} ·{" "}
-                  {t("export.exportedBy")}: <span style={{ fontWeight: 600 }}>{exporterName}</span>
+                  {t("export.exportedBy")}: <span style={{ fontWeight: 600, color: INK }}>{exporterName}</span>
                 </div>
-                <div style={{ color: "#e91e63", fontWeight: 600 }}>{t("app.name")}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontFamily: "ui-monospace, monospace" }}>{archiveNo}</span>
+                  <span style={{ color: ACCENT, fontWeight: 700 }}>{t("app.name")}</span>
+                </div>
               </div>
             </div>
           </div>
