@@ -712,6 +712,8 @@ const COPY = {
     "export.imageNotReady": "截图未能加载，请取消勾选或稍后重试",
     "export.selectAll": "全选",
     "export.deselectAll": "取消全选",
+    "export.archiveEntry": "档案入口",
+    "export.scanToView": "扫码查看完整档案",
   },
 
   en: {
@@ -1458,6 +1460,8 @@ const COPY = {
     "export.imageNotReady": "Screenshot failed to load — uncheck it or retry",
     "export.selectAll": "Select all",
     "export.deselectAll": "Deselect all",
+    "export.archiveEntry": "Archive Entry",
+    "export.scanToView": "Scan to view full archive",
   },
 
 } as const;
