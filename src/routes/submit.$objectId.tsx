@@ -8,6 +8,7 @@ import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { retryObservationAnalysis, submitObservation } from "@/lib/api/platform.functions";
 import { Thermometer } from "@/components/Thermometer";
+import { TempText } from "@/components/TempText";
 import { bandOf } from "@/lib/temperature";
 import { toast } from "sonner";
 import { formatTimeForLanguage, useI18n, usePageMeta } from "@/lib/i18n";
