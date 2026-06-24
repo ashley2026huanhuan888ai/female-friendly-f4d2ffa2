@@ -1,40 +1,32 @@
 ## 目标
-在每个对象卡片右上角温度计正下方（截图绿框处）增加「抵制」按钮，显示累计抵制次数；登录用户点击切换抵制/取消抵制（与关注按钮逻辑一致）。
+在现有 12 个预设头像基础上，按风格分组扩展到 18 个：**插画 / 几何 / 动物 各 6 个**，并在 AvatarPicker 中按分组展示。
 
-## 数据
-新建表 `public.object_boycotts`：
-- `user_id uuid` → `auth.users`，`object_id uuid` → `public.objects`，`created_at timestamptz`
-- 主键 `(user_id, object_id)` 保证一人一对象唯一
-- RLS：任何人可 SELECT（用于聚合计数），登录用户只能 INSERT/DELETE 自己的行
-- `GRANT SELECT TO anon, authenticated`；`GRANT INSERT, DELETE TO authenticated`；`GRANT ALL TO service_role`
-- 索引 `(object_id)` 便于计数
+## 实施步骤
 
-不改动 objects 表，也不写触发器；计数实时 `count(*)` 即可。
+### 1. 资源整理
+- 现有 12 张 `avatar-01 … avatar-12.png.asset.json`（已上传 CDN）作为「插画」组的前 6 张 + 「几何」组的 6 张。
+  - 经回顾，现有 12 张实为统一芭比粉极简插画，不天然契合三类。为避免风格混乱：
+  - **保留前 6 张作为「插画」组**（重命名变量 `illustration-01..06` 引用现有 asset.json，不动 CDN 文件）。
+  - **删除后 6 张** asset 指针（`delete_asset` 工具清理 avatar-07..12.png.asset.json + CDN 文件，避免占用未引用资源）。
+  - **新生成 6 张「几何」头像**：极简几何图形（圆/三角/方块/同心环），芭比粉 #E0218A 主色 + 黑白配，纯背景。
+  - **新生成 6 张「动物」头像**：极简插画动物头像（兔、猫、狐、熊、鸟、鹿），芭比粉点缀，与整体风格协调。
+  - 共 18 张，都上传到 Lovable Assets CDN 获得稳定 URL。
 
-## 服务端函数
-新文件 `src/lib/api/boycotts.functions.ts`：
-- `getBoycottStatus({ object_id })` → `{ count: number, mine: boolean }`
-  - 用 server publishable client 取总数；`requireSupabaseAuth` 不强制，登录态由 `attachSupabaseAuth` 自动带上时再查 `mine`。为简洁起见拆成两段：始终查 count（匿名也可见），再用 `auth.uid()` 检测。最干净的方式是单独一个 `toggleBoycott` 需要登录，`getBoycottStatus` 不需要。
-- `toggleBoycott({ object_id })`（`.middleware([requireSupabaseAuth])`）→ `{ count, mine }`：若已存在则 DELETE，否则 INSERT，再返回最新计数与状态。
+### 2. AvatarPicker 改造
+`src/components/AvatarPicker.tsx`：
+- 定义 `AVATAR_GROUPS: { key: 'illustration'|'geometric'|'animal', label: string, urls: string[] }[]`
+- 实时预览区不变（显示当前选中头像 + 「无头像」说明）
+- 「无头像」选项保留
+- 预设网格按分组渲染：每组一个小标题（如「插画 · Illustration」）+ 6 张圆形头像 4 列网格
+- 选中态、aria-pressed、勾标记沿用现有样式
 
-## 前端
-新建 `src/components/BoycottButton.tsx`（参考 `FollowButton.tsx`）：
-- 初始 `useEffect` 拉取 `{ count, mine }`
-- 未登录点击 → 弹出现有登录提示（复用 FollowButton 的弹层样式或共用文案）
-- 已登录点击 → 调用 toggle，乐观更新 count 与 mine
-- 视觉：紧凑按钮，文案 `抵制 · N` / `已抵制 · N`，已抵制态用 accent 描边突出
-
-在 `src/components/ObjectCard.tsx`：
-- 把右侧 `<Thermometer />` 包成一个 `flex-col items-end gap-2` 容器
-- 温度计下方放 `<BoycottButton objectId={id} />`
-- 该按钮放在 `<Link>` 内会导致点击穿透到卡片跳转 → 把 Thermometer 列移出外层 `<Link>`，外层 Link 仅包裹左侧文字区；右列保持独立，按钮可正常响应点击
-
-## i18n
-在 `src/lib/i18n.tsx` 新增键：
-- `boycott.action` = "抵制"
-- `boycott.active` = "已抵制"
-- `boycott.loginTitle` / `boycott.loginBody`（复用 follow 文案也可）
+### 3. 不动的部分
+- `me.tsx` 调用方不变
+- 数据库 `profiles.avatar_url` 仍存 CDN URL 字符串
+- `profile.functions.ts` 校验不变
+- 其它显示头像的页面（leaderboard / messages / follows）不变
 
 ## 不在范围
-- 不影响积分系统、不发通知、不进入对象详情页的其它统计
-- 不修改详情页（仅卡片按需）；如后续要在详情页也加，可复用同一组件
+- 不做自定义上传
+- 不改头像尺寸或裁剪逻辑
+- 不引入新字体或排版变化
