@@ -6,6 +6,7 @@ import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { Thermometer } from "@/components/Thermometer";
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
+import { getMyProfile, updateMyProfile } from "@/lib/api/profile.functions";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -65,6 +66,7 @@ function MePage() {
             My Observatory
           </div>
           <h1 className="mt-3 font-serif text-4xl">{t("me.title")}</h1>
+          <ProfileEditor />
           <div className="mt-6 inline-flex border border-border">
             {(
               [
@@ -93,6 +95,7 @@ function MePage() {
           </div>
         </div>
       </section>
+
 
       <section className="py-12">
         <div className="container-prose">
