@@ -155,15 +155,39 @@ function ObjectDetail() {
       <section className="border-b border-border">
         <div className="container-prose grid grid-cols-1 items-start gap-4 py-8 md:grid-cols-[minmax(0,1fr)_auto] md:gap-12 md:py-24">
           <div className="min-w-0 order-2 md:order-1">
-            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            <div className="hidden md:flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               <span className="font-mono tabular-nums text-foreground">
                 {t("objectDetail.reviewedCount", { count: obj.observation_count })}
               </span>
               <span aria-hidden>·</span>
               <span>{objectType(obj.type)}</span>
             </div>
-            <div className="mt-3 flex flex-wrap items-start gap-3 md:mt-4">
-              <h1 className="font-serif text-3xl text-balance sm:text-5xl md:text-6xl">{obj.name}</h1>
+
+            {/* Mobile: title + temperature number on one row */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 md:hidden">
+              <h1 className="font-serif text-3xl text-balance">{obj.name}</h1>
+              {obj.observation_count > 0 && (
+                <span className="font-serif text-3xl leading-none text-accent tabular-nums">
+                  {Math.round(obj.temperature)}
+                  <span className="text-sm align-top">°C</span>
+                </span>
+              )}
+            </div>
+
+            {/* Mobile: hint + export button on second row */}
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:hidden">
+              <p className="truncate text-xs text-muted-foreground">{t("objectDetail.why")}</p>
+              <button
+                onClick={() => setShowExport(true)}
+                className="shrink-0 border border-foreground/60 px-3 py-1.5 text-[11px] uppercase tracking-wider hover:border-foreground"
+              >
+                {t("export.button")}
+              </button>
+            </div>
+
+            {/* Desktop: title + export button */}
+            <div className="mt-3 hidden md:flex flex-wrap items-start gap-3 md:mt-4">
+              <h1 className="font-serif text-balance sm:text-5xl md:text-6xl">{obj.name}</h1>
               <button
                 onClick={() => setShowExport(true)}
                 className="mt-2 shrink-0 border border-foreground/60 px-3 py-1.5 text-[11px] uppercase tracking-wider hover:border-foreground"
@@ -175,6 +199,7 @@ function ObjectDetail() {
             {obj.description && (
               <p className="mt-6 max-w-2xl text-base text-muted-foreground">{obj.description}</p>
             )}
+
 
             {/* Mobile: tag cloud sized by mention count */}
             {topTags.length > 0 ? (
@@ -257,7 +282,7 @@ function ObjectDetail() {
             </div>
           </div>
 
-          <div className="order-1 flex shrink-0 flex-row items-center gap-3 md:order-2 md:flex-col md:items-end">
+          <div className="order-1 hidden shrink-0 flex-row items-center gap-3 md:order-2 md:flex md:flex-col md:items-end">
             <Thermometer
               value={obj.temperature}
               size="lg"
