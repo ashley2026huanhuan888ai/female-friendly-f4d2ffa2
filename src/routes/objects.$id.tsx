@@ -14,6 +14,7 @@ import { getPublicObjectDetail, getPublicObjectObservations, deleteObservation }
 import { useAuth } from "@/components/auth-context";
 
 import { FollowButton } from "@/components/FollowButton";
+import { BoycottButton } from "@/components/BoycottButton";
 import { ObjectComments } from "@/components/ObjectComments";
 import { ExportCardDialog } from "@/components/ExportCardDialog";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
@@ -304,6 +305,7 @@ function ObjectDetail() {
                 {t("objectDetail.submit")}
               </Link>
               <FollowButton objectId={id} />
+              <BoycottButton objectId={id} />
             </div>
           </div>
 
