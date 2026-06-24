@@ -1,13 +1,6 @@
-# Hero 操作区左对齐并收窄
+## 改动
+`src/routes/index.tsx` 第 411 行：将标签 className 由灰色边框改为粉色（accent）边框 + 粉色文字 + 浅粉底，hover 加深：
 
-`src/routes/index.tsx`：
+`border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/20`
 
-- 第 106 行 form className：
-  - 由 `mx-auto mt-8 flex w-full max-w-sm border border-foreground md:mx-0 md:mt-10 md:max-w-lg`
-  - 改为 `mt-8 flex w-full max-w-md border border-foreground md:mt-10 md:max-w-lg`
-
-- 第 118 行按钮行 className：
-  - 由 `mt-6 flex flex-wrap justify-center gap-3 md:justify-start`
-  - 改为 `mt-6 flex max-w-md flex-wrap gap-3`
-
-效果：搜索框与三个 CTA 在移动端均左对齐，宽度收到正文同级（max-w-md），右侧留白。
+仅改本页对象列表的标签样式，不动其他位置（HeatSources、ObjectTimeline 等）。
