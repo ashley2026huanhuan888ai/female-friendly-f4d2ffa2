@@ -407,13 +407,8 @@ function ColumnList({
                             key={tg}
                             to="/objects"
                             search={{ tag: tg }}
-                            style={{
-                              backgroundColor: b.color,
-                              color: b.fg,
-                              borderColor: `color-mix(in oklab, ${b.color} 70%, black)`,
-                              boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${b.color} 60%, black)`,
-                            }}
-                            className="border px-1.5 py-0.5 text-[10px] font-semibold hover:opacity-90"
+                            style={{ backgroundColor: b.color }}
+                            className="px-1.5 py-0.5 text-[10px] font-normal text-white hover:opacity-90"
                           >
                             #{tagLabel(tg)}
                           </Link>
