@@ -20,6 +20,7 @@ import { Route as HowWeJudgeRouteImport } from './routes/how-we-judge'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
+import { Route as ContributionRouteImport } from './routes/contribution'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -100,6 +101,11 @@ const FeedRoute = FeedRouteImport.update({
 const DiscussionsRoute = DiscussionsRouteImport.update({
   id: '/discussions',
   path: '/discussions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContributionRoute = ContributionRouteImport.update({
+  id: '/contribution',
+  path: '/contribution',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/contribution': typeof ContributionRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/contribution': typeof ContributionRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/contribution': typeof ContributionRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/contribution'
     | '/discussions'
     | '/feed'
     | '/feedback'
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/contribution'
     | '/discussions'
     | '/feed'
     | '/feedback'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/contribution'
     | '/discussions'
     | '/feed'
     | '/feedback'
@@ -473,6 +485,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ContributionRoute: typeof ContributionRoute
   DiscussionsRoute: typeof DiscussionsRoute
   FeedRoute: typeof FeedRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -573,6 +586,13 @@ declare module '@tanstack/react-router' {
       path: '/discussions'
       fullPath: '/discussions'
       preLoaderRoute: typeof DiscussionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contribution': {
+      id: '/contribution'
+      path: '/contribution'
+      fullPath: '/contribution'
+      preLoaderRoute: typeof ContributionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -807,6 +827,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  ContributionRoute: ContributionRoute,
   DiscussionsRoute: DiscussionsRoute,
   FeedRoute: FeedRoute,
   FeedbackRoute: FeedbackRoute,
