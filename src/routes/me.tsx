@@ -69,6 +69,8 @@ function MePage() {
           </div>
           <h1 className="mt-3 font-serif text-4xl">{t("me.title")}</h1>
           <ProfileEditor />
+          <MyTags tags={data.my_tags ?? []} />
+
           <div className="mt-6 inline-flex border border-border">
             {(
               [
