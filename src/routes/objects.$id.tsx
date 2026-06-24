@@ -193,7 +193,7 @@ function ObjectDetail() {
 
             {/* Mobile: hint + export button on second row */}
             <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:hidden">
-              <p className="truncate text-xs text-muted-foreground">{t("objectDetail.why")}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{t("objectDetail.why")}</p>
               <button
                 onClick={() => setShowExport(true)}
                 className="shrink-0 border border-foreground/60 px-3 py-1.5 text-[11px] uppercase tracking-wider hover:border-foreground"
