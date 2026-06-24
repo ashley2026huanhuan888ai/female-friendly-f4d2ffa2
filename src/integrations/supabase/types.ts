@@ -1013,6 +1013,39 @@ export type Database = {
           },
         ]
       }
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          contribution_points: number | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          level: number | null
+          level_title: string | null
+          reputation: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          contribution_points?: number | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          level?: number | null
+          level_title?: string | null
+          reputation?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          contribution_points?: number | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          level?: number | null
+          level_title?: string | null
+          reputation?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_contribution: {
@@ -1051,6 +1084,30 @@ export type Database = {
       }
       derive_archive_category: { Args: { _type: string }; Returns: string }
       gen_invite_code: { Args: never; Returns: string }
+      get_my_profile: {
+        Args: never
+        Returns: {
+          auto_approve: boolean
+          avatar_url: string | null
+          bio: string | null
+          contribution_points: number
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          invite_code: string | null
+          inviter_id: string | null
+          level: number
+          level_title: string
+          reputation: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
