@@ -5,15 +5,18 @@ export interface BandInfo {
   band: TempBand;
   label: string;
   color: string; // CSS variable
+  fg: string; // 与背景对比度 >= 4.5:1 的前景色
   range: [number, number];
 }
 
+// fg 选择依据：cool/neutral/warm 明度高（L 0.65–0.7），用深色文字；hot/critical 明度较低，用白色。
+// 同时在 chip 上叠加同色描边加深 + 内阴影提升边界辨识，深浅模式通用。
 export const BANDS: BandInfo[] = [
-  { band: "comfort", label: "女性友好", color: "var(--temp-cool)", range: [20, 28] },
-  { band: "minor", label: "轻微争议", color: "var(--temp-neutral)", range: [29, 40] },
-  { band: "notable", label: "明显争议", color: "var(--temp-warm)", range: [41, 60] },
-  { band: "high", label: "高温争议", color: "var(--temp-hot)", range: [61, 80] },
-  { band: "critical", label: "极高温争议", color: "var(--temp-critical)", range: [81, 100] },
+  { band: "comfort", label: "女性友好", color: "var(--temp-cool)", fg: "oklch(0.18 0.04 200)", range: [20, 28] },
+  { band: "minor", label: "轻微争议", color: "var(--temp-neutral)", fg: "oklch(0.18 0.02 80)", range: [29, 40] },
+  { band: "notable", label: "明显争议", color: "var(--temp-warm)", fg: "oklch(0.2 0.06 60)", range: [41, 60] },
+  { band: "high", label: "高温争议", color: "var(--temp-hot)", fg: "oklch(0.99 0 0)", range: [61, 80] },
+  { band: "critical", label: "极高温争议", color: "var(--temp-critical)", fg: "oklch(0.99 0 0)", range: [81, 100] },
 ];
 
 export function bandOf(t: number): BandInfo {
