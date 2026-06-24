@@ -173,7 +173,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       );
 
       const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 2,
+        pixelRatio: 3,
         cacheBust: true,
         backgroundColor: PAPER,
       });
@@ -521,14 +521,14 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 const showShot = cfg.includeScreenshot && !!obs.screenshot_url;
                 if (!showShot && !cfg.includeContent) return null;
                 return (
-                  <div key={obs.id} style={{ marginBottom: 44 }}>
+                  <div key={obs.id} style={{ marginBottom: 56 }}>
                     <div
                       style={{
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "baseline",
-                        marginBottom: 16,
-                        fontSize: 13,
+                        marginBottom: 20,
+                        fontSize: 16,
                         color: MUTED,
                         textTransform: "uppercase",
                         letterSpacing: "0.16em",
@@ -561,7 +561,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                     <div
                       style={{
                         border: `1px solid ${INK}`,
-                        padding: "28px 32px",
+                        padding: "36px 40px",
                         background: "#fff",
                       }}
                     >
@@ -572,16 +572,16 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                             display: "flex",
                             flexWrap: "wrap",
                             alignItems: "center",
-                            gap: "8px 14px",
-                            marginBottom: 16,
-                            fontSize: 13,
+                            gap: "10px 18px",
+                            marginBottom: 22,
+                            fontSize: 17,
                             textTransform: "uppercase",
                             letterSpacing: "0.12em",
                             color: MUTED,
                           }}
                         >
                           {obs.evidence_level != null && (
-                            <span style={{ border: `1px solid ${INK}`, color: INK, padding: "2px 8px" }}>
+                            <span style={{ border: `1px solid ${INK}`, color: INK, padding: "3px 10px" }}>
                               {t("common.evidence")} {obs.evidence_level}
                             </span>
                           )}
@@ -598,12 +598,12 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                         <div>
                           {obs.summary && (
                             <div
-                              style={{ fontSize: 22, fontWeight: 600, marginBottom: 12, lineHeight: 1.5, color: INK }}
+                              style={{ fontSize: 30, fontWeight: 600, marginBottom: 18, lineHeight: 1.45, color: INK }}
                             >
                               {obs.summary}
                             </div>
                           )}
-                          <div style={{ fontSize: 19, lineHeight: 1.8, whiteSpace: "pre-wrap", color: "#2a2a2a" }}>
+                          <div style={{ fontSize: 24, lineHeight: 1.8, whiteSpace: "pre-wrap", color: "#2a2a2a" }}>
                             {obs.cleaned_content || obs.content}
                           </div>
                         </div>
@@ -623,7 +623,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  fontSize: 13,
+                  fontSize: 16,
                   color: MUTED,
                 }}
               >
