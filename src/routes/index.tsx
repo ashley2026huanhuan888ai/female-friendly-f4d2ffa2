@@ -1,12 +1,29 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
 import { Thermometer } from "@/components/Thermometer";
 import { getHomeSummary } from "@/lib/api/observation-center.functions";
 import { useI18n, usePageMeta } from "@/lib/i18n";
 import { highlightKeywords } from "@/lib/highlight-keywords";
+
+const EMPTY_SUMMARY = {
+  today_events: [],
+  today_events_count: 0,
+  heating: [],
+  cooling: [],
+  latest_cases: [],
+  latest_observations: [],
+  newest_objects: [],
+  trending_tags: [],
+} as any;
+
+const homeSummaryQueryOptions = queryOptions({
+  queryKey: ["home-summary"],
+  queryFn: () => getHomeSummary(),
+  staleTime: 60_000,
+});
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,45 +37,41 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "观察 · 分析 · 不审判。" },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(homeSummaryQueryOptions),
+  errorComponent: HomeError,
   component: Index,
 });
+
+function HomeError({ reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  return (
+    <SiteLayout>
+      <section className="container-prose py-20">
+        <p className="text-sm text-destructive">加载失败，请重试。</p>
+        <button
+          type="button"
+          onClick={() => {
+            reset();
+            router.invalidate();
+          }}
+          className="mt-4 border border-foreground px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-foreground hover:text-background"
+        >
+          重试
+        </button>
+      </section>
+    </SiteLayout>
+  );
+}
 
 function Index() {
   const { t, objectType, tag: tagLabel, language } = useI18n();
   usePageMeta("seo.home.title", "seo.home.description");
   const [q, setQ] = useState("");
-  const [summary, setSummary] = useState<any>(null);
-  const [obsStatus, setObsStatus] = useState<"loading" | "ready" | "error">("loading");
-  const fetchSummary = useServerFn(getHomeSummary);
+  const { data: summary } = useSuspenseQuery(homeSummaryQueryOptions);
   const sentenceGap = language === "en" ? " " : "";
   const topicWall = (summary?.trending_tags ?? []).slice(0, 14);
   const maxTopicCount = Math.max(1, ...topicWall.map((item: any) => Number(item.count) || 0));
 
-  const loadSummary = useCallback(() => {
-    setObsStatus("loading");
-    fetchSummary()
-      .then((data) => {
-        setSummary(data);
-        setObsStatus("ready");
-      })
-      .catch(() => {
-        setSummary({
-          today_events: [],
-          today_events_count: 0,
-          heating: [],
-          cooling: [],
-          latest_cases: [],
-          latest_observations: [],
-          newest_objects: [],
-          trending_tags: [],
-        });
-        setObsStatus("error");
-      });
-  }, [fetchSummary]);
-
-  useEffect(() => {
-    loadSummary();
-  }, [loadSummary]);
 
   return (
     <SiteLayout>
