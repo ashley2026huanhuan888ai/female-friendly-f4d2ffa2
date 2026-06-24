@@ -240,7 +240,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:p-8"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="relative w-full max-w-2xl bg-background shadow-2xl"
