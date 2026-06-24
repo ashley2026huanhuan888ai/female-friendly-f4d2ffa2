@@ -408,7 +408,7 @@ function ColumnList({
                           key={tg}
                           to="/objects"
                           search={{ tag: tg }}
-                          className="border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:border-foreground/50 hover:text-foreground"
+                          className="border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/20"
                         >
                           #{tagLabel(tg)}
                         </Link>
