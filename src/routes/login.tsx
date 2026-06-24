@@ -314,6 +314,10 @@ function LoginPage() {
     setPending(true);
     try {
       if (mode === "signup") {
+        // 暂存邀请码，等待登录会话建立后由上方 useEffect 调用 bindInviter
+        if (inviteCode.trim()) {
+          try { localStorage.setItem("pending_invite_code", inviteCode.trim().toUpperCase()); } catch {}
+        }
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
