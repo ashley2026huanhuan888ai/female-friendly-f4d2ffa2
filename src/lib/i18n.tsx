@@ -712,6 +712,8 @@ const COPY = {
     "export.imageNotReady": "截图未能加载，请取消勾选或稍后重试",
     "export.selectAll": "全选",
     "export.deselectAll": "取消全选",
+    "export.archiveEntry": "档案入口",
+    "export.scanToView": "扫码查看完整档案",
   },
 
   en: {
