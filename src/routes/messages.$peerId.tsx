@@ -121,7 +121,7 @@ function MessageThread() {
             <p className="text-sm text-destructive">{t("common.loadError")}</p>
           )}
           {status === "ready" && data && (
-            data.messages.length === 0 ? (
+            data.messages.length === 0 && pending.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("messages.threadEmpty")}</p>
             ) : (
               <ul className="flex flex-col gap-3">
@@ -139,16 +139,53 @@ function MessageThread() {
                     >
                       <p className="whitespace-pre-wrap">{m.body}</p>
                       <div
-                        className={`mt-1 text-[10px] ${
+                        className={`mt-1 flex items-center gap-2 text-[10px] ${
                           m.from_me ? "text-background/70" : "text-muted-foreground"
                         }`}
                       >
-                        {formatDateForLanguage(m.created_at, language, {
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        <span>
+                          {formatDateForLanguage(m.created_at, language, {
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {m.from_me && <span>· {t("messages.sent")}</span>}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+                {pending.map((p) => (
+                  <li key={p.tempId} className="flex justify-end">
+                    <div
+                      className={`max-w-[80%] border px-3 py-2 text-sm ${
+                        p.status === "failed"
+                          ? "border-destructive bg-background text-destructive"
+                          : "border-foreground/40 bg-foreground/70 text-background"
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap">{p.body}</p>
+                      <div className="mt-1 flex items-center gap-2 text-[10px]">
+                        {p.status === "sending" ? (
+                          <span className="text-background/80">· {t("messages.sending")}</span>
+                        ) : (
+                          <>
+                            <span className="text-destructive">· {t("messages.sendFailed")}</span>
+                            <button
+                              onClick={() => retryPending(p)}
+                              className="underline hover:no-underline"
+                            >
+                              {t("common.retry")}
+                            </button>
+                            <button
+                              onClick={() => removePending(p.tempId)}
+                              className="underline hover:no-underline"
+                            >
+                              {t("common.cancel") || "×"}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </li>
