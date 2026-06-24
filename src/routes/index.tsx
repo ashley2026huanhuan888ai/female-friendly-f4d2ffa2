@@ -227,7 +227,16 @@ function Index() {
               ))}
             </ul>
           ) : obsStatus === "error" ? (
-            <p className="mt-6 text-sm text-destructive">{t("common.loadError")}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <p className="text-sm text-destructive">{t("common.loadError")}</p>
+              <button
+                type="button"
+                onClick={loadSummary}
+                className="border border-foreground px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-foreground hover:text-background"
+              >
+                {t("common.retry")}
+              </button>
+            </div>
           ) : summary?.latest_observations?.length ? (
             <ul className="mt-6 grid gap-4 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0 animate-fade-in">
               {summary.latest_observations.slice(0, 6).map((o: any) => {
