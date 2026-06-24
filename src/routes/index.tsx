@@ -63,17 +63,17 @@ function Index() {
     <SiteLayout>
       {/* HERO */}
       <section className="">
-        <div className="container-prose grid gap-10 pt-6 pb-12 md:grid-cols-[1.5fr_1fr] md:pt-10 md:pb-16">
+        <div className="container-prose grid gap-8 pt-10 pb-14 text-center md:grid-cols-[1.5fr_1fr] md:gap-10 md:pt-10 md:pb-16 md:text-left">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+            <div className="inline-block text-[11px] uppercase tracking-[0.18em] text-muted-foreground md:tracking-[0.2em]">
               Observatory · Est. 2026
             </div>
-            <h1 className="mt-6 font-serif text-5xl leading-[1.05] text-balance md:text-7xl">
+            <h1 className="mx-auto mt-6 max-w-[20ch] font-serif text-4xl leading-[1.1] text-balance md:mx-0 md:max-w-none md:text-7xl">
               {t("home.hero.title.before")}
               <span className="text-accent">{t("home.hero.title.accent")}</span>
               {t("home.hero.title.after")}
             </h1>
-            <ol className="mt-8 grid grid-cols-3 gap-2 sm:gap-3">
+            <ol className="mt-6 grid grid-cols-3 gap-3 text-left md:mt-8">
               {([1, 2, 3] as const).map((n) => (
                 <li key={n}>
                   <Link
@@ -91,7 +91,7 @@ function Index() {
                 </li>
               ))}
             </ol>
-            <p className="mt-8 max-w-2xl text-base text-muted-foreground">
+            <p className="mx-auto mt-6 max-w-md text-left text-sm text-muted-foreground md:mx-0 md:mt-8 md:max-w-2xl md:text-base">
               {t("home.hero.body")}
               {sentenceGap}
               <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
@@ -103,7 +103,7 @@ function Index() {
                 e.preventDefault();
                 window.location.href = `/objects?q=${encodeURIComponent(q)}`;
               }}
-              className="mt-10 flex max-w-lg border border-foreground"
+              className="mx-auto mt-8 flex w-full max-w-sm border border-foreground md:mx-0 md:mt-10 md:max-w-lg"
             >
               <input
                 value={q}
@@ -115,7 +115,7 @@ function Index() {
                 {t("home.search.button")}
               </button>
             </form>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
               <Link
                 to="/objects"
                 className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent"
