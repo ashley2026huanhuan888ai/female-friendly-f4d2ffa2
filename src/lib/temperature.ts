@@ -21,7 +21,12 @@ export const BANDS: BandInfo[] = [
 
 export function bandOf(t: number): BandInfo {
   const v = Math.max(20, Math.min(100, t));
-  return BANDS.find((b) => v >= b.range[0] && v <= b.range[1]) ?? BANDS[0];
+  // 使用上界阈值，避免小数（如 28.5、40.5）落入区间空隙后默认归为 comfort
+  if (v <= 28) return BANDS[0];
+  if (v <= 40) return BANDS[1];
+  if (v <= 60) return BANDS[2];
+  if (v <= 80) return BANDS[3];
+  return BANDS[4];
 }
 
 // 证据强度：A=1.0 / B=0.8 / C=0.5 / D=0（D 不参与计算）
