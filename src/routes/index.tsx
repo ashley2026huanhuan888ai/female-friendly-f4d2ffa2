@@ -92,53 +92,50 @@ function Index() {
                 </li>
               ))}
             </ol>
-            <div className="max-w-[18rem] sm:max-w-md md:max-w-lg">
-              <p className="mt-6 text-sm text-muted-foreground md:mt-8 md:text-base">
-                {t("home.hero.body")}
-                {sentenceGap}
-                <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
-                {sentenceGap}
-                {t("home.hero.actions")}
-              </p>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  window.location.href = `/objects?q=${encodeURIComponent(q)}`;
-                }}
-                className="mt-8 flex w-full border border-foreground md:mt-10"
+            <p className="mt-6 max-w-md text-sm text-muted-foreground md:mt-8 md:max-w-2xl md:text-base">
+              {t("home.hero.body")}
+              {sentenceGap}
+              <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
+              {sentenceGap}
+              {t("home.hero.actions")}
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                window.location.href = `/objects?q=${encodeURIComponent(q)}`;
+              }}
+              className="mt-8 flex w-full max-w-md border border-foreground md:mt-10 md:max-w-lg"
+            >
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={t("home.search.placeholder")}
+                className="flex-1 bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
+              />
+              <button className="bg-accent px-5 py-3 text-sm text-accent-foreground hover:bg-accent/90">
+                {t("home.search.button")}
+              </button>
+            </form>
+            <div className="mt-6 flex max-w-md flex-wrap gap-3">
+              <Link
+                to="/objects"
+                className="border border-accent bg-accent px-4 py-2 text-xs uppercase tracking-wider text-accent-foreground hover:bg-accent/90"
               >
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder={t("home.search.placeholder")}
-                  className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm outline-none placeholder:text-muted-foreground"
-                />
-                <button className="shrink-0 bg-accent px-5 py-3 text-sm text-accent-foreground hover:bg-accent/90">
-                  {t("home.search.button")}
-                </button>
-              </form>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link
-                  to="/objects"
-                  className="border border-accent bg-accent px-4 py-2 text-xs uppercase tracking-wider text-accent-foreground hover:bg-accent/90"
-                >
-                  {t("home.cta.browse")}
-                </Link>
-                <Link
-                  to="/feed"
-                  className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
-                >
-                  {t("home.cta.feed")}
-                </Link>
-                <Link
-                  to="/feedback"
-                  className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
-                >
-                  {t("home.cta.feedback")}
-                </Link>
-              </div>
+                {t("home.cta.browse")}
+              </Link>
+              <Link
+                to="/feed"
+                className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+              >
+                {t("home.cta.feed")}
+              </Link>
+              <Link
+                to="/feedback"
+                className="border border-foreground/60 px-4 py-2 text-xs uppercase tracking-wider text-foreground hover:border-foreground"
+              >
+                {t("home.cta.feedback")}
+              </Link>
             </div>
-
           </div>
 
           <div className="border border-border bg-card p-6">
