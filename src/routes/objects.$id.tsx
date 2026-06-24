@@ -376,6 +376,15 @@ function ObjectDetail() {
                     ))}
                     {o.scene && <span>· {o.scene}</span>}
                     <span className="ml-auto">{formatDateForLanguage(o.created_at, language)}</span>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDeleteObservation(o.id)}
+                        className="border border-destructive/60 px-2 py-0.5 text-[10px] uppercase tracking-wider text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        {t("objectDetail.deleteObservation")}
+                      </button>
+                    )}
+
                   </div>
                   {o.summary && (
                     <p className="mt-3 text-sm font-medium leading-relaxed">{o.summary}</p>
