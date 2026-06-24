@@ -10,7 +10,7 @@ import { HeatSources } from "@/components/HeatSources";
 import { TemperatureTimeline } from "@/components/TemperatureTimeline";
 import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
 import { getPublicObjectDetail, getPublicObjectObservations, deleteObservation } from "@/lib/api/platform.functions";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/components/auth-context";
 
 import { FollowButton } from "@/components/FollowButton";
 import { ObjectComments } from "@/components/ObjectComments";
