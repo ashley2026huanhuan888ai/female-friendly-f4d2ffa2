@@ -39,6 +39,7 @@ export type ExportInput = {
 const ACCENT = "#e0218a";
 const INK = "#1a1a1a";
 const MUTED = "#6b6b6b";
+const BORDER = "#d9d2c4";
 const PAPER = "#f5f1ea";
 const W = 640;
 const PAD = 36;
@@ -54,10 +55,11 @@ const TYPO = {
   summaryLH: 1.45,
   bodySize: 30,
   bodyLH: 1.65,
-  tagSize: 25,
-  tagSizeDense: 23,
-  tagLH: 36,
-  tagGapX: 14,
+  tagSize: 22,
+  tagSizeDense: 20,
+  tagLH: 42,
+  tagGapX: 10,
+  tagPadX: 12,
   tempSize: 72,
   tempSize3Digit: 60,
   tempUnitSize: 24,
