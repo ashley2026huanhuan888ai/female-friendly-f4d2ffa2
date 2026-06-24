@@ -127,18 +127,33 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   const headerH = 24 + 38 * 1.1 + 8 + 15 + 24; // pill + title + sub + bottom border padding
   y += headerH + 24;
 
-  // Object name + temp
+  // Object name + tags + temp
   const name = input.object.name;
-  const nameFontSize = name.length > 18 ? 60 : name.length > 10 ? 76 : 92;
+  const nameFontSize = name.length > 18 ? 56 : name.length > 10 ? 68 : 84;
   measure.font = `700 ${nameFontSize}px ${FONT_SERIF}`;
   const nameWrap = wrapText(measure, name, W - PAD * 2, nameFontSize * 1.1);
-  y += 44 + nameWrap.height + 32 + 80 + 24;
+
+  // union tags
+  const allTags = Array.from(
+    new Set(input.observations.flatMap((o) => Array.from(input.configs[o.id]?.tags || [])))
+  );
+  measure.font = `600 22px ${FONT_SANS}`;
+  let tagsRowsH = 0;
+  if (allTags.length > 0) {
+    let tx = 0;
+    let rows = 1;
+    for (const tg of allTags) {
+      const w = measure.measureText(`#${input.i18n.tagLabel(tg)}`).width + 18;
+      if (tx + w > W - PAD * 2) { rows++; tx = w; } else { tx += w; }
+    }
+    tagsRowsH = rows * 28 + 20;
+  }
+  // 40 top pad + name + 24 + tags + bar(50) + 36 bottom pad
+  y += 40 + nameWrap.height + 24 + tagsRowsH + 50 + 36;
 
   // Observations
-  const obsTop = y;
   const contentLeft = PAD;
   const contentW = W - contentLeft - PAD;
-
 
   const obsBlocks: Array<{ height: number }> = [];
   for (const o of input.observations) {
@@ -153,14 +168,14 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
       continue;
     }
     let h = 36; // padding top
-    if (cfg.tags.size > 0 || o.scene) h += 24;
+    if (o.scene) h += 22;
     if (cfg.includeContent) {
       if (o.summary) {
-        measure.font = `700 32px ${FONT_SERIF}`;
-        h += wrapText(measure, o.summary, contentW, 32 * 1.4).height + 16;
+        measure.font = `700 30px ${FONT_SERIF}`;
+        h += wrapText(measure, o.summary, contentW, 30 * 1.4).height + 16;
       }
-      measure.font = `400 24px ${FONT_SERIF}`;
-      h += wrapText(measure, o.cleaned_content || o.content, contentW, 24 * 1.8).height;
+      measure.font = `400 26px ${FONT_SERIF}`;
+      h += wrapText(measure, o.cleaned_content || o.content, contentW, 26 * 1.7).height;
     }
     if (showShot) {
       const im = shotImgs[o.id]!;
@@ -175,6 +190,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     obsBlocks.push({ height: h });
     y += h;
   }
+
 
   y += 28 + 18 + 24 + 48; // footer + bottom padding
   const totalH = y;
@@ -233,7 +249,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.12)";
   ctx.fillRect(PAD, cy, W - PAD * 2, 1);
-  cy += 1 + 44;
+  cy += 1 + 40;
 
   // Object name
   ctx.fillStyle = INK;
@@ -241,10 +257,26 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   for (let i = 0; i < nameWrap.lines.length; i++) {
     ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * 1.1);
   }
-  cy += nameWrap.height + 32;
+  cy += nameWrap.height + 24;
+
+  // Tags row (band color)
+  if (allTags.length > 0) {
+    ctx.fillStyle = input.bandHex;
+    ctx.font = `600 22px ${FONT_SANS}`;
+    let tx = PAD;
+    let ty = cy;
+    for (const tg of allTags) {
+      const txt = `#${input.i18n.tagLabel(tg)}`;
+      const tw = ctx.measureText(txt).width;
+      if (tx + tw > W - PAD) { tx = PAD; ty += 28; }
+      ctx.fillText(txt, tx, ty);
+      tx += tw + 18;
+    }
+    cy = ty + 28 + 20;
+  }
 
   // Temperature bar
-  const barW = W - PAD * 2 - 240;
+  const barW = W - PAD * 2 - 260;
   const barH = 10;
   ctx.fillStyle = "rgba(26,26,26,0.08)";
   // rounded bg
@@ -270,16 +302,16 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.fill();
   // Temp number
   ctx.fillStyle = input.bandHex;
-  ctx.font = `700 72px ${FONT_SERIF}`;
+  ctx.font = `700 84px ${FONT_SERIF}`;
   ctx.textBaseline = "alphabetic";
   const tempStr = String(Math.round(input.object.temperature));
-  ctx.fillText(tempStr, PAD + barW + 24, cy + 72);
+  ctx.fillText(tempStr, PAD + barW + 24, cy + 78);
   const tempW = ctx.measureText(tempStr).width;
   ctx.fillStyle = INK;
-  ctx.font = `700 26px ${FONT_SERIF}`;
-  ctx.fillText("°C", PAD + barW + 24 + tempW + 4, cy + 72);
+  ctx.font = `700 28px ${FONT_SERIF}`;
+  ctx.fillText("°C", PAD + barW + 24 + tempW + 4, cy + 78);
   ctx.textBaseline = "top";
-  cy += 80 + 24;
+  cy += 86 + 24;
 
   // separator
   ctx.fillStyle = "rgba(26,26,26,0.08)";
@@ -300,38 +332,22 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     const cl = contentLeft;
     const cw = contentW;
 
-
-
-    // tags
-    if (cfg.tags.size > 0 || o.scene) {
-      ctx.fillStyle = ACCENT;
-      ctx.font = `600 18px ${FONT_SANS}`;
-      let tx = cl;
-      for (const tg of cfg.tags) {
-        const txt = `#${input.i18n.tagLabel(tg)}`;
-        const tw = ctx.measureText(txt).width;
-        if (tx + tw > cl + cw) {
-          tx = cl;
-          by += 22;
-        }
-        ctx.fillText(txt, tx, by);
-        tx += tw + 16;
-      }
-      if (o.scene) {
-        ctx.fillStyle = MUTED;
-        ctx.font = `400 14px ${FONT_SANS}`;
-        ctx.fillText(`· ${o.scene}`, tx, by + 3);
-      }
-      by += 24;
+    // scene only (tags moved to header)
+    if (o.scene) {
+      ctx.fillStyle = MUTED;
+      ctx.font = `400 13px ${FONT_SANS}`;
+      ctx.fillText(o.scene.toUpperCase(), cl, by);
+      by += 22;
     }
 
     if (cfg.includeContent) {
       if (o.summary) {
-        by += drawText(ctx, o.summary, cl, by, cw, 32 * 1.4, INK, `700 32px ${FONT_SERIF}`);
+        by += drawText(ctx, o.summary, cl, by, cw, 30 * 1.4, INK, `700 30px ${FONT_SERIF}`);
         by += 16;
       }
-      by += drawText(ctx, o.cleaned_content || o.content, cl, by, cw, 24 * 1.8, "#2a2a2a", `400 24px ${FONT_SERIF}`);
+      by += drawText(ctx, o.cleaned_content || o.content, cl, by, cw, 26 * 1.7, "#2a2a2a", `400 26px ${FONT_SERIF}`);
     }
+
 
     if (showShot) {
       const im = shotImgs[o.id]!;
