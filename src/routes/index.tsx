@@ -63,12 +63,12 @@ function Index() {
     <SiteLayout>
       {/* HERO */}
       <section className="">
-        <div className="container-prose grid gap-8 pt-10 pb-14 text-center md:grid-cols-[1.5fr_1fr] md:gap-10 md:pt-10 md:pb-16 md:text-left">
+        <div className="container-prose grid gap-8 pt-10 pb-14 md:grid-cols-[1.5fr_1fr] md:gap-10 md:pt-10 md:pb-16">
           <div>
             <div className="inline-block text-[11px] uppercase tracking-[0.18em] text-muted-foreground md:tracking-[0.2em]">
               Observatory · Est. 2026
             </div>
-            <h1 className="mx-auto mt-6 max-w-[20ch] font-serif text-4xl leading-[1.1] text-balance md:mx-0 md:max-w-none md:text-7xl">
+            <h1 className="mt-6 font-serif text-4xl leading-[1.1] text-balance md:text-7xl">
               {t("home.hero.title.before")}
               <span className="text-accent">{t("home.hero.title.accent")}</span>
               {t("home.hero.title.after")}
@@ -91,7 +91,7 @@ function Index() {
                 </li>
               ))}
             </ol>
-            <p className="mx-auto mt-6 max-w-md text-left text-sm text-muted-foreground md:mx-0 md:mt-8 md:max-w-2xl md:text-base">
+            <p className="mt-6 max-w-md text-sm text-muted-foreground md:mt-8 md:max-w-2xl md:text-base">
               {t("home.hero.body")}
               {sentenceGap}
               <strong className="text-foreground">{t("home.hero.disclaimer")}</strong>
