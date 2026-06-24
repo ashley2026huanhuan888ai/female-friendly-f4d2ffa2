@@ -714,6 +714,14 @@ const COPY = {
     "export.deselectAll": "取消全选",
     "export.archiveEntry": "档案入口",
     "export.scanToView": "扫码查看完整档案",
+    "export.ready": "长图已生成",
+    "export.download": "下载 PNG",
+    "export.share": "分享",
+    "export.shareUnsupported": "当前设备不支持直接分享，已复制到剪贴板",
+    "export.copyFailed": "复制失败，请长按图片保存",
+    "export.regenerate": "重新生成",
+    "export.filename": "文件名",
+    "export.filenameCopied": "文件名已复制",
   },
 
   en: {
