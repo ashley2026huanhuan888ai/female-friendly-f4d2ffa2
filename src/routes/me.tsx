@@ -5,8 +5,10 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { Thermometer } from "@/components/Thermometer";
+import { UserFollowButton } from "@/components/UserFollowButton";
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
 import { getMyProfile, updateMyProfile } from "@/lib/api/profile.functions";
+import { listMyFollowers, listMyFollowing } from "@/lib/api/follows.functions";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -24,7 +26,7 @@ function MePage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { ready, user } = useAuth();
-  const [tab, setTab] = useState<"watch" | "obs" | "notif">("watch");
+  const [tab, setTab] = useState<"watch" | "obs" | "notif" | "relations">("watch");
   const fetchDash = useServerFn(getMyDashboard);
   const markRead = useServerFn(markNotificationsRead);
 
@@ -78,6 +80,7 @@ function MePage() {
                     count: data.unread_count > 0 ? ` · ${data.unread_count}` : "",
                   }),
                 ],
+                ["relations", t("me.followers") + " / " + t("me.following")],
               ] as const
             ).map(([k, label]) => (
               <button
@@ -208,6 +211,8 @@ function MePage() {
               )}
             </>
           )}
+
+          {tab === "relations" && <RelationsPanel />}
         </div>
       </section>
     </SiteLayout>
