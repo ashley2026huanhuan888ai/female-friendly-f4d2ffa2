@@ -97,13 +97,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-paper/85 backdrop-blur">
-        <div className="container-prose flex h-16 items-center justify-between gap-3">
-          <Link to="/" className="flex items-baseline gap-3">
-            <span className="font-serif text-xl tracking-tight">{t("app.name")}</span>
+        <div className="container-prose grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:flex md:h-16 md:justify-between">
+          <Link to="/" className="flex min-w-0 items-baseline gap-3">
+            <span className="truncate font-serif text-base tracking-tight md:text-xl">{t("app.name")}</span>
             <span className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground md:inline">
               {t("app.brand.en")}
             </span>
           </Link>
+
 
           {/* 桌面端主导航 */}
           <nav className="hidden items-center gap-5 text-sm md:flex">
@@ -166,18 +167,18 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          {/* 移动端：登录/注册 + 汉堡 */}
-          <div className="flex items-center gap-2 md:hidden">
+          {/* 移动端：登录/注册 + 语言 */}
+          <div className="flex shrink-0 items-center gap-1.5 md:hidden">
             {!email && (
               <Link
                 to="/login"
-                className="border border-foreground/80 px-2.5 py-1 text-xs text-foreground"
+                className="whitespace-nowrap border border-foreground/80 px-2 py-1 text-[11px] text-foreground"
               >
                 {t("nav.loginRegister")}
               </Link>
             )}
             {email && (
-              <Link to="/me" className="relative text-xs text-muted-foreground">
+              <Link to="/me" className="relative whitespace-nowrap text-xs text-muted-foreground">
                 {t("nav.me")}
                 {unread > 0 && (
                   <span className="absolute -right-3 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-background">
@@ -188,6 +189,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             )}
             <LanguageToggle language={language} setLanguage={setLanguage} />
           </div>
+
         </div>
 
         {/* 移动端第二行：快捷入口 */}
