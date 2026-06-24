@@ -1,17 +1,22 @@
-## 目标
-让 hero 段落里 "它更像一本公开观察笔记：…我们记录它的来源、证据和讨论。" 成为独立段落（前后空行），英文版对应句同样处理。
+## 问题
+首页 `src/routes/index.tsx` 用 `useEffect + useServerFn(getHomeSummary)` 在客户端挂载后才拉数据，SSR 阶段第二/三屏（升温、最新 AI 观察、最新案例、话题墙）拿不到 `summary`，需等客户端 hydrate + RPC 往返完成才显示，肉眼可见"滞后"。
 
-## 改动
-1. `src/lib/i18n.tsx`
-   - 中文 `home.hero.body` 拆成三个键：`home.hero.body.intro`（"这里不是打分榜，也不是审判席。"）、`home.hero.body.main`（"它更像一本公开观察笔记：…讨论。"）。把原 `home.hero.disclaimer` 保持不变。
-   - 英文 `home.hero.body` 同样拆成 `intro` + `main`。
+## 方案
+切换到 TanStack Router + Query 的标准 loader 模式，让 SSR 直接带数据出 HTML：
 
-2. `src/routes/index.tsx`（第 95–101 行）
-   - 将单个 `<p>` 替换为三个 `<p>` 段落，中间通过 `space-y-3`（包一层 div）实现段落间距：
-     - 第 1 段：`home.hero.body.intro`
-     - 第 2 段（独立段落）：`home.hero.body.main`
-     - 第 3 段：`<strong>{disclaimer}</strong>` + `sentenceGap` + `home.hero.actions`
-   - 保留原有 `text-sm/md:text-base text-muted-foreground max-w-md/2xl` 样式。
+1. `src/routes/index.tsx`
+   - 新增 `homeSummaryQueryOptions = queryOptions({ queryKey: ["home-summary"], queryFn: () => getHomeSummary(), staleTime: 60_000 })`。
+   - `Route` 增加 `loader: ({ context }) => context.queryClient.ensureQueryData(homeSummaryQueryOptions)`，并加 `errorComponent` / `notFoundComponent`（错误时回落到空 summary UI）。
+   - 组件内用 `const { data: summary } = useSuspenseQuery(homeSummaryQueryOptions)` 替换 `useState/useEffect/useServerFn` 那一坨。
+   - 移除 `obsStatus` 分支：loader 已保证 ready；保留"空状态"提示。错误重试改用 `router.invalidate()`（在 `errorComponent` 中）。
+   - 顶部 import 增 `useSuspenseQuery, queryOptions`，去掉不再需要的 `useEffect/useState(summary)/useCallback/useServerFn` 引用。
+
+2. 不修改 `getHomeSummary` 的实现与签名。
+
+## 效果
+- SSR HTML 已包含第二/三屏数据 → 首屏不再"延迟显现"。
+- 60s `staleTime` 内导航回首页直接命中缓存。
+- 仍保留搜索框 `q` 的 `useState`。
 
 ## 验证
-preview 首页 hero 区，目标句独占一段，上下有空行。
+preview 首页硬刷新：第二/三屏内容随首屏一起出现，无白屏闪烁；断网刷新触发 errorComponent。
