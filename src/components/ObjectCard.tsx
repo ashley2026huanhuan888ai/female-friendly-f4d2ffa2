@@ -89,7 +89,7 @@ export function ObjectCard({
           </div>
         </div>
 
-        <Thermometer value={temperature} size="sm" unmeasured={observation_count === 0} />
+        <Thermometer value={temperature} size="lg" showLabel={false} unmeasured={observation_count === 0} />
       </Link>
 
       {tags.length > 0 && (
