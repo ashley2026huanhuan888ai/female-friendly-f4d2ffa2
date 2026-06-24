@@ -49,6 +49,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [generating, setGenerating] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [result, setResult] = useState<{ dataUrl: string; blob: Blob; filename: string } | null>(null);
+  const [previewZoom, setPreviewZoom] = useState<number>(1);
 
   const handleClose = () => {
     setResult(null);
@@ -364,24 +365,70 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
         {result && (
           <div className="border-t border-border bg-muted/30 px-5 py-4">
-            <div className="mb-3 flex items-start gap-4">
-              <img
-                src={result.dataUrl}
-                alt=""
-                className="max-h-40 w-24 border border-border object-cover object-top"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {t("export.ready")} · {t("export.filename")}
+            <div className="mb-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {t("export.ready")} · {t("export.filename")}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyFilename}
+                    className="mt-1 block w-full truncate text-left font-mono text-xs text-foreground hover:text-accent"
+                    title={result.filename}
+                  >
+                    {result.filename}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={copyFilename}
-                  className="mt-1 block w-full truncate text-left font-mono text-xs text-foreground hover:text-accent"
-                  title={result.filename}
-                >
-                  {result.filename}
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewZoom((z) => Math.max(0.25, +(z - 0.25).toFixed(2)))}
+                    className="border border-border px-2 py-1 text-xs hover:border-foreground"
+                    aria-label="zoom out"
+                  >
+                    −
+                  </button>
+                  <span className="w-12 text-center font-mono text-[11px] text-muted-foreground">
+                    {Math.round(previewZoom * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))}
+                    className="border border-border px-2 py-1 text-xs hover:border-foreground"
+                    aria-label="zoom in"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewZoom(1)}
+                    className="ml-1 border border-border px-2 py-1 text-[10px] uppercase tracking-wider text-muted-foreground hover:border-foreground hover:text-foreground"
+                  >
+                    1:1
+                  </button>
+                </div>
+              </div>
+              <input
+                type="range"
+                min={0.25}
+                max={4}
+                step={0.05}
+                value={previewZoom}
+                onChange={(e) => setPreviewZoom(parseFloat(e.target.value))}
+                className="mb-3 w-full accent-accent"
+                aria-label="preview zoom"
+              />
+              <div className="max-h-[60vh] overflow-auto border border-border bg-background">
+                <img
+                  src={result.dataUrl}
+                  alt=""
+                  style={{
+                    width: `${previewZoom * 100}%`,
+                    maxWidth: "none",
+                    display: "block",
+                  }}
+                />
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
