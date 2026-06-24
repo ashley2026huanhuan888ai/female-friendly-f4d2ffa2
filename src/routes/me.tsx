@@ -69,6 +69,8 @@ function MePage() {
           </div>
           <h1 className="mt-3 font-serif text-4xl">{t("me.title")}</h1>
           <ProfileEditor />
+          <MyTags tags={data.my_tags ?? []} />
+
           <div className="mt-6 inline-flex border border-border">
             {(
               [
@@ -286,15 +288,34 @@ function ProfileEditor() {
     }
   };
 
+  const [editing, setEditing] = useState(false);
+
+  const onSaveAndClose = async () => {
+    await onSave();
+    setEditing(false);
+  };
+
   return (
     <div className="mt-6 border border-border bg-card p-5">
-      <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        {t("profile.title")}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            {t("profile.title")}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">{t("profile.hint")}</p>
+        </div>
+        {!editing && !loading && (
+          <button
+            onClick={() => setEditing(true)}
+            className="shrink-0 border border-foreground/60 px-3 py-1.5 text-xs hover:border-foreground"
+          >
+            {t("profile.edit")}
+          </button>
+        )}
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">{t("profile.hint")}</p>
       {loading ? (
         <p className="mt-4 text-sm text-muted-foreground">{t("common.loading")}</p>
-      ) : (
+      ) : editing ? (
         <div className="mt-4 grid gap-3">
           <label className="grid gap-1 text-xs">
             <span className="text-muted-foreground">{t("profile.displayName")}</span>
@@ -326,20 +347,80 @@ function ProfileEditor() {
               className="border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
             />
           </label>
-          <div>
+          <div className="flex items-center gap-3">
             <button
-              onClick={onSave}
+              onClick={onSaveAndClose}
               disabled={saving}
               className="border border-foreground bg-foreground px-4 py-2 text-xs text-background hover:bg-accent hover:border-accent disabled:opacity-50"
             >
               {saving ? t("profile.saving") : t("profile.save")}
             </button>
+            <button
+              onClick={() => {
+                setEditing(false);
+                load();
+              }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              {t("profile.cancel")}
+            </button>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
+
+function MyTags({ tags }: { tags: { tag: string; count: number }[] }) {
+  const { t, tag: tagLabel } = useI18n();
+  if (!tags || tags.length === 0) {
+    return (
+      <div className="mt-6 border border-border bg-card p-5">
+        <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          {t("me.myTags")}
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">{t("me.noTags")}</p>
+      </div>
+    );
+  }
+  const max = tags[0]?.count ?? 1;
+  const min = tags[tags.length - 1]?.count ?? 1;
+  const range = Math.max(max - min, 1);
+  return (
+    <div className="mt-6 border border-border bg-card p-5">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        {t("me.myTags")}
+      </div>
+      <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-2">
+        {tags.map((tt) => {
+          const ratio = (tt.count - min) / range;
+          const tier = ratio > 0.75 ? 0 : ratio > 0.5 ? 1 : ratio > 0.25 ? 2 : 3;
+          const cls = [
+            "text-2xl font-semibold text-foreground",
+            "text-xl font-semibold text-foreground/90",
+            "text-base font-medium text-foreground/75",
+            "text-sm text-muted-foreground",
+          ][tier];
+          return (
+            <Link
+              key={tt.tag}
+              to="/topics/$tag"
+              params={{ tag: tt.tag }}
+              className={`leading-tight hover:underline ${cls}`}
+            >
+
+              {tagLabel(tt.tag)}
+              <span className="ml-1 text-[10px] text-muted-foreground align-baseline">
+                ·{tt.count}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 function RelationsPanel() {
   const { t } = useI18n();

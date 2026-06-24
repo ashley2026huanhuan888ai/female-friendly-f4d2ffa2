@@ -660,6 +660,11 @@ const COPY = {
     "profile.saving": "保存中…",
     "profile.saved": "资料已更新",
     "profile.saveFailed": "保存失败",
+    "profile.edit": "修改个人资料",
+    "profile.cancel": "取消",
+    "me.myTags": "我观察的标签",
+    "me.noTags": "还没有已通过的观察",
+
 
     "messages.title": "私信",
     "messages.empty": "还没有私信。在评论里点对方昵称即可发起对话。",
@@ -1401,6 +1406,11 @@ const COPY = {
     "profile.saving": "Saving...",
     "profile.saved": "Profile updated",
     "profile.saveFailed": "Save failed",
+    "profile.edit": "Edit profile",
+    "profile.cancel": "Cancel",
+    "me.myTags": "Tags I observe",
+    "me.noTags": "No approved observations yet",
+
 
     "messages.title": "Messages",
     "messages.empty": "No conversations yet. Tap a comment author to start one.",
