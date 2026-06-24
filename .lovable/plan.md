@@ -1,47 +1,30 @@
-## 在对象详情页增加「导出卡片」功能
+# 导出卡片：多选合并长图
 
-### 入口
-- 在 `src/routes/objects.$id.tsx` 对象名（`<h1>{obj.name}</h1>`）旁边新增「导出卡片」按钮，移动端图标 + 文字，桌面端紧贴标题右侧。
+## 改动范围
+仅修改 `src/components/ExportCardDialog.tsx` 与 `src/lib/i18n.tsx`，不涉及后端。
 
-### 导出弹窗（新建 `src/components/ExportCardDialog.tsx`）
-- 打开后展示该对象的全部观察列表（复用 `obs`）。
-- 顶部说明 + 单条选择（每次导出一条观察）。也可以多选；先实现「选定一条观察 → 配置导出内容」。
-- 配置区：
-  - 是否包含截图（默认开，若该 observation 有 `screenshot_url`）。
-  - 标签勾选：默认全选该 observation 的 `tags`，用户可取消勾选。
-  - 是否包含观察原文（默认开，使用 `cleaned_content || content`）。
-- 「生成长图」按钮 → 触发 html-to-image 渲染。
+## 交互改动
+1. **观察列表改为复选多选**：把现有 `<select>` 换成列表，每行带复选框；顶部加「全选 / 反选」。默认勾选第一条。
+2. **每条单独配置**：勾选一条后，下方展开该条的配置块（包含截图开关 + 标签复选框），多条则按顺序堆叠各自的配置块，互不影响。
+3. **校验**：未勾选任何观察、或所有勾选项都关闭了截图和原文时，禁用「生成长图」并 toast 提示。
+4. **按钮文案**：根据勾选数量动态显示「生成长图（N 条）」。
 
-### 卡片结构（离屏 DOM，固定宽 1080px）
-单张竖向长图，上下两块拼接，整体风格沿用站点的报纸/档案风（serif 标题 + 边框 + 红色 accent）：
+## 长图结构
+顶部统一 Header（对象类型 + 名称 + 档案编号）→ 依次渲染每条观察的 section：
+- 截图（若勾选且存在）
+- 触发点（勾选的 tags）
+- 观察原文（summary + cleaned_content）
+- 条目分隔线 + 该条 `created_at`
 
-1. **上半部分（第 1 页）**：
-   - 截图证据全幅显示（`screenshot_url`），按宽度自适应高度。
-   - 若无截图：使用对象名 + 温度计 + 「无附件证据」占位卡。
-   - 顶部 badge：对象名 + 类型。
+底部统一 Footer（导出时间 + 导出者昵称 + 品牌）。
 
-2. **下半部分（第 2 页）**：
-   - 「触发标签」：勾选过的 tags 渲染为带 ☑ 的方框列表（仿用户上传的检查表风格）。
-   - 「观察原文」：cleaned_content / content 全文，serif 字体。
-   - 可选 summary（如有）置顶为引言。
+## 技术要点
+- 状态：`selectedIds: Set<string>` + `perItemConfig: Record<id, { includeScreenshot; includeContent; tags: Set<string> }>`，进入时按观察 tags 预填。
+- 渲染：off-screen 容器宽度仍 1080px，循环 `selectedIds` 输出 section。
+- 图片预检：对所有勾选且开启截图的 URL 并发 `new Image()` 预加载，失败的条目 toast 提示并中止。
+- 文件名：`${object.name}-cards-${count}.png`。
+- 新增 i18n 键：`export.selectAll` / `export.deselectAll` / `export.selectedCount` / `export.generateN`。
 
-3. **底部 footer**（贯穿整张图底端）：
-   - 时间：observation 的 `created_at`，按当前语言 `formatDateForLanguage` 格式化。
-   - 用户昵称：登录用户的 nickname（从 `useAuth()` / 当前 profile 取，未登录显示「匿名」）。
-   - 站点标识：`女性友好体验测评 · Female-Friendly Experience Archive` + 档案编号 `FF-2026-<obj.id 前 6 位>`。
-
-### 生成图片
-- 依赖：`bun add html-to-image`。
-- `toPng(cardRef.current, { pixelRatio: 2, cacheBust: true })` → 触发 `<a download>` 保存 `${obj.name}-${observationId}.png`。
-- 截图为跨域时（Supabase storage）需 `crossOrigin: 'anonymous'`；通过 `<img crossorigin="anonymous">` 加载并等待 `onload` 后再 toPng，避免画布污染。
-
-### i18n
-- 新增 key：`export.button` / `export.title` / `export.selectObservation` / `export.tags` / `export.includeScreenshot` / `export.generate` / `export.exportedBy` / `export.archivedAt` / `export.anonymous` / `export.noScreenshot`。中英文都加。
-
-### 涉及文件
-- 新建：`src/components/ExportCardDialog.tsx`
-- 修改：`src/routes/objects.$id.tsx`（按钮 + 弹窗挂载）
-- 修改：`src/lib/i18n.tsx`（翻译 key）
-- 新增依赖：`html-to-image`
-
-不改后端、不动数据库。
+## 不做的事
+- 不实现 zip、PDF、分页或后端导出。
+- 不改导出按钮入口或对象详情页其他部分。
