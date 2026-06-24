@@ -1,27 +1,25 @@
-## 目标
-对导出卡片全链路（打开对话框 → 预览缩放交互 → 生成长图）做一次客观的流畅度采样，输出量化指标和瓶颈定位，再决定是否优化。
+## 根因
+控制台显示两类错误：
 
-## 测量步骤（Playwright + CDP，全部在沙箱中执行，不改产品代码）
+1. `SecurityError: Failed to read 'cssRules'` — html-to-image 试图把 Google Fonts 样式表内联进 SVG，浏览器拒绝读取跨域 stylesheet。这条只是 warning，库内部 catch 了，不致命但拖慢且刷屏。
+2. `{isTrusted: true}` 的 Event 抛到 handleExport 的 catch 里 — 来自 html-to-image 内部 `embedImages` 拉取观察截图时失败。原因：截图 `<img>` 设置了 `crossOrigin="anonymous"`，但远端图片响应没有 CORS 头（或 fetch 模式不一致），导致内联失败 + canvas 污染，整个 `toPng` 抛错 → toast「生成失败」。
 
-脚本写在 `/tmp/browser/export-perf/run.py`：
+## 修复
+改 `src/components/ExportCardDialog.tsx`：
 
-1. 登录态注入 → 打开任意带观察记录的对象页（例如当前 `/objects/ae138077-...`）。
-2. 启动 CDP Performance + Tracing（`Page.startScreencast` + `Tracing.start` `categories: devtools.timeline, blink.user_timing`），并打开浏览器 FPS meter (`Overlay.setShowFPSCounter`)。
-3. **场景 A — 打开对话框**：点击「导出长图」按钮，记录从 click 到对话框首帧绘制（`requestAnimationFrame` + `performance.now()` 注入），以及离屏卡片首次完成 layout 的耗时。
-4. **场景 B — 预览缩放交互**：连续拖动 zoom 滑块 0.5 → 1.5 共 20 次，采样 `requestAnimationFrame` 间隔统计平均 FPS、p95 帧时间、长任务数（PerformanceObserver `longtask`）。
-5. **场景 C — 生成长图**：勾选 3 条观察，点击「生成」，用 `performance.mark` 包裹 `html-to-image` 调用，记录：DOM 准备耗时、`toPng` 耗时、Blob/DataURL 大小、主线程阻塞时长（CDP `Performance.metrics` 前后差值）。
-6. 导出 trace 到 `/tmp/browser/export-perf/trace.json`，截图关键节点到 `screenshots/`。
-7. 解析 trace，打印汇总表：场景、总耗时、平均 FPS、p95 帧时间、长任务总时长、主要耗时函数 top 5。
+### 1. 关掉字体内联
+`toPng(..., { skipFonts: true })`。卡片现用 `ui-serif / Songti SC / system-ui` 系列，渲染时浏览器已加载，PNG 中保留同名字体即可，不需要把 Google Fonts CSS 嵌进 SVG。消除 SecurityError 噪音并显著加速。
 
-## 判定标准
-- 流畅：交互期间 p95 帧 < 32ms（≥30FPS），无 > 200ms 长任务。
-- 生成长图：3 条观察 + 截图，pixelRatio=3，总耗时 < 3s 视为可接受；>5s 建议优化。
+### 2. 截图本地化（避开 html-to-image 的跨域抓取）
+在 `handleExport` 调 `toPng` 之前，把每张 `screenshot_url` 用 `fetch(url).then(r => r.blob())` 转成 `URL.createObjectURL(blob)`，把 off-screen `<img>` 的 `src` 替换为 blob URL；blob URL 同源、无 CORS 限制。
+- 拉取失败的那条：跳过该截图（不致整张图失败），并 toast 提示「部分截图未能加载」。
+- 完成后 `URL.revokeObjectURL` 回收。
 
-## 后续（仅在本次测量数据支持时）
-若指标不达标，再单独提一份优化方案候选：
-- 预览缩放改用 CSS `transform: scale()` 而非重渲染（如当前未用）。
-- 离屏卡片在 dialog 关闭时卸载，避免常驻 DOM。
-- `html-to-image` 改为按需懒加载 + `pixelRatio` 自适应屏幕 dpr。
-- 长截图分块绘制 + `OffscreenCanvas`。
+实现要点：
+- 新增 `screenshotBlobUrls: Record<observationId, string>` state，由 `handleExport` 开始时填充，渲染分支用 `blobUrls[o.id] ?? o.screenshot_url` 决定 `<img src>`。
+- 旧的 `Image()` probe + `crossOrigin='anonymous'` 改为 fetch blob 路径，复用进度阶段 `progressImages`。
 
-本计划本身不改任何产品代码，只产出测量报告。
+### 3. 错误日志可读
+`catch (e)` 里 `console.error('[ExportCard] toPng failed', e)`，避免日志只剩 `{isTrusted:true}` 不知所云。
+
+不改：缩放、进度条、pixelRatio 自适应、UI 文案。

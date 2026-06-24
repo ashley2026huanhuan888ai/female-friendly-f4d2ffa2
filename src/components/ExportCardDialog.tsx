@@ -48,6 +48,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [nickname, setNickname] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState<{ pct: number; label: string }>({ pct: 0, label: "" });
+  const [shotBlobs, setShotBlobs] = useState<Record<string, string>>({});
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [result, setResult] = useState<{ dataUrl: string; blob: Blob; filename: string } | null>(null);
   const [previewZoom, setPreviewZoom] = useState<number>(1);
@@ -148,32 +149,39 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
     setGenerating(true);
     setProgress({ pct: 5, label: t("export.progressPrepare") });
+    const createdBlobUrls: string[] = [];
     try {
-      const urlsToCheck = orderedSelected
+      // 1) 预取截图为 blob URL，规避 html-to-image 内联跨域图片失败
+      const shotEntries = orderedSelected
         .filter((o) => o.screenshot_url)
-        .map((o) => o.screenshot_url!);
-      if (urlsToCheck.length) {
-        const results = await Promise.all(
-          urlsToCheck.map(
-            (url) =>
-              new Promise<boolean>((resolve) => {
-                const probe = new Image();
-                probe.crossOrigin = "anonymous";
-                probe.onload = () => resolve(true);
-                probe.onerror = () => resolve(false);
-                probe.src = url;
-              })
-          )
+        .map((o) => [o.id, o.screenshot_url!] as const);
+      let failedCount = 0;
+      if (shotEntries.length) {
+        const fetched = await Promise.all(
+          shotEntries.map(async ([id, url]) => {
+            try {
+              const r = await fetch(url, { mode: "cors", cache: "no-cache" });
+              if (!r.ok) throw new Error(`HTTP ${r.status}`);
+              const blob = await r.blob();
+              const objUrl = URL.createObjectURL(blob);
+              createdBlobUrls.push(objUrl);
+              return [id, objUrl] as const;
+            } catch (err) {
+              console.warn("[ExportCard] screenshot fetch failed", url, err);
+              failedCount += 1;
+              return [id, ""] as const;
+            }
+          })
         );
-        if (results.some((ok) => !ok)) {
-          toast.error(t("export.imageNotReady"));
-          setGenerating(false);
-          setProgress({ pct: 0, label: "" });
-          return;
-        }
+        const map: Record<string, string> = {};
+        for (const [id, u] of fetched) if (u) map[id] = u;
+        setShotBlobs(map);
+        if (failedCount > 0) toast.warning(t("export.imageNotReady"));
       }
-      setProgress({ pct: 25, label: t("export.progressImages") });
+      setProgress({ pct: 30, label: t("export.progressImages") });
 
+      // 2) 等离屏 <img> 解码完成
+      await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
       const imgs = cardRef.current.querySelectorAll("img");
       await Promise.all(
         Array.from(imgs).map(
@@ -185,12 +193,10 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
             })
         )
       );
-      setProgress({ pct: 45, label: t("export.progressRender") });
-
-      // 让出一帧，进度条能绘制出来
+      setProgress({ pct: 50, label: t("export.progressRender") });
       await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
 
-      // 自适应像素比：跟随设备 DPR，限制 1.5–2.5，避免移动端 3x 过度采样
+      // 3) 自适应像素比（避免 3x 过度采样）
       const dpr =
         typeof window !== "undefined" && window.devicePixelRatio
           ? window.devicePixelRatio
@@ -199,7 +205,8 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio,
-        cacheBust: true,
+        cacheBust: false,
+        skipFonts: true,
         backgroundColor: PAPER,
       });
       setProgress({ pct: 85, label: t("export.progressEncode") });
@@ -212,9 +219,12 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       setResult({ dataUrl, blob, filename });
       toast.success(t("export.ready"));
     } catch (e: any) {
-      console.error(e);
+      console.error("[ExportCard] toPng failed", e);
       toast.error(t("export.failed"));
     } finally {
+      // 回收 blob URL
+      for (const u of createdBlobUrls) URL.revokeObjectURL(u);
+      setShotBlobs({});
       setGenerating(false);
       setTimeout(() => setProgress({ pct: 0, label: "" }), 400);
     }
@@ -805,9 +815,8 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                         {showShot && (
                           <div style={{ marginTop: 22 }}>
                             <img
-                              src={obs.screenshot_url!}
+                              src={shotBlobs[obs.id] || obs.screenshot_url!}
                               alt=""
-                              crossOrigin="anonymous"
                               style={{
                                 width: "100%",
                                 maxHeight: 640,
