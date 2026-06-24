@@ -58,6 +58,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [result, setResult] = useState<{ dataUrl: string; blob: Blob; filename: string } | null>(null);
   const [previewZoom, setPreviewZoom] = useState<number>(1);
+  const [selectionOpen, setSelectionOpen] = useState<boolean>(true);
 
   const handleClose = () => {
     setResult(null);
@@ -215,6 +216,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       const filename = `${safeName}-${ymd}-${orderedSelected.length}cards.png`;
       setProgress({ pct: 100, label: t("export.progressDone") });
       setResult({ dataUrl, blob, filename });
+      setSelectionOpen(false);
       toast.success(t("export.ready"));
     } catch (e: any) {
       console.error("[ExportCard] export failed entirely", e);
@@ -321,19 +323,30 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
             <p className="py-8 text-center text-sm text-muted-foreground">{t("export.empty")}</p>
           ) : (
             <>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  {t("export.selectObservation")} ({selectedIds.size}/{observations.length})
-                </span>
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={allSelected ? deselectAll : selectAll}
+                  onClick={() => setSelectionOpen((v) => !v)}
+                  className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                  aria-expanded={selectionOpen}
+                >
+                  <span aria-hidden="true">{selectionOpen ? "▾" : "▸"}</span>
+                  {t("export.selectObservation")} ({selectedIds.size}/{observations.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (allSelected) deselectAll();
+                    else selectAll();
+                  }}
                   className="text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
                 >
                   {allSelected ? t("export.deselectAll") : t("export.selectAll")}
                 </button>
               </div>
 
+              {selectionOpen && (
               <div className="divide-y divide-border border border-border">
                 {observations.map((o) => {
                   const checked = selectedIds.has(o.id);
