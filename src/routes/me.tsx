@@ -27,6 +27,7 @@ function MePage() {
   const [loading, setLoading] = useState(true);
   const { ready, user } = useAuth();
   const [tab, setTab] = useState<"watch" | "obs" | "notif" | "relations">("watch");
+  const [editingProfile, setEditingProfile] = useState(false);
   const fetchDash = useServerFn(getMyDashboard);
   const markRead = useServerFn(markNotificationsRead);
 
