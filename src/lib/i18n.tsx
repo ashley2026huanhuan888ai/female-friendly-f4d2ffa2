@@ -1437,6 +1437,8 @@ const COPY = {
     "export.failed": "Failed to generate, please retry",
     "export.needContent": "Please include screenshot or observation text",
     "export.imageNotReady": "Screenshot failed to load — uncheck it or retry",
+    "export.selectAll": "Select all",
+    "export.deselectAll": "Deselect all",
   },
 
 } as const;
