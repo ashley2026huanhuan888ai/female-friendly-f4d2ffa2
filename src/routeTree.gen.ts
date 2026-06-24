@@ -44,6 +44,7 @@ import { Route as AdminObservationsRouteImport } from './routes/admin.observatio
 import { Route as AdminObjectsRouteImport } from './routes/admin.objects'
 import { Route as AdminKnowledgeRouteImport } from './routes/admin.knowledge'
 import { Route as AdminFeedbackRouteImport } from './routes/admin.feedback'
+import { Route as AdminContributionRouteImport } from './routes/admin.contribution'
 import { Route as AdminCommentsRouteImport } from './routes/admin.comments'
 import { Route as AdminBulkImportRouteImport } from './routes/admin.bulk-import'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
@@ -224,6 +225,11 @@ const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
   path: '/feedback',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminContributionRoute = AdminContributionRouteImport.update({
+  id: '/contribution',
+  path: '/contribution',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCommentsRoute = AdminCommentsRouteImport.update({
   id: '/comments',
   path: '/comments',
@@ -266,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/contribution': typeof AdminContributionRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
@@ -306,6 +313,7 @@ export interface FileRoutesByTo {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/contribution': typeof AdminContributionRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/admin/audit': typeof AdminAuditRoute
   '/admin/bulk-import': typeof AdminBulkImportRoute
   '/admin/comments': typeof AdminCommentsRoute
+  '/admin/contribution': typeof AdminContributionRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/knowledge': typeof AdminKnowledgeRoute
   '/admin/objects': typeof AdminObjectsRoute
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/contribution'
     | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
@@ -431,6 +441,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/contribution'
     | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
@@ -472,6 +483,7 @@ export interface FileRouteTypes {
     | '/admin/audit'
     | '/admin/bulk-import'
     | '/admin/comments'
+    | '/admin/contribution'
     | '/admin/feedback'
     | '/admin/knowledge'
     | '/admin/objects'
@@ -769,6 +781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFeedbackRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/contribution': {
+      id: '/admin/contribution'
+      path: '/contribution'
+      fullPath: '/admin/contribution'
+      preLoaderRoute: typeof AdminContributionRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/comments': {
       id: '/admin/comments'
       path: '/comments'
@@ -805,6 +824,7 @@ interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminBulkImportRoute: typeof AdminBulkImportRoute
   AdminCommentsRoute: typeof AdminCommentsRoute
+  AdminContributionRoute: typeof AdminContributionRoute
   AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminKnowledgeRoute: typeof AdminKnowledgeRoute
   AdminObjectsRoute: typeof AdminObjectsRoute
@@ -820,6 +840,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminBulkImportRoute: AdminBulkImportRoute,
   AdminCommentsRoute: AdminCommentsRoute,
+  AdminContributionRoute: AdminContributionRoute,
   AdminFeedbackRoute: AdminFeedbackRoute,
   AdminKnowledgeRoute: AdminKnowledgeRoute,
   AdminObjectsRoute: AdminObjectsRoute,

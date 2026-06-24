@@ -1,20 +1,24 @@
 import * as React from "react";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useAuth } from "@/components/auth-context";
 import { toast } from "sonner";
 import { setRemember, consumeExpiredNotice } from "@/lib/remember-login";
 import { useI18n, usePageMeta } from "@/lib/i18n";
+import { bindInviter } from "@/lib/api/contribution.functions";
 
 type LoginSearch = {
   redirect?: string;
+  ref?: string;
 };
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): LoginSearch => ({
     redirect: typeof s.redirect === "string" ? s.redirect : undefined,
+    ref: typeof s.ref === "string" ? s.ref : undefined,
   }),
   head: () => ({ meta: [{ title: "登录 · 女性友好体验测评" }] }),
   component: LoginPage,
