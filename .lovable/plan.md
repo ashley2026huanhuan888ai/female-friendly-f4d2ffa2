@@ -1,28 +1,22 @@
-# 手机端 Hero 排版重构
+# 管理员删除单条观察
 
-参考图右侧的草图调整 `src/routes/objects.$id.tsx` 的 hero 区域（仅 `md:` 以下）。
+后端 `deleteObservation` server fn 已存在并校验 admin，无需新增。仅做前端接入。
 
-## 移动端新结构（自上而下）
+## 改动 `src/routes/objects.$id.tsx`
 
-1. **第一行**：对象标题（大号）左侧，温度数值「65°C」右侧贴边对齐（去掉温度计图形与「高温争议」标签，只保留数字+°C，红色）。
-2. **第二行**：温度短描述（截断为 1 行，例如「温度越高，性别争议…」）左，「导出卡片」按钮右。
-3. 删除 hero 顶部的「共 X 条已审核观察 · 综艺节目」小标签行（即图中划红线部分）。
-4. 下方保留：描述（如有）、移动端标签云、「为什么这个温度？」入口、提交观察 / 已关注按钮组。
+1. `import { deleteObservation } from "@/lib/api/platform.functions"`，`useServerFn` 包装；从 `useAuth()` 取 `isAdmin`。
+2. 在「所有已审核观察」列表（约 324 行 `<article>`）右上角元数据行内追加一个仅 `isAdmin` 时渲染的删除按钮（小号文字按钮 `border border-destructive/60 text-destructive`，文案 i18n `objectDetail.deleteObservation` / "删除" / "Delete"）。
+3. 点击 → `confirm(t("objectDetail.deleteConfirm"))` → 调用 `deleteObservation({ data: { id: o.id } })` → 成功 `toast.success` 并刷新列表（沿用现有的 `loadObservations` 或本地 `setObs(prev => prev.filter)`）。
+4. 失败：`toast.error(err.message)`。
 
-## 桌面端
+## i18n
 
-`md:` 以上完全不变（标题大字 + 右侧温度计 + 现有元数据行保留）。
-
-## 技术实现
-
-- 把现有 hero 的元数据行（159–164 行）包成 `hidden md:flex`。
-- 标题块改为 mobile grid：`grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 md:flex md:flex-wrap`，右侧放手机版温度数字 `<span class="md:hidden font-serif text-3xl text-accent">65°<span class="text-xs">C</span></span>`。
-- 「导出卡片」按钮从标题旁挪到新一行：mobile 与温度描述同行 `grid grid-cols-[minmax(0,1fr)_auto]`，桌面端按钮回到原位置（用 `md:hidden` / `hidden md:inline-flex` 双份渲染）。
-- 温度描述文本沿用现有 `t("objectDetail.tempHint")` 或同等文案，移动端 `truncate text-sm text-muted-foreground`。
-- 右侧温度计列（260–272 行）改为 `hidden md:flex`，避免移动端重复显示。
+`src/lib/i18n.tsx` 新增 zh/en：
+- `objectDetail.deleteObservation`: "删除" / "Delete"
+- `objectDetail.deleteConfirm`: "确认删除该观察？此操作不可撤销。" / "Delete this observation? This cannot be undone."
 
 ## 不做
 
-- 不改温度数值/颜色逻辑，不动后端。
-- 不改桌面端布局。
-- 不改其它 section（案例时间线、所有已审核等）。
+- 不改 RLS / 不新建迁移（admin 走 service-role 的 server fn）。
+- 不改桌面端其它布局。
+- 不在 admin 后台页面重复加入口（已有审核流程；此处只是详情页便捷删除）。
