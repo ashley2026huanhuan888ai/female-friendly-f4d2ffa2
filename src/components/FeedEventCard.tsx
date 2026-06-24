@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { bandOf } from "@/lib/temperature";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
+import { TempText } from "@/components/TempText";
 
 interface Event {
   id: string;
