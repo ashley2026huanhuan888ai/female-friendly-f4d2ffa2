@@ -415,6 +415,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                   );
                 })}
               </div>
+              )}
             </>
           )}
         </div>
