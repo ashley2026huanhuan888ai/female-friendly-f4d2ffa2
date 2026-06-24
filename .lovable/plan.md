@@ -1,9 +1,8 @@
+## 问题
+`facts` 字段在数据库中是 jsonb，可能为对象/字符串/null，不一定是数组，因此 `o.facts.map` 抛错。`o.facts?.length > 0` 的判断对非数组也可能为 truthy。
+
 ## 改动
+1. `src/routes/admin.observations.tsx` 第 350-361 行：使用 `Array.isArray(o.facts) ? o.facts : []` 归一化后再渲染。
+2. `src/routes/archive.$caseCode.tsx` 第 154 行同类问题，同样处理。
 
-在 `src/routes/objects.$id.tsx` 中，将"Tags ·"区域（移动端词云 + 桌面端标签）里每个 tag 由 `<span>` 改为 `<Link to="/objects" search={{ tag: tt.tag }}>`，并保留现有样式，添加 hover 态（如 `hover:text-accent`）。
-
-跳转目标 `/objects?tag=xxx` 已存在并支持按标签筛选对象列表，无需新增路由或后端改动。
-
-涉及位置：
-- 移动端词云：第 240-245 行的 `<span>`
-- 桌面端标签：第 278-282 行的 `<span>`
+不改动后端 / 数据。
