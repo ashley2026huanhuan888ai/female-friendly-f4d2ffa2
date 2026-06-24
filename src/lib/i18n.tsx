@@ -700,6 +700,8 @@ const COPY = {
     "export.failed": "生成失败，请重试",
     "export.needContent": "请至少选择截图或观察原文",
     "export.imageNotReady": "截图未能加载，请取消勾选或稍后重试",
+    "export.selectAll": "全选",
+    "export.deselectAll": "取消全选",
   },
 
   en: {
@@ -1435,6 +1437,8 @@ const COPY = {
     "export.failed": "Failed to generate, please retry",
     "export.needContent": "Please include screenshot or observation text",
     "export.imageNotReady": "Screenshot failed to load — uncheck it or retry",
+    "export.selectAll": "Select all",
+    "export.deselectAll": "Deselect all",
   },
 
 } as const;

@@ -18,6 +18,12 @@ type Observation = {
   scene?: string | null;
 };
 
+type ItemConfig = {
+  includeScreenshot: boolean;
+  includeContent: boolean;
+  tags: Set<string>;
+};
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -29,31 +35,31 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const { language, t, tag, objectType } = useI18n();
   const fetchProfile = useServerFn(getMyProfile);
 
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [includeScreenshot, setIncludeScreenshot] = useState(true);
-  const [includeContent, setIncludeContent] = useState(true);
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [configs, setConfigs] = useState<Record<string, ItemConfig>>({});
   const [nickname, setNickname] = useState<string>("");
   const [generating, setGenerating] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const selected = useMemo(
-    () => observations.find((o) => o.id === selectedId) || observations[0],
-    [observations, selectedId]
-  );
-
+  // Initialize on open
   useEffect(() => {
-    if (open && observations.length && !selectedId) {
-      setSelectedId(observations[0].id);
-    }
-  }, [open, observations, selectedId]);
-
-  useEffect(() => {
-    if (selected) {
-      setSelectedTags(new Set(selected.tags || []));
-    }
-  }, [selected]);
+    if (!open || observations.length === 0) return;
+    setSelectedIds((prev) => (prev.size ? prev : new Set([observations[0].id])));
+    setConfigs((prev) => {
+      const next = { ...prev };
+      for (const o of observations) {
+        if (!next[o.id]) {
+          next[o.id] = {
+            includeScreenshot: true,
+            includeContent: true,
+            tags: new Set(o.tags || []),
+          };
+        }
+      }
+      return next;
+    });
+  }, [open, observations]);
 
   useEffect(() => {
     if (!open) return;
@@ -64,43 +70,79 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
   if (!open) return null;
 
-  const toggleTag = (tg: string) => {
-    setSelectedTags((prev) => {
+  const orderedSelected = observations.filter((o) => selectedIds.has(o.id));
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(tg)) next.delete(tg);
-      else next.add(tg);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
 
-  const handleExport = async () => {
-    if (!cardRef.current || !selected) return;
+  const selectAll = () => setSelectedIds(new Set(observations.map((o) => o.id)));
+  const deselectAll = () => setSelectedIds(new Set());
 
-    // Validate: at least one content section must be enabled
-    if (!includeScreenshot && !includeContent) {
+  const updateConfig = (id: string, patch: Partial<ItemConfig>) => {
+    setConfigs((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  };
+
+  const toggleTag = (id: string, tg: string) => {
+    setConfigs((prev) => {
+      const cur = prev[id];
+      if (!cur) return prev;
+      const tags = new Set(cur.tags);
+      if (tags.has(tg)) tags.delete(tg);
+      else tags.add(tg);
+      return { ...prev, [id]: { ...cur, tags } };
+    });
+  };
+
+  const hasAnyContent = orderedSelected.some((o) => {
+    const c = configs[o.id];
+    return c && (c.includeContent || (c.includeScreenshot && o.screenshot_url));
+  });
+
+  const canGenerate = orderedSelected.length > 0 && hasAnyContent;
+
+  const handleExport = async () => {
+    if (!cardRef.current) return;
+    if (orderedSelected.length === 0) {
+      toast.error(t("export.empty"));
+      return;
+    }
+    if (!hasAnyContent) {
       toast.error(t("export.needContent"));
       return;
     }
 
     setGenerating(true);
     try {
-      // Pre-check screenshot availability before rendering
-      if (includeScreenshot && selected.screenshot_url) {
-        const ok = await new Promise<boolean>((resolve) => {
-          const probe = new Image();
-          probe.crossOrigin = "anonymous";
-          probe.onload = () => resolve(true);
-          probe.onerror = () => resolve(false);
-          probe.src = selected.screenshot_url!;
-        });
-        if (!ok) {
+      // Pre-check all screenshot URLs in parallel
+      const urlsToCheck = orderedSelected
+        .filter((o) => configs[o.id]?.includeScreenshot && o.screenshot_url)
+        .map((o) => o.screenshot_url!);
+      if (urlsToCheck.length) {
+        const results = await Promise.all(
+          urlsToCheck.map(
+            (url) =>
+              new Promise<boolean>((resolve) => {
+                const probe = new Image();
+                probe.crossOrigin = "anonymous";
+                probe.onload = () => resolve(true);
+                probe.onerror = () => resolve(false);
+                probe.src = url;
+              })
+          )
+        );
+        if (results.some((ok) => !ok)) {
           toast.error(t("export.imageNotReady"));
           setGenerating(false);
           return;
         }
       }
 
-      // wait for in-DOM images to settle
       const imgs = cardRef.current.querySelectorAll("img");
       await Promise.all(
         Array.from(imgs).map(
@@ -112,6 +154,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
             })
         )
       );
+
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio: 2,
         cacheBust: true,
@@ -119,7 +162,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       });
       const a = document.createElement("a");
       a.href = dataUrl;
-      a.download = `${object.name}-${selected.id.slice(0, 6)}.png`;
+      a.download = `${object.name}-cards-${orderedSelected.length}.png`;
       a.click();
       toast.success(t("export.button"));
     } catch (e: any) {
@@ -132,6 +175,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
   const archiveNo = `FF-2026-${object.id.slice(0, 6).toUpperCase()}`;
   const exporterName = nickname || t("export.anonymous");
+  const allSelected = selectedIds.size === observations.length && observations.length > 0;
 
   return (
     <div
@@ -157,71 +201,101 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
             <p className="py-8 text-center text-sm text-muted-foreground">{t("export.empty")}</p>
           ) : (
             <>
-              <label className="mb-2 block text-[11px] uppercase tracking-wider text-muted-foreground">
-                {t("export.selectObservation")}
-              </label>
-              <select
-                value={selected?.id ?? ""}
-                onChange={(e) => setSelectedId(e.target.value)}
-                className="w-full border border-border bg-background px-3 py-2 text-sm"
-              >
-                {observations.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {formatDateForLanguage(o.created_at, language)} ·{" "}
-                    {(o.summary || o.cleaned_content || o.content || "").slice(0, 40)}
-                  </option>
-                ))}
-              </select>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {t("export.selectObservation")} ({selectedIds.size}/{observations.length})
+                </span>
+                <button
+                  type="button"
+                  onClick={allSelected ? deselectAll : selectAll}
+                  className="text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                >
+                  {allSelected ? t("export.deselectAll") : t("export.selectAll")}
+                </button>
+              </div>
 
-              {selected && (
-                <div className="mt-4 space-y-3">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={includeScreenshot}
-                      onChange={(e) => setIncludeScreenshot(e.target.checked)}
-                    />
-                    {t("export.includeScreenshot")}
-                    {!selected.screenshot_url && (
-                      <span className="text-xs text-muted-foreground">
-                        ({t("export.noScreenshot")})
-                      </span>
-                    )}
-                  </label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={includeContent}
-                      onChange={(e) => setIncludeContent(e.target.checked)}
-                    />
-                    {t("export.includeContent")}
-                  </label>
+              <div className="divide-y divide-border border border-border">
+                {observations.map((o) => {
+                  const checked = selectedIds.has(o.id);
+                  const cfg = configs[o.id];
+                  return (
+                    <div key={o.id} className="p-3">
+                      <label className="flex cursor-pointer items-start gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSelect(o.id)}
+                          className="mt-1 shrink-0"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[11px] text-muted-foreground">
+                            {formatDateForLanguage(o.created_at, language)}
+                          </span>
+                          <span className="line-clamp-2 text-sm">
+                            {o.summary || o.cleaned_content || o.content}
+                          </span>
+                        </span>
+                      </label>
 
-                  {(selected.tags?.length ?? 0) > 0 && (
-                    <div>
-                      <div className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
-                        {t("export.tags")}
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selected.tags!.map((tg) => (
-                          <button
-                            key={tg}
-                            type="button"
-                            onClick={() => toggleTag(tg)}
-                            className={`border px-2 py-1 text-xs ${
-                              selectedTags.has(tg)
-                                ? "border-foreground bg-foreground text-background"
-                                : "border-border text-foreground"
-                            }`}
-                          >
-                            {selectedTags.has(tg) ? "☑ " : "☐ "} {tag(tg)}
-                          </button>
-                        ))}
-                      </div>
+                      {checked && cfg && (
+                        <div className="ml-6 mt-3 space-y-2 border-l-2 border-border pl-3">
+                          <label className="flex items-center gap-2 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={cfg.includeScreenshot}
+                              onChange={(e) =>
+                                updateConfig(o.id, { includeScreenshot: e.target.checked })
+                              }
+                            />
+                            {t("export.includeScreenshot")}
+                            {!o.screenshot_url && (
+                              <span className="text-muted-foreground">
+                                ({t("export.noScreenshot")})
+                              </span>
+                            )}
+                          </label>
+                          <label className="flex items-center gap-2 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={cfg.includeContent}
+                              onChange={(e) =>
+                                updateConfig(o.id, { includeContent: e.target.checked })
+                              }
+                            />
+                            {t("export.includeContent")}
+                          </label>
+                          {(o.tags?.length ?? 0) > 0 && (
+                            <div>
+                              <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                {t("export.tags")}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {o.tags!.map((tg) => {
+                                  const on = cfg.tags.has(tg);
+                                  return (
+                                    <button
+                                      key={tg}
+                                      type="button"
+                                      onClick={() => toggleTag(o.id, tg)}
+                                      className={`border px-2 py-0.5 text-[11px] ${
+                                        on
+                                          ? "border-foreground bg-foreground text-background"
+                                          : "border-border text-foreground"
+                                      }`}
+                                    >
+                                      {on ? "☑ " : "☐ "} {tag(tg)}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </>
           )}
         </div>
@@ -235,15 +309,17 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
           </button>
           <button
             onClick={handleExport}
-            disabled={!selected || generating}
+            disabled={!canGenerate || generating}
             className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background hover:bg-accent hover:border-accent disabled:opacity-50"
           >
-            {generating ? t("export.generating") : t("export.generate")}
+            {generating
+              ? t("export.generating")
+              : `${t("export.generate")}${orderedSelected.length > 1 ? ` (${orderedSelected.length})` : ""}`}
           </button>
         </div>
 
         {/* Off-screen render target */}
-        {selected && (
+        {orderedSelected.length > 0 && (
           <div
             style={{
               position: "fixed",
@@ -295,114 +371,141 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 </div>
               </div>
 
-              {/* Page 1: Screenshot */}
-              {includeScreenshot && (
-                <div style={{ marginBottom: 32 }}>
-                  {selected.screenshot_url ? (
-                    <img
-                      src={selected.screenshot_url}
-                      alt=""
-                      crossOrigin="anonymous"
-                      style={{
-                        width: "100%",
-                        display: "block",
-                        border: "1px solid #1a1a1a",
-                      }}
-                    />
-                  ) : (
+              {/* Sections per observation */}
+              {orderedSelected.map((obs, idx) => {
+                const cfg = configs[obs.id];
+                if (!cfg) return null;
+                return (
+                  <div key={obs.id} style={{ marginBottom: 36 }}>
                     <div
                       style={{
-                        border: "1px dashed #999",
-                        padding: "60px 0",
-                        textAlign: "center",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "baseline",
+                        marginBottom: 14,
+                        fontSize: 13,
                         color: "#999",
-                        fontSize: 18,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.16em",
                       }}
                     >
-                      {t("export.noScreenshot")}
+                      <span>
+                        № {String(idx + 1).padStart(2, "0")} / {String(orderedSelected.length).padStart(2, "0")}
+                      </span>
+                      <span>{formatDateForLanguage(obs.created_at, language)}</span>
                     </div>
-                  )}
-                </div>
-              )}
 
-              {/* Page 2: Evidence + content */}
-              <div
-                style={{
-                  border: "1px solid #1a1a1a",
-                  padding: "28px 32px",
-                  background: "#fff",
-                }}
-              >
-                {selectedTags.size > 0 && (
-                  <div style={{ marginBottom: 24 }}>
-                    <div
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 700,
-                        marginBottom: 12,
-                        borderBottom: "1px solid #1a1a1a",
-                        paddingBottom: 6,
-                      }}
-                    >
-                      {t("export.evidenceLabel")}
-                    </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px" }}>
-                      {Array.from(selectedTags).map((tg) => (
-                        <div
-                          key={tg}
-                          style={{ fontSize: 18, display: "flex", alignItems: "center", gap: 8 }}
-                        >
-                          <span
+                    {cfg.includeScreenshot && (
+                      <div style={{ marginBottom: 20 }}>
+                        {obs.screenshot_url ? (
+                          <img
+                            src={obs.screenshot_url}
+                            alt=""
+                            crossOrigin="anonymous"
                             style={{
-                              display: "inline-block",
-                              width: 18,
-                              height: 18,
-                              border: "2px solid #1a1a1a",
+                              width: "100%",
+                              display: "block",
+                              border: "1px solid #1a1a1a",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              border: "1px dashed #999",
+                              padding: "48px 0",
                               textAlign: "center",
-                              lineHeight: "14px",
-                              fontSize: 14,
-                              color: "#e91e63",
-                              fontWeight: 700,
+                              color: "#999",
+                              fontSize: 18,
                             }}
                           >
-                            ✓
-                          </span>
-                          {tag(tg)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {includeContent && (
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 700,
-                        marginBottom: 12,
-                        borderBottom: "1px solid #1a1a1a",
-                        paddingBottom: 6,
-                      }}
-                    >
-                      {t("export.observationLabel")}
-                    </div>
-                    {selected.summary && (
-                      <div style={{ fontSize: 22, fontWeight: 600, marginBottom: 12, lineHeight: 1.4 }}>
-                        {selected.summary}
+                            {t("export.noScreenshot")}
+                          </div>
+                        )}
                       </div>
                     )}
-                    <div style={{ fontSize: 18, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                      {selected.cleaned_content || selected.content}
+
+                    <div
+                      style={{
+                        border: "1px solid #1a1a1a",
+                        padding: "24px 28px",
+                        background: "#fff",
+                      }}
+                    >
+                      {cfg.tags.size > 0 && (
+                        <div style={{ marginBottom: 20 }}>
+                          <div
+                            style={{
+                              fontSize: 14,
+                              fontWeight: 700,
+                              marginBottom: 10,
+                              borderBottom: "1px solid #1a1a1a",
+                              paddingBottom: 6,
+                            }}
+                          >
+                            {t("export.evidenceLabel")}
+                          </div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 22px" }}>
+                            {Array.from(cfg.tags).map((tg) => (
+                              <div
+                                key={tg}
+                                style={{ fontSize: 17, display: "flex", alignItems: "center", gap: 8 }}
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    width: 18,
+                                    height: 18,
+                                    border: "2px solid #1a1a1a",
+                                    textAlign: "center",
+                                    lineHeight: "14px",
+                                    fontSize: 14,
+                                    color: "#e91e63",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  ✓
+                                </span>
+                                {tag(tg)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {cfg.includeContent && (
+                        <div>
+                          <div
+                            style={{
+                              fontSize: 14,
+                              fontWeight: 700,
+                              marginBottom: 10,
+                              borderBottom: "1px solid #1a1a1a",
+                              paddingBottom: 6,
+                            }}
+                          >
+                            {t("export.observationLabel")}
+                          </div>
+                          {obs.summary && (
+                            <div
+                              style={{ fontSize: 21, fontWeight: 600, marginBottom: 10, lineHeight: 1.4 }}
+                            >
+                              {obs.summary}
+                            </div>
+                          )}
+                          <div style={{ fontSize: 17, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+                            {obs.cleaned_content || obs.content}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
+                );
+              })}
 
               {/* Footer */}
               <div
                 style={{
-                  marginTop: 28,
+                  marginTop: 12,
                   paddingTop: 16,
                   borderTop: "2px solid #1a1a1a",
                   display: "flex",
@@ -412,12 +515,10 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 }}
               >
                 <div>
-                  {formatDateForLanguage(selected.created_at, language)} · {t("export.exportedBy")}:{" "}
-                  <span style={{ fontWeight: 600 }}>{exporterName}</span>
+                  {formatDateForLanguage(new Date().toISOString(), language)} ·{" "}
+                  {t("export.exportedBy")}: <span style={{ fontWeight: 600 }}>{exporterName}</span>
                 </div>
-                <div style={{ color: "#e91e63", fontWeight: 600 }}>
-                  {t("app.name")}
-                </div>
+                <div style={{ color: "#e91e63", fontWeight: 600 }}>{t("app.name")}</div>
               </div>
             </div>
           </div>
