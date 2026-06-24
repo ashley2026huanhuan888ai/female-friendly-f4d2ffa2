@@ -31,9 +31,9 @@ export function UserFollowButton({
 
   const label = status.following
     ? status.followed_by
-      ? t("follow.mutual" as any)
-      : t("follow.following" as any)
-    : t("follow.follow" as any);
+      ? t("userFollow.mutual")
+      : t("userFollow.following")
+    : t("userFollow.follow");
 
   const onClick = async () => {
     if (busy) return;
@@ -42,11 +42,11 @@ export function UserFollowButton({
       if (status.following) {
         await unfollow({ data: { user_id: userId } });
         setStatus({ ...status, following: false });
-        toast.success(t("follow.unfollowed" as any));
+        toast.success(t("userFollow.unfollowed"));
       } else {
         await follow({ data: { user_id: userId } });
         setStatus({ ...status, following: true });
-        toast.success(t("follow.followed" as any));
+        toast.success(t("userFollow.followed"));
       }
       onChange?.();
     } catch (e: any) {
