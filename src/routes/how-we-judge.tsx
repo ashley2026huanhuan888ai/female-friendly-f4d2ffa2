@@ -99,6 +99,16 @@ function HowWeJudgePage() {
           </Link>
         </div>
 
+        <div className="container-prose mt-8">
+          <Link
+            to="/points-system"
+            className="inline-flex items-center gap-2 border border-accent bg-accent px-5 py-2.5 text-sm text-background hover:opacity-90"
+          >
+            积分制度 →
+          </Link>
+        </div>
+
+
         <div className="container-prose mt-10 text-sm text-muted-foreground">
           {t("howWeJudge.feedback")}{" "}
           <Link to="/feedback" className="underline underline-offset-4 hover:text-foreground">
