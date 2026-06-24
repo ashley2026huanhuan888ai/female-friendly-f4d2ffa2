@@ -309,7 +309,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
                 {observations.map((o) => {
                   const checked = selectedIds.has(o.id);
                   const cfg = configs[o.id];
-                  const hasShot = !!o.screenshot_url;
+                  
                   return (
                     <div key={o.id} className="p-3">
                       <label className="flex cursor-pointer items-start gap-2 text-sm">
