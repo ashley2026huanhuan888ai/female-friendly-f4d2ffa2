@@ -76,6 +76,21 @@ function ObjectDetail() {
 
   const fetchDetail = useServerFn(getPublicObjectDetail);
   const fetchMoreObservations = useServerFn(getPublicObjectObservations);
+  const removeObservation = useServerFn(deleteObservation);
+  const { isAdmin } = useAuth();
+
+  async function handleDeleteObservation(obsId: string) {
+    if (!confirm(t("objectDetail.deleteConfirm"))) return;
+    try {
+      await removeObservation({ data: { id: obsId } });
+      setObs((prev) => prev.filter((o) => o.id !== obsId));
+      setObsTotal((n) => Math.max(0, n - 1));
+      toast.success(t("objectDetail.deleteSuccess"));
+    } catch (e: any) {
+      toast.error(e?.message || "Error");
+    }
+  }
+
 
   useEffect(() => {
     let cancelled = false;
