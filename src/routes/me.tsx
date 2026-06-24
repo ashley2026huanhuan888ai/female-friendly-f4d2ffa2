@@ -6,6 +6,8 @@ import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { Thermometer } from "@/components/Thermometer";
 import { UserFollowButton } from "@/components/UserFollowButton";
+import { AvatarPicker } from "@/components/AvatarPicker";
+
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
 import { getMyProfile, updateMyProfile } from "@/lib/api/profile.functions";
 import { listMyFollowers, listMyFollowing } from "@/lib/api/follows.functions";
@@ -336,16 +338,11 @@ function ProfileEditor({ onClose }: { onClose: () => void }) {
               className="min-h-[72px] resize-y border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
             />
           </label>
-          <label className="grid gap-1 text-xs">
+          <div className="grid gap-2 text-xs">
             <span className="text-muted-foreground">{t("profile.avatarUrl")}</span>
-            <input
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              maxLength={500}
-              placeholder={t("profile.avatarUrlPlaceholder")}
-              className="border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
-            />
-          </label>
+            <AvatarPicker value={avatarUrl || null} onChange={(v) => setAvatarUrl(v ?? "")} />
+          </div>
+
           <div className="flex items-center gap-3">
             <button
               onClick={onSave}
