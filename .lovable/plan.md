@@ -1,1 +1,1 @@
-把 `src/lib/i18n.tsx` 中 `nav.loginRegister` 文案：中文 "登录 / 注册" → "登录"，英文 "Log in / Sign up" → "Log in"。其他使用处不动。
+把 `src/components/ObjectCard.tsx` 第 92 行的 `<Thermometer value={temperature} size="sm" unmeasured={...} />` 改为 `size="lg" showLabel={false}`，与首页升温列表一致（大号温度数字 + 小号灰色 °C，去掉下方区间标签文字）。
