@@ -429,7 +429,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     // scene
     if (o.scene) {
       ctx.fillStyle = MUTED;
-      ctx.font = `400 13px ${FONT_SANS}`;
+      ctx.font = `500 20px ${FONT_SANS}`;
       ctx.fillText(ellipsize(ctx, o.scene.toUpperCase(), cw), cl, by);
       by += TYPO.sceneLH;
     }
@@ -446,7 +446,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
           INK,
           `700 ${TYPO.summarySize}px ${FONT_SERIF}`
         );
-        by += 16;
+        by += TYPO.paraGap;
       }
       by += drawText(
         ctx,
@@ -469,7 +469,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
         dh = 640;
         dw = dh / ratio;
       }
-      by += 22;
+      by += 26;
       ctx.fillStyle = "#fff";
       ctx.fillRect(cl, by, dw, dh);
       ctx.drawImage(im, cl, by, dw, dh);
@@ -479,15 +479,15 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
       by += dh;
     }
 
-    by += 16;
+    by += 20;
     ctx.fillStyle = MUTED;
-    ctx.font = `400 13px ${FONT_SANS}`;
+    ctx.font = `400 20px ${FONT_SANS}`;
     ctx.fillText(
       input.i18n.dateText.replace("{date}", formatShort(o.created_at)) || formatShort(o.created_at),
       cl,
       by
     );
-    by += TYPO.dateLH + 36;
+    by += TYPO.dateLH + TYPO.blockPad;
 
     // bottom separator
     ctx.fillStyle = "rgba(26,26,26,0.06)";
@@ -496,10 +496,10 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   }
 
   // Footer — 截断防溢出
-  cy += 28;
+  cy += 32;
   ctx.fillStyle = INK;
-  ctx.font = `700 14px ${FONT_SANS}`;
-  const rightNameMax = 360;
+  ctx.font = `700 22px ${FONT_SANS}`;
+  const rightNameMax = 460;
   const rightName = ellipsize(ctx, input.object.name.toUpperCase(), rightNameMax);
   const rightNameW = ctx.measureText(rightName).width;
   ctx.textAlign = "right";
@@ -507,10 +507,11 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   ctx.textAlign = "left";
 
   ctx.fillStyle = MUTED;
-  ctx.font = `400 14px ${FONT_SANS}`;
-  const leftMax = W - PAD * 2 - rightNameW - 24;
+  ctx.font = `400 22px ${FONT_SANS}`;
+  const leftMax = W - PAD * 2 - rightNameW - 28;
   const leftFull = `${input.i18n.nowText}  |  ${input.i18n.exportedBy}: ${input.exporterName}`;
   ctx.fillText(ellipsize(ctx, leftFull, leftMax), PAD, cy);
+
 
   return canvas.toDataURL("image/png");
 }
