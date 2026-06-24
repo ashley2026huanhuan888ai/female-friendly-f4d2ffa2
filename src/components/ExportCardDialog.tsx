@@ -48,6 +48,12 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [nickname, setNickname] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [result, setResult] = useState<{ dataUrl: string; blob: Blob; filename: string } | null>(null);
+
+  const handleClose = () => {
+    setResult(null);
+    onClose();
+  };
 
   const cardRef = useRef<HTMLDivElement>(null);
 
