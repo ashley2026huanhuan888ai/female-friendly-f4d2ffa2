@@ -5,8 +5,10 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { useAuth } from "@/components/auth-context";
 import { Thermometer } from "@/components/Thermometer";
+import { UserFollowButton } from "@/components/UserFollowButton";
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
 import { getMyProfile, updateMyProfile } from "@/lib/api/profile.functions";
+import { listMyFollowers, listMyFollowing } from "@/lib/api/follows.functions";
 import { formatDateForLanguage, useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -24,7 +26,7 @@ function MePage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { ready, user } = useAuth();
-  const [tab, setTab] = useState<"watch" | "obs" | "notif">("watch");
+  const [tab, setTab] = useState<"watch" | "obs" | "notif" | "relations">("watch");
   const fetchDash = useServerFn(getMyDashboard);
   const markRead = useServerFn(markNotificationsRead);
 
@@ -78,6 +80,7 @@ function MePage() {
                     count: data.unread_count > 0 ? ` · ${data.unread_count}` : "",
                   }),
                 ],
+                ["relations", t("me.followers") + " / " + t("me.following")],
               ] as const
             ).map(([k, label]) => (
               <button
@@ -208,6 +211,8 @@ function MePage() {
               )}
             </>
           )}
+
+          {tab === "relations" && <RelationsPanel />}
         </div>
       </section>
     </SiteLayout>
@@ -332,6 +337,72 @@ function ProfileEditor() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function RelationsPanel() {
+  const { t } = useI18n();
+  const fetchFollowing = useServerFn(listMyFollowing);
+  const fetchFollowers = useServerFn(listMyFollowers);
+  const [following, setFollowing] = useState<any[] | null>(null);
+  const [followers, setFollowers] = useState<any[] | null>(null);
+
+  const reload = () => {
+    fetchFollowing().then(setFollowing).catch(() => setFollowing([]));
+    fetchFollowers().then(setFollowers).catch(() => setFollowers([]));
+  };
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const renderList = (items: any[] | null) => {
+    if (items === null)
+      return <div className="text-sm text-muted-foreground">{t("common.loading")}</div>;
+    if (items.length === 0)
+      return <Empty hint={t("userFollow.empty")} />;
+    return (
+      <ul className="divide-y divide-border border-y border-border">
+        {items.map((u) => (
+          <li key={u.id} className="flex items-center justify-between gap-3 py-3">
+            <Link
+              to="/messages/$peerId"
+              params={{ peerId: u.id }}
+              className="flex items-center gap-3 hover:text-foreground"
+            >
+              {u.avatar_url ? (
+                <img
+                  src={u.avatar_url}
+                  alt=""
+                  className="h-9 w-9 rounded-full border border-border object-cover"
+                />
+              ) : (
+                <div className="h-9 w-9 rounded-full border border-border bg-card" />
+              )}
+              <span className="text-sm">{u.display_name ?? u.id.slice(0, 8)}</span>
+            </Link>
+            <UserFollowButton userId={u.id} onChange={reload} />
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  return (
+    <div className="grid gap-8 md:grid-cols-2">
+      <div>
+        <div className="mb-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          {t("me.following")}
+        </div>
+        {renderList(following)}
+      </div>
+      <div>
+        <div className="mb-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+          {t("me.followers")}
+        </div>
+        {renderList(followers)}
+      </div>
     </div>
   );
 }
