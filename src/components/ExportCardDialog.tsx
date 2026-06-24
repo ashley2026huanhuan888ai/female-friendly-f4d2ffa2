@@ -203,12 +203,30 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
           : 2;
       const pixelRatio = Math.min(2.5, Math.max(1.5, dpr));
 
-      const dataUrl = await toPng(cardRef.current, {
-        pixelRatio,
-        cacheBust: false,
-        skipFonts: true,
-        backgroundColor: PAPER,
-      });
+      const MAX_ATTEMPTS = 3;
+      let dataUrl = "";
+      let lastErr: any = null;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          dataUrl = await toPng(cardRef.current, {
+            pixelRatio: attempt === MAX_ATTEMPTS ? Math.max(1, pixelRatio - 0.5) : pixelRatio,
+            cacheBust: attempt > 1,
+            skipFonts: true,
+            backgroundColor: PAPER,
+          });
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+          console.warn(`[ExportCard] toPng attempt ${attempt}/${MAX_ATTEMPTS} failed`, err);
+          if (attempt < MAX_ATTEMPTS) {
+            setProgress({ pct: 50, label: t("export.progressRetry", { attempt: attempt + 1, total: MAX_ATTEMPTS }) });
+            await new Promise((r) => setTimeout(r, 300 * attempt));
+          }
+        }
+      }
+      if (lastErr) throw lastErr;
+
       setProgress({ pct: 85, label: t("export.progressEncode") });
       const blob = await (await fetch(dataUrl)).blob();
       const d = new Date();
@@ -219,8 +237,12 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       setResult({ dataUrl, blob, filename });
       toast.success(t("export.ready"));
     } catch (e: any) {
-      console.error("[ExportCard] toPng failed", e);
-      toast.error(t("export.failed"));
+      console.error("[ExportCard] toPng failed after retries", e);
+      const msg = e?.message ? `: ${String(e.message).slice(0, 120)}` : "";
+      toast.error(t("export.failedFinal") + msg, {
+        description: t("export.failedHint"),
+        duration: 8000,
+      });
     } finally {
       // 回收 blob URL
       for (const u of createdBlobUrls) URL.revokeObjectURL(u);
