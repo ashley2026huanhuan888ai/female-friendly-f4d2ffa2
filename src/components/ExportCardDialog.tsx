@@ -249,7 +249,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <h2 className="font-serif text-lg">{t("export.title")}</h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
           >
             ✕
