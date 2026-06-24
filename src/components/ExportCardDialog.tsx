@@ -78,9 +78,18 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
   useEffect(() => {
     if (!open) return;
-    fetchProfile()
-      .then((p: any) => setNickname(p?.display_name || ""))
-      .catch(() => {});
+    let cancelled = false;
+    import("@/integrations/supabase/client").then(({ supabase }) =>
+      supabase.auth.getSession().then(({ data }) => {
+        if (cancelled || !data.session) return;
+        fetchProfile()
+          .then((p: any) => setNickname(p?.display_name || ""))
+          .catch(() => {});
+      })
+    );
+    return () => {
+      cancelled = true;
+    };
   }, [open, fetchProfile]);
 
   useEffect(() => {
