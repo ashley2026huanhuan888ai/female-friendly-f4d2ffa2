@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
@@ -33,7 +33,7 @@ function Index() {
   const topicWall = (summary?.trending_tags ?? []).slice(0, 14);
   const maxTopicCount = Math.max(1, ...topicWall.map((item: any) => Number(item.count) || 0));
 
-  useEffect(() => {
+  const loadSummary = useCallback(() => {
     setObsStatus("loading");
     fetchSummary()
       .then((data) => {
@@ -54,6 +54,10 @@ function Index() {
         setObsStatus("error");
       });
   }, [fetchSummary]);
+
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
 
   return (
     <SiteLayout>
