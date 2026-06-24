@@ -41,7 +41,7 @@ const COPY = {
     "nav.me": "我的",
     "nav.messages": "私信",
     "nav.signOut": "退出",
-    "nav.loginRegister": "登录 / 注册",
+    "nav.loginRegister": "登录",
     "nav.menu": "菜单",
 
     "common.loading": "加载中…",
