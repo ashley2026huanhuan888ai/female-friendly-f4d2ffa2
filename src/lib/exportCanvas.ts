@@ -39,6 +39,7 @@ export type ExportInput = {
 const ACCENT = "#e0218a";
 const INK = "#1a1a1a";
 const MUTED = "#6b6b6b";
+const BORDER = "#d9d2c4";
 const PAPER = "#f5f1ea";
 const W = 640;
 const PAD = 36;
@@ -54,10 +55,11 @@ const TYPO = {
   summaryLH: 1.45,
   bodySize: 30,
   bodyLH: 1.65,
-  tagSize: 25,
-  tagSizeDense: 23,
-  tagLH: 36,
-  tagGapX: 14,
+  tagSize: 22,
+  tagSizeDense: 20,
+  tagLH: 42,
+  tagGapX: 10,
+  tagPadX: 12,
   tempSize: 72,
   tempSize3Digit: 60,
   tempUnitSize: 24,
@@ -217,7 +219,7 @@ function layoutTags(
     if (ctx.measureText(label).width > CONTENT_W) {
       label = ellipsize(ctx, label, CONTENT_W);
     }
-    const w = ctx.measureText(label).width;
+    const w = ctx.measureText(label).width + TYPO.tagPadX * 2;
     const advance = w + TYPO.tagGapX;
     if (lineW > 0 && lineW + w > CONTENT_W) {
       lines.push([{ text: label, w }]);
@@ -233,18 +235,18 @@ function layoutTags(
     const trimmed = lines.slice(0, 3);
     let extra = `+${overflow}`;
     ctx.font = `600 ${size}px ${FONT_SANS}`;
-    let extraW = ctx.measureText(extra).width;
+    let extraW = ctx.measureText(extra).width + TYPO.tagPadX * 2;
     const last = trimmed[2];
     const lineWidth = () => last.reduce((sum, item, index) => sum + item.w + (index > 0 ? TYPO.tagGapX : 0), 0);
     while (last.length > 0 && lineWidth() + TYPO.tagGapX + extraW > CONTENT_W) {
       last.pop();
       overflow += 1;
       extra = `+${overflow}`;
-      extraW = ctx.measureText(extra).width;
+      extraW = ctx.measureText(extra).width + TYPO.tagPadX * 2;
     }
     if (extraW > CONTENT_W) {
       extra = ellipsize(ctx, extra, CONTENT_W);
-      extraW = ctx.measureText(extra).width;
+      extraW = ctx.measureText(extra).width + TYPO.tagPadX * 2;
     }
     last.push({ text: extra, w: extraW });
     return { lines: trimmed, size, lh: TYPO.tagLH };
@@ -385,18 +387,25 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   }
   cy += nameWrap.height + 20;
 
-  // Tags row (band color, 自适应布局)
+  // Tags row — 与主页 ObjectCard 一致的描边胶囊
   if (tagLayout.lines.length > 0) {
-    ctx.fillStyle = input.bandHex;
-    ctx.font = `600 ${tagLayout.size}px ${FONT_SANS}`;
+    const rectH = tagLayout.size + 18;
+    ctx.font = `500 ${tagLayout.size}px ${FONT_SANS}`;
+    ctx.lineWidth = 1;
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
     for (let li = 0; li < tagLayout.lines.length; li++) {
       let tx = PAD;
-      const ty = cy + li * tagLayout.lh;
+      const rowCenter = cy + li * tagLayout.lh + tagLayout.lh / 2;
       for (const item of tagLayout.lines[li]) {
-        ctx.fillText(item.text, tx, ty);
+        ctx.strokeStyle = BORDER;
+        ctx.strokeRect(tx + 0.5, rowCenter - rectH / 2 + 0.5, item.w - 1, rectH - 1);
+        ctx.fillStyle = MUTED;
+        ctx.fillText(item.text, tx + TYPO.tagPadX, rowCenter);
         tx += item.w + TYPO.tagGapX;
       }
     }
+    ctx.textBaseline = "alphabetic";
     cy += tagLayout.lines.length * tagLayout.lh + 14;
   }
 
