@@ -47,15 +47,14 @@ describe("styles.css 暗色模式 TempText 颜色覆盖", () => {
   const tokens = ["--temp-cool", "--temp-neutral", "--temp-warm", "--temp-hot", "--temp-critical"];
 
   // 提取 :root 与 .dark 块（简单括号匹配，足以应付当前 styles.css 结构）
-  function extractBlock(selector: string): string {
-    const re = new RegExp(`${selector.replace(/[.]/g, "\\.")}\\s*\\{([\\s\\S]*?)\\n\\}`);
-    const m = css.match(re);
-    if (!m) throw new Error(`找不到 ${selector} 选择器块`);
+  function extractBlock(pattern: RegExp): string {
+    const m = css.match(pattern);
+    if (!m) throw new Error(`找不到选择器块: ${pattern}`);
     return m[1];
   }
 
-  const rootBlock = extractBlock(":root");
-  const darkBlock = extractBlock("\\.dark");
+  const rootBlock = extractBlock(/:root\s*\{([\s\S]*?)\n\}/);
+  const darkBlock = extractBlock(/\.dark\s*\{([\s\S]*?)\n\}/);
 
   for (const tok of tokens) {
     it(`:root 定义 ${tok}`, () => {
