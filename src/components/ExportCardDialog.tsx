@@ -173,7 +173,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       );
 
       const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 2,
+        pixelRatio: 3,
         cacheBust: true,
         backgroundColor: PAPER,
       });
