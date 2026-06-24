@@ -177,11 +177,13 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
         cacheBust: true,
         backgroundColor: PAPER,
       });
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `${object.name}-cards-${orderedSelected.length}.png`;
-      a.click();
-      toast.success(t("export.button"));
+      const blob = await (await fetch(dataUrl)).blob();
+      const d = new Date();
+      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+      const safeName = object.name.replace(/[\\/:*?"<>|\s]+/g, "_");
+      const filename = `${safeName}-${ymd}-${orderedSelected.length}cards.png`;
+      setResult({ dataUrl, blob, filename });
+      toast.success(t("export.ready"));
     } catch (e: any) {
       console.error(e);
       toast.error(t("export.failed"));
