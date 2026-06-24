@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteLayout } from "@/components/SiteLayout";
 import { FeedEventCard } from "@/components/FeedEventCard";
@@ -33,7 +33,7 @@ function Index() {
   const topicWall = (summary?.trending_tags ?? []).slice(0, 14);
   const maxTopicCount = Math.max(1, ...topicWall.map((item: any) => Number(item.count) || 0));
 
-  useEffect(() => {
+  const loadSummary = useCallback(() => {
     setObsStatus("loading");
     fetchSummary()
       .then((data) => {
@@ -54,6 +54,10 @@ function Index() {
         setObsStatus("error");
       });
   }, [fetchSummary]);
+
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
 
   return (
     <SiteLayout>
@@ -223,7 +227,16 @@ function Index() {
               ))}
             </ul>
           ) : obsStatus === "error" ? (
-            <p className="mt-6 text-sm text-destructive">{t("common.loadError")}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <p className="text-sm text-destructive">{t("common.loadError")}</p>
+              <button
+                type="button"
+                onClick={loadSummary}
+                className="border border-foreground px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-foreground hover:text-background"
+              >
+                {t("common.retry")}
+              </button>
+            </div>
           ) : summary?.latest_observations?.length ? (
             <ul className="mt-6 grid gap-4 divide-y divide-border border-y border-border md:grid-cols-2 md:divide-y-0 animate-fade-in">
               {summary.latest_observations.slice(0, 6).map((o: any) => {
