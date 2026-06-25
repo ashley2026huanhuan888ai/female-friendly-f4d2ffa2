@@ -167,7 +167,7 @@ export function BoycottButton({ objectId }: { objectId: string }) {
                 onClick={() => setCelebrate({ open: false, n: 0 })}
                 className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background transition hover:bg-accent hover:border-accent"
               >
-                知道了
+                我真棒
               </button>
               <Link
                 to="/leaderboard"
