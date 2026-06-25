@@ -148,7 +148,7 @@ export function BoycottButton({ objectId }: { objectId: string }) {
                 {celebrate.n}
               </span>
               <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                次 / boycotts
+                次 / spurns
               </span>
             </div>
             <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
