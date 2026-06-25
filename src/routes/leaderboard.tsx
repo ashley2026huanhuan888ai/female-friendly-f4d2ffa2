@@ -39,7 +39,7 @@ function LeaderboardPage() {
     mode === "contribution"
       ? "每一次观察、每一次邀请，都让这里更明亮。"
       : mode === "boycott_object"
-      ? "被最多人按下"抵制"的对象。"
+      ? "被最多人按下「抵制」的对象。"
       : "最积极表达抵制态度的用户。";
 
   return (
