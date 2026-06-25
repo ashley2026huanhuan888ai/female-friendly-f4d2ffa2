@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useAuth } from "@/components/auth-context";
 import { toast } from "sonner";
-import { getBoycottStatus, isBoycotting, toggleBoycott } from "@/lib/api/boycotts.functions";
+import { getBoycottStatus, isBoycotting, toggleBoycott, getMyBoycottCount } from "@/lib/api/boycotts.functions";
 
 export function BoycottButton({ objectId }: { objectId: string }) {
   const { ready, user } = useAuth();
@@ -12,10 +12,12 @@ export function BoycottButton({ objectId }: { objectId: string }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [celebrate, setCelebrate] = useState<{ open: boolean; n: number }>({ open: false, n: 0 });
   const router = useRouter();
   const getStatus = useServerFn(getBoycottStatus);
   const checkMine = useServerFn(isBoycotting);
   const toggle = useServerFn(toggleBoycott);
+  const myCount = useServerFn(getMyBoycottCount);
 
   useEffect(() => {
     if (!ready) return;
@@ -52,6 +54,14 @@ export function BoycottButton({ objectId }: { objectId: string }) {
       const r = await toggle({ data: { object_id: objectId } });
       setMine(r.mine);
       setCount(r.count);
+      if (r.mine) {
+        try {
+          const { count: n } = await myCount();
+          setCelebrate({ open: true, n });
+        } catch {
+          // ignore celebration failure
+        }
+      }
     } catch (err) {
       // revert
       setMine((m) => !m);
@@ -113,6 +123,59 @@ export function BoycottButton({ objectId }: { objectId: string }) {
               >
                 取消
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {celebrate.open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4"
+          onClick={() => setCelebrate({ open: false, n: 0 })}
+        >
+          <div
+            className="w-full max-w-md border border-accent/40 bg-paper p-7 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-[11px] uppercase tracking-[0.25em] text-accent">
+              第 {celebrate.n} 次抵制
+            </div>
+            <h3 className="mt-3 font-serif text-2xl leading-snug">
+              恭喜你，守住了边界。
+            </h3>
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="font-serif text-6xl leading-none text-accent tabular-nums">
+                {celebrate.n}
+              </span>
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                次 / boycotts
+              </span>
+            </div>
+            <p className="mt-5 text-sm leading-relaxed text-muted-foreground">
+              {celebrate.n === 1 ? (
+                <>你的第一次抵制，从今天起算。</>
+              ) : (
+                <>我，不忍受冒犯。</>
+              )}
+              <br />
+              这是我的第 <span className="text-accent font-medium">{celebrate.n}</span> 次抵制——每一次都在告诉世界：
+              <br />
+              我会守住我的边界。
+            </p>
+            <div className="mt-6 flex gap-2">
+              <button
+                onClick={() => setCelebrate({ open: false, n: 0 })}
+                className="border border-foreground bg-foreground px-4 py-2 text-xs uppercase tracking-wider text-background transition hover:bg-accent hover:border-accent"
+              >
+                知道了
+              </button>
+              <Link
+                to="/leaderboard"
+                onClick={() => setCelebrate({ open: false, n: 0 })}
+                className="border border-border px-4 py-2 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground hover:border-foreground"
+              >
+                去贡献榜看看
+              </Link>
             </div>
           </div>
         </div>

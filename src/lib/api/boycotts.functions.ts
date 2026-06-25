@@ -4,6 +4,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const input = z.object({ object_id: z.string().uuid() });
 
+export const getMyBoycottCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { count } = await supabase
+      .from("object_boycotts" as never)
+      .select("object_id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    return { count: count ?? 0 };
+  });
+
 
 export const getBoycottStatus = createServerFn({ method: "GET" })
   .inputValidator((i) => input.parse(i))
