@@ -191,11 +191,18 @@ function PointsSystemPage() {
               贡献榜
             </Link>
             <Link
+              to="/contribution"
+              className="border border-accent px-4 py-2 text-accent hover:bg-accent hover:text-accent-foreground"
+            >
+              邀请朋友注册
+            </Link>
+            <Link
               to="/how-we-judge"
               className="border border-border px-4 py-2 hover:border-foreground"
             >
               ← 返回判断说明
             </Link>
+
           </div>
         </div>
       </section>
