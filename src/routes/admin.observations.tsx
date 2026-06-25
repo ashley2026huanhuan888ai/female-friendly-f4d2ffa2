@@ -56,6 +56,8 @@ function ObsAdmin() {
   const [items, setItems] = useState<Obs[]>([]);
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected">("pending");
   const [risk, setRisk] = useState<"all" | "low" | "medium" | "high">("all");
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [rejectFor, setRejectFor] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>("too_short");
@@ -64,9 +66,16 @@ function ObsAdmin() {
   const [batchReason, setBatchReason] = useState<string>("too_short");
   const [batchBusy, setBatchBusy] = useState(false);
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedKeyword(keyword.trim()), 300);
+    return () => clearTimeout(t);
+  }, [keyword]);
+
   const reload = async () => {
     try {
-      const rows = await listObs({ data: { status: filter, risk, limit: 100 } });
+      const rows = await listObs({
+        data: { status: filter, risk, limit: 100, q: debouncedKeyword || undefined },
+      });
       setItems((rows ?? []) as unknown as Obs[]);
       setSelected(new Set());
     } catch (e: any) {
@@ -75,7 +84,7 @@ function ObsAdmin() {
   };
   useEffect(() => {
     reload(); /* eslint-disable-next-line */
-  }, [filter, risk]);
+  }, [filter, risk, debouncedKeyword]);
 
   const toggleSel = (id: string) =>
     setSelected((s) => {
@@ -241,6 +250,23 @@ function ObsAdmin() {
             {r === "all" ? "全部" : RISK_LABEL[r]}
           </button>
         ))}
+        <div className="ml-auto flex items-center gap-2">
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="搜索内容、对象、标签…"
+            className="border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-foreground"
+          />
+          {keyword && (
+            <button
+              onClick={() => setKeyword("")}
+              className="border border-border px-2 py-1 text-xs text-muted-foreground hover:border-foreground"
+            >
+              清除
+            </button>
+          )}
+        </div>
       </div>
 
       {filter === "pending" && items.length > 0 && (
