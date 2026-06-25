@@ -250,6 +250,24 @@ function ObsAdmin() {
             {r === "all" ? "全部" : RISK_LABEL[r]}
           </button>
         ))}
+        ))}
+        <div className="ml-auto flex items-center gap-2">
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="搜索内容、对象、标签…"
+            className="border border-border bg-background px-3 py-1.5 text-sm outline-none focus:border-foreground"
+          />
+          {keyword && (
+            <button
+              onClick={() => setKeyword("")}
+              className="border border-border px-2 py-1 text-xs text-muted-foreground hover:border-foreground"
+            >
+              清除
+            </button>
+          )}
+        </div>
       </div>
 
       {filter === "pending" && items.length > 0 && (
