@@ -90,7 +90,7 @@ async function ensureCanvasFonts(input: ExportInput): Promise<void> {
     ...input.observations.flatMap((o) => [
       o.scene || "",
       o.summary || "",
-      o.cleaned_content || o.content || "",
+      o.content || "",
       ...(o.tags || []).map((tg) => input.i18n.tagLabel(tg)),
     ]),
   ].join(" ");
@@ -316,7 +316,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
         h += wrapText(measure, o.summary, contentW, TYPO.summarySize * TYPO.summaryLH).height + TYPO.paraGap;
       }
       measure.font = `400 ${TYPO.bodySize}px ${FONT_SERIF}`;
-      h += wrapText(measure, o.cleaned_content || o.content, contentW, TYPO.bodySize * TYPO.bodyLH).height;
+      h += wrapText(measure, o.content, contentW, TYPO.bodySize * TYPO.bodyLH).height;
     }
     if (showShot) {
       const im = shotImgs[o.id]!;
@@ -493,7 +493,7 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
       }
       by += drawText(
         ctx,
-        o.cleaned_content || o.content,
+        o.content,
         cl,
         by,
         cw,
