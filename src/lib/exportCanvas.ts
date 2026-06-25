@@ -379,17 +379,19 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   cy += 1 + 34;
 
 
-  // Object name
-  ctx.fillStyle = INK;
+  // 测量名字实际占据的宽高，水印随之对齐与缩放
   ctx.font = `700 ${nameFontSize}px ${FONT_SERIF}`;
-  for (let i = 0; i < nameWrap.lines.length; i++) {
-    ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * TYPO.nameLH);
+  let nameBlockW = 0;
+  for (const ln of nameWrap.lines) {
+    const w = ctx.measureText(ln).width;
+    if (w > nameBlockW) nameBlockW = w;
   }
+  if (nameBlockW <= 0) nameBlockW = CONTENT_W * 0.5;
 
-  // “抵制” 透明水印 — 浮于对象名字之上
+  // “抵制” 透明水印 — 先绘制，确保被名字盖住、不遮挡文字
   {
-    const wmSize = Math.round(nameFontSize * 2.2);
-    const cxWM = PAD + Math.min(CONTENT_W, 520) * 0.42;
+    const wmSize = Math.round(Math.min(nameBlockW * 0.55, nameWrap.height * 1.6, nameFontSize * 2.4));
+    const cxWM = PAD + nameBlockW / 2;
     const cyWM = cy + nameWrap.height / 2;
     ctx.save();
     ctx.translate(cxWM, cyWM);
@@ -397,14 +399,22 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     ctx.font = `900 ${wmSize}px ${FONT_SERIF}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(224, 33, 138, 0.14)";
+    ctx.fillStyle = "rgba(224, 33, 138, 0.12)";
     ctx.fillText("抵制", 0, 0);
     ctx.restore();
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
   }
 
+  // Object name — 绘制在水印之上
+  ctx.fillStyle = INK;
+  ctx.font = `700 ${nameFontSize}px ${FONT_SERIF}`;
+  for (let i = 0; i < nameWrap.lines.length; i++) {
+    ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * TYPO.nameLH);
+  }
+
   cy += nameWrap.height + 20;
+
 
 
   // Tags row — 与主页 ObjectCard 一致的描边胶囊
