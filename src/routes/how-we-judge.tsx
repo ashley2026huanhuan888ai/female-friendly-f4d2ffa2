@@ -99,14 +99,21 @@ function HowWeJudgePage() {
           </Link>
         </div>
 
-        <div className="container-prose mt-8">
+        <div className="container-prose mt-8 flex flex-wrap gap-3">
           <Link
             to="/points-system"
             className="inline-flex items-center gap-2 border border-accent bg-accent px-5 py-2.5 text-sm text-background hover:opacity-90"
           >
             积分制度 →
           </Link>
+          <Link
+            to="/leaderboard"
+            className="inline-flex items-center gap-2 border border-foreground px-5 py-2.5 text-sm hover:bg-foreground hover:text-background"
+          >
+            贡献榜 →
+          </Link>
         </div>
+
 
 
         <div className="container-prose mt-10 text-sm text-muted-foreground">
