@@ -17,8 +17,8 @@ function publicClient() {
 export const getBoycottStatus = createServerFn({ method: "GET" })
   .inputValidator((i) => input.parse(i))
   .handler(async ({ data }) => {
-    const sb = publicClient();
-    const { count } = await sb
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count } = await supabaseAdmin
       .from("object_boycotts" as never)
       .select("user_id", { count: "exact", head: true })
       .eq("object_id", data.object_id);
