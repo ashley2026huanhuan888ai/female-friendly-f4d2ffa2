@@ -39,6 +39,19 @@ function PointsSystemPage() {
               你帮助对象提升的温度 <span className="text-accent">=</span> 你获得的积分
             </p>
           </div>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              to="/contribution"
+              className="inline-flex items-center justify-center bg-accent px-5 py-3 text-sm font-medium text-accent-foreground hover:opacity-90"
+            >
+              立即邀请朋友注册 →
+            </Link>
+            <p className="text-xs text-muted-foreground sm:max-w-sm">
+              登录后获取你的专属邀请码与链接，每邀请一位好友注册得 <span className="text-accent">5 分</span>，好友贡献还有 <span className="text-accent">10%</span> 返利。
+            </p>
+          </div>
+
         </div>
       </section>
 
@@ -178,11 +191,18 @@ function PointsSystemPage() {
               贡献榜
             </Link>
             <Link
+              to="/contribution"
+              className="border border-accent px-4 py-2 text-accent hover:bg-accent hover:text-accent-foreground"
+            >
+              邀请朋友注册
+            </Link>
+            <Link
               to="/how-we-judge"
               className="border border-border px-4 py-2 hover:border-foreground"
             >
               ← 返回判断说明
             </Link>
+
           </div>
         </div>
       </section>
