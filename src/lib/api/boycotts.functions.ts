@@ -80,8 +80,8 @@ export const isBoycotting = createServerFn({ method: "GET" })
 export const getObjectBoycottLeaderboard = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ limit: z.number().int().min(1).max(100).default(50) }).parse(i))
   .handler(async ({ data }) => {
-    const sb = publicClient();
-    const { data: rows, error } = await sb
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
       .from("object_boycotts" as never)
       .select("object_id")
       .limit(10000);
