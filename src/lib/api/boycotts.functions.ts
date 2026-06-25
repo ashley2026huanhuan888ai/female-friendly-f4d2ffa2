@@ -95,7 +95,7 @@ export const getObjectBoycottLeaderboard = createServerFn({ method: "GET" })
       .slice(0, data.limit);
     if (top.length === 0) return [] as Array<{ id: string; name: string; type: string; count: number }>;
     const ids = top.map(([id]) => id);
-    const { data: objs, error: oerr } = await sb
+    const { data: objs, error: oerr } = await supabaseAdmin
       .from("objects")
       .select("id,name,type")
       .in("id", ids);
