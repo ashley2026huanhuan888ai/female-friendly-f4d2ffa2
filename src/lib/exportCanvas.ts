@@ -386,23 +386,37 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
     ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * TYPO.nameLH);
   }
 
-  // “抵制” 透明水印 — 浮于对象名字之上
+  // “抵制” 透明水印 — 偏右，落在名字右侧的空白区
   {
-    const wmSize = Math.round(nameFontSize * 2.2);
-    const cxWM = PAD + Math.min(CONTENT_W, 520) * 0.42;
-    const cyWM = cy + nameWrap.height / 2;
-    ctx.save();
-    ctx.translate(cxWM, cyWM);
-    ctx.rotate((-12 * Math.PI) / 180);
-    ctx.font = `900 ${wmSize}px ${FONT_SERIF}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(224, 33, 138, 0.14)";
-    ctx.fillText("抵制", 0, 0);
-    ctx.restore();
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
+    // 量出名字实际占用的最大宽度，避免遮挡
+    ctx.font = `700 ${nameFontSize}px ${FONT_SERIF}`;
+    let maxNameW = 0;
+    for (const line of nameWrap.lines) {
+      const w = ctx.measureText(line).width;
+      if (w > maxNameW) maxNameW = w;
+    }
+    const rightSpace = CONTENT_W - maxNameW - 24; // 名字右侧剩余空间
+    // 水印字号：随名字字号缩放，但不超过右侧空间能容纳的两字宽
+    const baseSize = Math.round(nameFontSize * 1.9);
+    const maxByRoom = Math.floor(rightSpace / 1.6); // 2 字 ≈ 1.6×字号（含旋转裕量）
+    const wmSize = Math.max(36, Math.min(baseSize, maxByRoom));
+    if (rightSpace > 60 && wmSize >= 36) {
+      const cxWM = PAD + CONTENT_W - wmSize * 0.85;
+      const cyWM = cy + nameWrap.height / 2;
+      ctx.save();
+      ctx.translate(cxWM, cyWM);
+      ctx.rotate((-12 * Math.PI) / 180);
+      ctx.font = `900 ${wmSize}px ${FONT_SERIF}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(224, 33, 138, 0.16)";
+      ctx.fillText("抵制", 0, 0);
+      ctx.restore();
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
   }
+
 
   cy += nameWrap.height + 20;
 
