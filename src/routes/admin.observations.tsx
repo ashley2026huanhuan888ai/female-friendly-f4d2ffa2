@@ -56,6 +56,8 @@ function ObsAdmin() {
   const [items, setItems] = useState<Obs[]>([]);
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected">("pending");
   const [risk, setRisk] = useState<"all" | "low" | "medium" | "high">("all");
+  const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [rejectFor, setRejectFor] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>("too_short");
@@ -64,9 +66,16 @@ function ObsAdmin() {
   const [batchReason, setBatchReason] = useState<string>("too_short");
   const [batchBusy, setBatchBusy] = useState(false);
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedKeyword(keyword.trim()), 300);
+    return () => clearTimeout(t);
+  }, [keyword]);
+
   const reload = async () => {
     try {
-      const rows = await listObs({ data: { status: filter, risk, limit: 100 } });
+      const rows = await listObs({
+        data: { status: filter, risk, limit: 100, q: debouncedKeyword || undefined },
+      });
       setItems((rows ?? []) as unknown as Obs[]);
       setSelected(new Set());
     } catch (e: any) {
@@ -75,7 +84,7 @@ function ObsAdmin() {
   };
   useEffect(() => {
     reload(); /* eslint-disable-next-line */
-  }, [filter, risk]);
+  }, [filter, risk, debouncedKeyword]);
 
   const toggleSel = (id: string) =>
     setSelected((s) => {
