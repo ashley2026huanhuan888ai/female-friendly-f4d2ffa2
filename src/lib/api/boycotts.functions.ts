@@ -112,8 +112,8 @@ export const getObjectBoycottLeaderboard = createServerFn({ method: "GET" })
 export const getUserBoycottLeaderboard = createServerFn({ method: "GET" })
   .inputValidator((i) => z.object({ limit: z.number().int().min(1).max(100).default(50) }).parse(i))
   .handler(async ({ data }) => {
-    const sb = publicClient();
-    const { data: rows, error } = await sb
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin
       .from("object_boycotts" as never)
       .select("user_id")
       .limit(10000);
@@ -127,7 +127,7 @@ export const getUserBoycottLeaderboard = createServerFn({ method: "GET" })
       .slice(0, data.limit);
     if (top.length === 0) return [] as Array<{ id: string; display_name: string | null; avatar_url: string | null; count: number }>;
     const ids = top.map(([id]) => id);
-    const { data: profs, error: perr } = await sb
+    const { data: profs, error: perr } = await supabaseAdmin
       .from("profiles")
       .select("id,display_name,avatar_url")
       .in("id", ids);
