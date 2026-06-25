@@ -54,7 +54,8 @@ export const toggleBoycott = createServerFn({ method: "POST" })
       mine = true;
     }
 
-    const { count } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count } = await supabaseAdmin
       .from("object_boycotts" as never)
       .select("user_id", { count: "exact", head: true })
       .eq("object_id", data.object_id);
