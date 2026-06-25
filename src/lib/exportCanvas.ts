@@ -385,7 +385,27 @@ export async function renderExportToPng(input: ExportInput): Promise<string> {
   for (let i = 0; i < nameWrap.lines.length; i++) {
     ctx.fillText(nameWrap.lines[i], PAD, cy + i * nameFontSize * TYPO.nameLH);
   }
+
+  // “抵制” 透明水印 — 浮于对象名字之上
+  {
+    const wmSize = Math.round(nameFontSize * 2.2);
+    const cxWM = PAD + Math.min(CONTENT_W, 520) * 0.42;
+    const cyWM = cy + nameWrap.height / 2;
+    ctx.save();
+    ctx.translate(cxWM, cyWM);
+    ctx.rotate((-12 * Math.PI) / 180);
+    ctx.font = `900 ${wmSize}px ${FONT_SERIF}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(224, 33, 138, 0.14)";
+    ctx.fillText("抵制", 0, 0);
+    ctx.restore();
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+  }
+
   cy += nameWrap.height + 20;
+
 
   // Tags row — 与主页 ObjectCard 一致的描边胶囊
   if (tagLayout.lines.length > 0) {
