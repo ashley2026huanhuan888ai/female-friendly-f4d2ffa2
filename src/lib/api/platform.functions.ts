@@ -2274,6 +2274,7 @@ export const adminListObservations = createServerFn({ method: "POST" })
         status: z.enum(["pending", "approved", "rejected"]),
         risk: z.enum(["all", "low", "medium", "high"]).default("all"),
         limit: z.number().int().min(1).max(200).default(100),
+        q: z.string().trim().max(100).optional(),
       })
       .parse(i),
   )
@@ -2284,16 +2285,49 @@ export const adminListObservations = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .eq("role", "admin");
     if (!roles?.length) throw new Error("forbidden");
-    let q = supabaseAdmin
-      .from("observations")
-      .select("*, objects(id,name)")
-      .eq("status", data.status)
-      .order("created_at", { ascending: false })
-      .limit(data.limit);
-    if (data.risk !== "all") q = q.eq("risk_level", data.risk);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
-    return rows ?? [];
+
+    const keyword = data.q?.trim();
+    const baseSelect = "*, objects(id,name)";
+
+    const buildBase = (selectStr: string) => {
+      let q = supabaseAdmin
+        .from("observations")
+        .select(selectStr)
+        .eq("status", data.status)
+        .order("created_at", { ascending: false })
+        .limit(data.limit);
+      if (data.risk !== "all") q = q.eq("risk_level", data.risk);
+      return q;
+    };
+
+    if (!keyword) {
+      const { data: rows, error } = await buildBase(baseSelect);
+      if (error) throw new Error(error.message);
+      return rows ?? [];
+    }
+
+    const like = `%${keyword.replace(/[%_]/g, (m) => `\\${m}`)}%`;
+    // 1) content / explanation
+    const q1 = buildBase(baseSelect).or(`content.ilike.${like},explanation.ilike.${like}`);
+    // 2) tag contains keyword
+    const q2 = buildBase(baseSelect).contains("tags", [keyword]);
+    // 3) object name match via inner join
+    const q3 = buildBase("*, objects!inner(id,name)").ilike("objects.name", like);
+
+    const [r1, r2, r3] = await Promise.all([q1, q2, q3]);
+    if (r1.error) throw new Error(r1.error.message);
+    if (r2.error) throw new Error(r2.error.message);
+    if (r3.error) throw new Error(r3.error.message);
+
+    const seen = new Set<string>();
+    const merged: any[] = [];
+    for (const row of [...(r1.data ?? []), ...(r2.data ?? []), ...(r3.data ?? [])] as any[]) {
+      if (seen.has(row.id)) continue;
+      seen.add(row.id);
+      merged.push(row);
+    }
+    merged.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    return merged.slice(0, data.limit);
   });
 
 export const adminGetOverviewCounts = createServerFn({ method: "GET" })
