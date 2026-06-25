@@ -142,9 +142,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             )}
             {email ? (
               <>
-                <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground">
-                  贡献榜
-                </Link>
                 <Link to="/messages" className="text-muted-foreground hover:text-foreground">
                   {t("nav.messages")}
                 </Link>
