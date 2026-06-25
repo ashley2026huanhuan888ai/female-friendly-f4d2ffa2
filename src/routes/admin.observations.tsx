@@ -250,7 +250,6 @@ function ObsAdmin() {
             {r === "all" ? "全部" : RISK_LABEL[r]}
           </button>
         ))}
-        ))}
         <div className="ml-auto flex items-center gap-2">
           <input
             type="text"
