@@ -1,1 +1,7 @@
-在 `src/components/BoycottButton.tsx` 的庆祝弹窗中，把按钮文字「知道了」改为「我真棒」。
+在 `src/lib/exportCanvas.ts` 渲染对象名字之后（约 line 386 之后），叠加一层半透明大字水印「抵制」，覆盖在对象名字区域上方：
+
+- 字体：`FONT_SERIF` 粗体，字号约为对象名字号的 2.2 倍
+- 颜色：`rgba(224, 33, 138, 0.12)`（芭比粉，低透明度）
+- 旋转：约 -12°
+- 位置：以对象名字块为中心；用 `ctx.save()` / `translate` / `rotate` / `restore` 隔离变换
+- 不影响布局测量，仅作为视觉浮层叠加
