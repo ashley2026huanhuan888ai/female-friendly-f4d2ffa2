@@ -169,8 +169,8 @@ function ReqAdmin() {
                       </p>
                     )}
                     {hasReason && (
-                      <p className="mt-2 text-[11px] text-accent">
-                        该申请包含说明内容，通过后将自动生成一条管理员观察并重新计算温度。
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        申请说明仅供审核参考，通过后不会生成观察。
                       </p>
                     )}
                   </div>
