@@ -132,6 +132,11 @@ function MePage() {
               }}
             />
           )}
+          <ExportProfileDialog
+            open={exportOpen}
+            onClose={() => setExportOpen(false)}
+            tags={data.my_tags ?? []}
+          />
 
           <MyTags tags={data.my_tags ?? []} />
 
