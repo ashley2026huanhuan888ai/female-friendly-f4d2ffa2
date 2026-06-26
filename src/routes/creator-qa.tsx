@@ -71,9 +71,13 @@ function CreatorQAPage() {
     fetchContent({ data: { slug: "creator-qa" } })
       .then((row) => {
         if (cancelled || !row) return;
-        const body = row.body as Partial<QAContent> | null;
-        if (body && Array.isArray(body.items)) {
-          setContent({ ...DEFAULT_CONTENT, ...body, items: body.items as QA[] });
+        try {
+          const body = JSON.parse(row.bodyJson) as Partial<QAContent> | null;
+          if (body && Array.isArray(body.items)) {
+            setContent({ ...DEFAULT_CONTENT, ...body, items: body.items as QA[] });
+          }
+        } catch {
+          /* ignore */
         }
       })
       .catch(() => {});
