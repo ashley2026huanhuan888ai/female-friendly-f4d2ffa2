@@ -85,10 +85,10 @@ function ReqAdmin() {
   };
 
   const runBackfill = async () => {
-    if (!confirm("将历史已通过、含说明但未生成观察的申请补成观察并重算温度，确认继续？")) return;
+    if (!confirm("将历史已通过、但没有对象卡片的申请补建为公开对象，确认继续？")) return;
     try {
       const r = await backfill();
-      toast.success(`回填完成：扫描 ${r.scanned} · 补齐 ${r.backfilled} · 跳过 ${r.skipped}`);
+      toast.success(`回填完成：扫描 ${r.scanned} · 补建 ${r.backfilled} · 跳过 ${r.skipped}`);
     } catch (e: any) {
       toast.error(e.message);
     }
