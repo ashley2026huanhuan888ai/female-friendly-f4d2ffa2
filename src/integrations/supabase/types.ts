@@ -735,6 +735,27 @@ export type Database = {
           },
         ]
       }
+      page_content: {
+        Row: {
+          body: Json
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: Json
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: Json
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       presence_sessions: {
         Row: {
           created_at: string
