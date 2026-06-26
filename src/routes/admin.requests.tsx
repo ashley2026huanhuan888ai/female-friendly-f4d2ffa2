@@ -179,12 +179,8 @@ function ReqAdmin() {
                   <button
                     onClick={async () => {
                       try {
-                        const res = await approve({ data: { request_id: r.id } });
-                        toast.success(
-                          res.temperature != null
-                            ? `已通过 · 温度 ${res.temperature}°C`
-                            : "对象已创建（待测评）",
-                        );
+                        await approve({ data: { request_id: r.id } });
+                        toast.success("对象已创建（0 观察）");
                         reload();
                       } catch (e: any) {
                         toast.error(e.message);
