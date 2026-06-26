@@ -1,13 +1,15 @@
-## 目标
-所有温度 >40°C 的显示处，在数字右侧紧邻新增小字「温度告警！」，颜色与温度一致。
+## 补全
+
+首页等位置温度由 `Thermometer` 组件渲染（未走 `TempText`），所以之前的修改未在这些地方生效。
 
 ## 修改
-仅改 `src/components/TempText.tsx`：
-- 当 `!delta && v > 40` 时，在 `°C` 单位之后追加一个 `<span>` 显示「温度告警！」。
-- 字号：使用与 `°C` 单位相同的 `UNIT_SIZE`（约 0.45–0.6em），略加 `ml-1`。
-- 颜色：复用 `band.color`（即温度区间色，与数字同色）。
-- 不影响 `delta`（增量）显示，不影响 ≤40°C 的显示。
-- 保持 `<span>` 内联结构不破坏既有布局。
 
-## 影响范围
-TempText 被首页温度计、ObjectCard、详情页、归档、时间线、导出等所有处复用，一处修改即全局覆盖。导出卡片用的是 Canvas (`exportCanvas.ts`)，不在本次改动范围（如需也加请另行说明）。
+仅改 `src/components/Thermometer.tsx`：在 `v > 40` 时，在 `°C` 后追加同色「温度告警！」小字（`text-xs`，`ml-1`，`font-semibold`，颜色用 `band.color`），不影响 `unmeasured` 与 ≤40°C 情况。
+
+温度告警，竖行显示。
+
+&nbsp;
+
+同样的修改，适应到所有会出现温度的地方， 旁边都增加“温度告警”，并且是竖行显示。
+
+布局上 Thermometer 当前是 `flex flex-col`，告警字与温度同一行紧贴 °C 右侧，不换行，竖行显示。

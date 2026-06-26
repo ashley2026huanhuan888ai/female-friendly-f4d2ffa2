@@ -51,14 +51,20 @@ export function TempText({ value, size = "sm", delta = false, precision = 0, cla
   const band = bandOf(v);
   const alert = v > 40;
   return (
-    <span
-      className={`font-serif font-bold tabular-nums ${num} ${className}`}
-      style={{ color: band.color }}
-    >
-      {v.toFixed(precision)}
-      <span className={`ml-0.5 ${unit} text-muted-foreground`}>°C</span>
+    <span className={`inline-flex items-start gap-1 ${className}`}>
+      <span
+        className={`font-serif font-bold tabular-nums ${num}`}
+        style={{ color: band.color }}
+      >
+        {v.toFixed(precision)}
+        <span className={`ml-0.5 ${unit} text-muted-foreground`}>°C</span>
+      </span>
       {alert && (
-        <span className={`ml-1 ${unit} font-sans font-semibold`} style={{ color: band.color }}>
+        <span
+          className="text-[10px] font-semibold leading-tight tracking-wider [writing-mode:vertical-rl]"
+          style={{ color: band.color }}
+          aria-label="温度告警"
+        >
           温度告警！
         </span>
       )}
