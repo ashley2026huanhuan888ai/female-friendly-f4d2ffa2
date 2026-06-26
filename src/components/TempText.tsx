@@ -49,6 +49,7 @@ export function TempText({ value, size = "sm", delta = false, precision = 0, cla
   }
 
   const band = bandOf(v);
+  const alert = v > 40;
   return (
     <span
       className={`font-serif font-bold tabular-nums ${num} ${className}`}
@@ -56,6 +57,11 @@ export function TempText({ value, size = "sm", delta = false, precision = 0, cla
     >
       {v.toFixed(precision)}
       <span className={`ml-0.5 ${unit} text-muted-foreground`}>°C</span>
+      {alert && (
+        <span className={`ml-1 ${unit} font-sans font-semibold`} style={{ color: band.color }}>
+          温度告警！
+        </span>
+      )}
     </span>
   );
 }
