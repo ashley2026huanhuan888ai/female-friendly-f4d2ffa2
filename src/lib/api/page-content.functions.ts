@@ -14,31 +14,37 @@ async function assertAdmin(userId: string) {
 
 export const getPageContent = createServerFn({ method: "GET" })
   .inputValidator((input) => z.object({ slug: z.string().min(1).max(64) }).parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<{ slug: string; bodyJson: string; updated_at: string } | null> => {
     const { data: row, error } = await supabaseAdmin
       .from("page_content" as never)
       .select("slug, body, updated_at")
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return (row ?? null) as { slug: string; body: unknown; updated_at: string } | null as
-      | { slug: string; body: Record<string, unknown> | null; updated_at: string }
-      | null;
+    if (!row) return null;
+    const r = row as { slug: string; body: unknown; updated_at: string };
+    return { slug: r.slug, bodyJson: JSON.stringify(r.body ?? {}), updated_at: r.updated_at };
   });
 
 export const adminUpsertPageContent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ slug: z.string().min(1).max(64), body: z.unknown() }).parse(input),
+    z.object({ slug: z.string().min(1).max(64), bodyJson: z.string().min(2).max(200_000) }).parse(input),
   )
   .handler(async ({ context, data }) => {
     await assertAdmin(context.userId);
+    let body: unknown;
+    try {
+      body = JSON.parse(data.bodyJson);
+    } catch {
+      throw new Error("内容不是合法 JSON");
+    }
     const { error } = await supabaseAdmin
       .from("page_content" as never)
       .upsert(
         {
           slug: data.slug,
-          body: data.body,
+          body,
           updated_at: new Date().toISOString(),
           updated_by: context.userId,
         } as never,
