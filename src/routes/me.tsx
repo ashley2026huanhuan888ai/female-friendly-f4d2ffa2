@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth-context";
 import { Thermometer } from "@/components/Thermometer";
 import { UserFollowButton } from "@/components/UserFollowButton";
 import { AvatarPicker } from "@/components/AvatarPicker";
+import { ExportProfileDialog } from "@/components/ExportProfileDialog";
 
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
 import { getMyProfile, updateMyProfile } from "@/lib/api/profile.functions";
@@ -31,6 +32,7 @@ function MePage() {
   const { ready, user } = useAuth();
   const [tab, setTab] = useState<"watch" | "obs" | "notif" | "relations">("watch");
   const [editingProfile, setEditingProfile] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const fetchDash = useServerFn(getMyDashboard);
   const fetchProfile = useServerFn(getMyProfile);
   const markRead = useServerFn(markNotificationsRead);
@@ -86,13 +88,19 @@ function MePage() {
                   {t("profile.edit")}
                 </button>
               </div>
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   to="/contribution"
                   className="inline-flex items-center gap-2 border border-accent/40 bg-accent/5 px-3 py-1.5 text-xs text-accent hover:bg-accent hover:text-background"
                 >
                   我的贡献积分 / 邀请好友 →
                 </Link>
+                <button
+                  onClick={() => setExportOpen(true)}
+                  className="inline-flex items-center gap-2 border border-foreground/60 px-3 py-1.5 text-xs hover:border-foreground hover:bg-foreground hover:text-background"
+                >
+                  {language === "zh" ? "导出我的观察台 ↓" : "Export Observatory ↓"}
+                </button>
               </div>
             </div>
             <button
@@ -124,6 +132,11 @@ function MePage() {
               }}
             />
           )}
+          <ExportProfileDialog
+            open={exportOpen}
+            onClose={() => setExportOpen(false)}
+            tags={data.my_tags ?? []}
+          />
 
           <MyTags tags={data.my_tags ?? []} />
 
