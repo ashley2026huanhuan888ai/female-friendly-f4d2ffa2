@@ -34,10 +34,25 @@ function HowWeJudgePage() {
             {t("howWeJudge.eyebrow")}
           </p>
           <h1 className="mt-3 font-serif text-4xl md:text-5xl">{t("howWeJudge.title")}</h1>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              to="/points-system"
+              className="inline-flex items-center gap-2 border border-accent bg-accent px-5 py-2.5 text-sm text-background hover:opacity-90"
+            >
+              积分制度 →
+            </Link>
+            <Link
+              to="/leaderboard"
+              className="inline-flex items-center gap-2 border border-foreground px-5 py-2.5 text-sm hover:bg-foreground hover:text-background"
+            >
+              贡献榜 →
+            </Link>
+          </div>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
             {t("howWeJudge.body")}
           </p>
         </div>
+
       </section>
 
       <section className="border-b border-border">
