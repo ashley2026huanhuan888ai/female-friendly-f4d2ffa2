@@ -22,6 +22,7 @@ import { Route as HowWeJudgeRouteImport } from './routes/how-we-judge'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as DiscussionsRouteImport } from './routes/discussions'
+import { Route as CreatorQaRouteImport } from './routes/creator-qa'
 import { Route as ContributionRouteImport } from './routes/contribution'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
@@ -114,6 +115,11 @@ const FeedRoute = FeedRouteImport.update({
 const DiscussionsRoute = DiscussionsRouteImport.update({
   id: '/discussions',
   path: '/discussions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorQaRoute = CreatorQaRouteImport.update({
+  id: '/creator-qa',
+  path: '/creator-qa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContributionRoute = ContributionRouteImport.update({
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/contribution': typeof ContributionRoute
+  '/creator-qa': typeof CreatorQaRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/contribution': typeof ContributionRoute
+  '/creator-qa': typeof CreatorQaRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/contribution': typeof ContributionRoute
+  '/creator-qa': typeof CreatorQaRoute
   '/discussions': typeof DiscussionsRoute
   '/feed': typeof FeedRoute
   '/feedback': typeof FeedbackRoute
@@ -393,6 +402,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/contribution'
+    | '/creator-qa'
     | '/discussions'
     | '/feed'
     | '/feedback'
@@ -435,6 +445,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/contribution'
+    | '/creator-qa'
     | '/discussions'
     | '/feed'
     | '/feedback'
@@ -478,6 +489,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/contribution'
+    | '/creator-qa'
     | '/discussions'
     | '/feed'
     | '/feedback'
@@ -522,6 +534,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   ContributionRoute: typeof ContributionRoute
+  CreatorQaRoute: typeof CreatorQaRoute
   DiscussionsRoute: typeof DiscussionsRoute
   FeedRoute: typeof FeedRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -638,6 +651,13 @@ declare module '@tanstack/react-router' {
       path: '/discussions'
       fullPath: '/discussions'
       preLoaderRoute: typeof DiscussionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-qa': {
+      id: '/creator-qa'
+      path: '/creator-qa'
+      fullPath: '/creator-qa'
+      preLoaderRoute: typeof CreatorQaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contribution': {
@@ -889,6 +909,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   ContributionRoute: ContributionRoute,
+  CreatorQaRoute: CreatorQaRoute,
   DiscussionsRoute: DiscussionsRoute,
   FeedRoute: FeedRoute,
   FeedbackRoute: FeedbackRoute,

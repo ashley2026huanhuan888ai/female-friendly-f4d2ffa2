@@ -21,7 +21,9 @@ export const getPageContent = createServerFn({ method: "GET" })
       .eq("slug", data.slug)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return (row ?? null) as { slug: string; body: unknown; updated_at: string } | null;
+    return (row ?? null) as { slug: string; body: unknown; updated_at: string } | null as
+      | { slug: string; body: Record<string, unknown> | null; updated_at: string }
+      | null;
   });
 
 export const adminUpsertPageContent = createServerFn({ method: "POST" })
