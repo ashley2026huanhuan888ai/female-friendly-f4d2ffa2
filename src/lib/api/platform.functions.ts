@@ -2036,20 +2036,11 @@ export const approveObjectRequest = createServerFn({ method: "POST" })
     });
     if (mergeResult.targetId) obj = { id: mergeResult.targetId };
 
-    const reason = (req.reason ?? "").trim();
-    let observation_id: string | null = null;
-    let temperature: number | null = null;
-    if (reason) {
-      const r = await ingestReasonAsObservation(obj.id, reason, context.userId, "申请审批");
-      observation_id = r.observation_id;
-      temperature = r.temperature;
-    }
-
     await supabaseAdmin
       .from("object_requests")
       .update({ status: "approved" })
       .eq("id", data.request_id);
-    return { object_id: obj.id, observation_id, temperature };
+    return { object_id: obj.id, observation_id: null, temperature: null };
   });
 
 // ===== 历史回填：把已通过但无观察的申请补成观察 =====
