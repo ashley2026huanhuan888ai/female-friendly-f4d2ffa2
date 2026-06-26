@@ -34,15 +34,26 @@ export function Thermometer({ value, size = "md", showLabel = true, unmeasured =
   const v = Math.max(20, Math.min(100, value));
   const band = bandOf(v);
 
+  const alert = v > 40;
   return (
     <div className="flex flex-col">
-      <div
-        className={`font-serif font-bold tabular-nums ${numCls}`}
-        style={{ color: band.color }}
-
-      >
-        {v.toFixed(0)}
-        <span className="ml-0.5 text-base text-muted-foreground">°C</span>
+      <div className="flex items-start gap-1">
+        <div
+          className={`font-serif font-bold tabular-nums ${numCls}`}
+          style={{ color: band.color }}
+        >
+          {v.toFixed(0)}
+          <span className="ml-0.5 text-base text-muted-foreground">°C</span>
+        </div>
+        {alert && (
+          <div
+            className="text-[10px] font-semibold leading-tight tracking-wider [writing-mode:vertical-rl]"
+            style={{ color: band.color }}
+            aria-label="温度告警"
+          >
+            温度告警！
+          </div>
+        )}
       </div>
       {showLabel && (
         <div className="text-xs uppercase tracking-wider text-muted-foreground">
