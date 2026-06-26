@@ -85,10 +85,10 @@ function ReqAdmin() {
   };
 
   const runBackfill = async () => {
-    if (!confirm("将历史已通过、含说明但未生成观察的申请补成观察并重算温度，确认继续？")) return;
+    if (!confirm("将历史已通过、但没有对象卡片的申请补建为公开对象，确认继续？")) return;
     try {
       const r = await backfill();
-      toast.success(`回填完成：扫描 ${r.scanned} · 补齐 ${r.backfilled} · 跳过 ${r.skipped}`);
+      toast.success(`回填完成：扫描 ${r.scanned} · 补建 ${r.backfilled} · 跳过 ${r.skipped}`);
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -102,7 +102,7 @@ function ReqAdmin() {
           onClick={runBackfill}
           className="border border-border px-3 py-1.5 text-xs hover:border-foreground"
         >
-          回填历史申请
+          回填缺失对象卡片
         </button>
       </div>
 
@@ -169,8 +169,8 @@ function ReqAdmin() {
                       </p>
                     )}
                     {hasReason && (
-                      <p className="mt-2 text-[11px] text-accent">
-                        该申请包含说明内容，通过后将自动生成一条管理员观察并重新计算温度。
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        申请说明仅供审核参考，通过后不会生成观察。
                       </p>
                     )}
                   </div>
@@ -179,12 +179,8 @@ function ReqAdmin() {
                   <button
                     onClick={async () => {
                       try {
-                        const res = await approve({ data: { request_id: r.id } });
-                        toast.success(
-                          res.temperature != null
-                            ? `已通过 · 温度 ${res.temperature}°C`
-                            : "对象已创建（待测评）",
-                        );
+                        await approve({ data: { request_id: r.id } });
+                        toast.success("对象已创建（0 观察）");
                         reload();
                       } catch (e: any) {
                         toast.error(e.message);
