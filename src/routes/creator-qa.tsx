@@ -104,7 +104,7 @@ function CreatorQAPage() {
     }
     setSaving(true);
     try {
-      await saveContent({ data: { slug: "creator-qa", body: parsed } });
+      await saveContent({ data: { slug: "creator-qa", bodyJson: JSON.stringify(parsed) } });
       setContent(parsed);
       setEditing(false);
       setMsg("已保存");
