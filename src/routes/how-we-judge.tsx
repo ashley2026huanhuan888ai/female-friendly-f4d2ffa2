@@ -124,17 +124,3 @@ function HowWeJudgePage() {
     </SiteLayout>
   );
 }
-
-
-
-
-        <div className="container-prose mt-10 text-sm text-muted-foreground">
-          {t("howWeJudge.feedback")}{" "}
-          <Link to="/feedback" className="underline underline-offset-4 hover:text-foreground">
-            /feedback
-          </Link>
-        </div>
-      </section>
-    </SiteLayout>
-  );
-}
