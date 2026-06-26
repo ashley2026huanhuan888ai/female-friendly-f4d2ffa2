@@ -32,6 +32,7 @@ function MePage() {
   const { ready, user } = useAuth();
   const [tab, setTab] = useState<"watch" | "obs" | "notif" | "relations">("watch");
   const [editingProfile, setEditingProfile] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const fetchDash = useServerFn(getMyDashboard);
   const fetchProfile = useServerFn(getMyProfile);
   const markRead = useServerFn(markNotificationsRead);
