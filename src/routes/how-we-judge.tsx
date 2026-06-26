@@ -47,6 +47,12 @@ function HowWeJudgePage() {
             >
               贡献榜 →
             </Link>
+            <Link
+              to="/creator-qa"
+              className="inline-flex items-center gap-2 border border-border px-5 py-2.5 text-sm hover:border-foreground"
+            >
+              创作者问答 →
+            </Link>
           </div>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
             {t("howWeJudge.body")}
