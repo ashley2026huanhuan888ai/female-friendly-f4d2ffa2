@@ -1,17 +1,19 @@
-## 目标
-申请通过后只创建对象卡片，不再自动把申请说明（reason）写成一条观察。只有当用户后续真正提交观察时，观察数才 +1。
+## 个人观察台 — 导出图片功能
 
-## 改动
-1. `src/lib/api/platform.functions.ts` · `approveObjectRequest`
-   - 删除 `if (reason) { ingestReasonAsObservation(...) }` 分支与相关返回字段（`observation_id` / `temperature` 置空）。
-   - 通过后仅完成：建对象 / 发布已存在对象 / 同名合并 / 把 request 标记 approved。
+在 `/me` 页面顶部添加「导出图片」按钮，生成 640×自适应 PNG，风格沿用现有 `exportCanvas.ts`（米色底 #faf6ec、芭比粉 accent、Noto Serif SC 标题）。
 
-2. `src/lib/api/platform.functions.ts` · `backfillApprovedRequests`
-   - 不再把历史 reason 回填成观察，仅补建缺失的对象卡片；返回值 `backfilled` 改为统计补建的对象数，温度字段保持 null。
+### 卡片内容（自上而下）
+1. Header：`MY OBSERVATORY / 个人观察台` + 用户头像 + 昵称
+2. 数据条：`贡献温度 XX°` · `抵制 XX 次` · `等级 LX 称号`
+3. 「我观察的标签」标题
+4. 标签云：按数量降序，前 N 个加粗大字（参照截图样式：`女性工具化 ·61`），溢出自动换行
+5. 底部：左侧 slogan「女性友好体验测评 / FEMALE EXPERIENCE ASSESSMENT」，右侧二维码（指向 `https://female-friendly.lovable.app/login?ref={invite_code}`）+ 一行小字「扫码加入 · 用我的邀请码 {CODE}」
 
-3. `src/routes/admin.requests.tsx`
-   - 去掉提示文案「该申请包含说明内容，通过后将自动生成一条管理员观察并重新计算温度。」
-   - 通过成功的 toast 改为「对象已创建」，不再展示温度。
-   - 回填按钮文案改为「回填缺失对象卡片」。
+### 实现
+- 新文件 `src/lib/exportProfileCanvas.ts`：参照 `exportCanvas.ts` 的字体加载、Canvas 绘制、保存逻辑；新增 QR 绘制（用 `qrcode` 包，已安装则复用，否则 `bun add qrcode`）
+- 新组件 `src/components/ExportProfileDialog.tsx`：预览 + 下载按钮（结构参考 `ExportCardDialog.tsx`）
+- 新 server fn `getMyProfileStats`（`src/lib/api/contribution.functions.ts` 已有大部分，补一个聚合接口返回 `{ nickname, avatar_url, invite_code, points, level, level_title, boycott_count, tags: [{name, count}] }`）
+- 在 `src/routes/me.tsx` header 区加按钮触发 dialog
 
-不动任何观察表结构、温度引擎、申请表单（reason 字段保留作为审核参考用途）。
+### 验证
+Playwright 移动端 390×745 截屏：打开 `/me` → 点导出 → 确认预览图标签清晰、QR 可扫、无遮挡。
