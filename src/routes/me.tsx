@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth-context";
 import { Thermometer } from "@/components/Thermometer";
 import { UserFollowButton } from "@/components/UserFollowButton";
 import { AvatarPicker } from "@/components/AvatarPicker";
+import { ExportProfileDialog } from "@/components/ExportProfileDialog";
 
 import { getMyDashboard, markNotificationsRead } from "@/lib/api/observation-center.functions";
 import { getMyProfile, updateMyProfile } from "@/lib/api/profile.functions";
