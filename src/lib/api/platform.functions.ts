@@ -2072,64 +2072,30 @@ export const backfillApprovedRequests = createServerFn({ method: "POST" })
     }>) {
       scanned++;
       const reason = (r.reason ?? "").trim();
-      if (!reason) {
-        skipped++;
-        continue;
-      }
-      // 找对应对象（按标准化名称精确匹配）
+      // 仅补建缺失的对象卡片，不再把申请说明回填为观察
       let obj: { id: string } | null = await findObjectByName(r.requested_name);
       if (!obj) {
         obj = await createPublishedObject({
           name: r.requested_name,
           type: r.requested_type,
-          description: reason,
+          description: reason || null,
         });
+        backfilled++;
         details.push({
           name: r.requested_name,
           object_id: obj.id,
           temperature: null,
           note: "已补建公开对象卡片",
         });
+      } else {
+        skipped++;
       }
-      const mergeResult = await autoMergeSameNameObjects({
+      await autoMergeSameNameObjects({
         name: r.requested_name,
         actorId: context.userId,
         preferredObjectId: obj.id,
         reason: "历史回填时自动合并同名对象",
       });
-      const objectId = mergeResult.targetId ?? obj.id;
-
-      // 去重：已有 admin_note 含「对象申请通过」的观察则跳过
-      const { data: existing } = await supabaseAdmin
-        .from("observations")
-        .select("id")
-        .eq("object_id", objectId)
-        .ilike("admin_note", "对象申请通过%")
-        .limit(1);
-      if (existing && existing.length > 0) {
-        skipped++;
-        details.push({
-          name: r.requested_name,
-          object_id: objectId,
-          temperature: null,
-          note: "已存在观察",
-        });
-        continue;
-      }
-
-      try {
-        const res = await ingestReasonAsObservation(objectId, reason, context.userId, "历史回填");
-        backfilled++;
-        details.push({ name: r.requested_name, object_id: objectId, temperature: res.temperature });
-      } catch (e) {
-        skipped++;
-        details.push({
-          name: r.requested_name,
-          object_id: objectId,
-          temperature: null,
-          note: (e as Error).message,
-        });
-      }
     }
     return { scanned, backfilled, skipped, details };
   });
