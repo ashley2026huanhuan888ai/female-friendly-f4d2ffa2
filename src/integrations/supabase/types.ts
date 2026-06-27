@@ -756,6 +756,39 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_feedback: {
+        Row: {
+          contact: string | null
+          contact_type: string | null
+          created_at: string
+          id: string
+          message: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          contact?: string | null
+          contact_type?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          contact?: string | null
+          contact_type?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       presence_sessions: {
         Row: {
           created_at: string
