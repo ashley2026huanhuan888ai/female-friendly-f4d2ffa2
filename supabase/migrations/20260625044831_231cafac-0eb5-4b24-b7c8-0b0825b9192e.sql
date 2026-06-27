@@ -1,0 +1,1 @@
+REVOKE SELECT (moderation_note) ON public.object_comments FROM anon, authenticated;
