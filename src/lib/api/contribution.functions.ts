@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export type ContribKind = "observation_temp" | "invite_signup" | "referral_bonus" | "admin_adjust";
+export type ContribKind = "observation_temp" | "invite_signup" | "referral_bonus" | "share_view" | "admin_adjust";
 
 export const getMyContribution = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -154,6 +154,80 @@ export const getUserBadge = createServerFn({ method: "GET" })
       badge: lv?.badge ?? "",
       points: Number(row.contribution_points ?? 0),
     };
+  });
+
+export const recordShareView = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        inviteCode: z.string().min(1),
+        sourceType: z.enum(["object_card", "profile_card"]),
+        objectId: z.string().uuid().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    // 1. 通过 inviteCode 查找分享者 profile
+    const { data: sharerProfile, error: sharerError } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("invite_code", data.inviteCode)
+      .maybeSingle();
+    if (sharerError || !sharerProfile) {
+      throw new Error("分享者未找到");
+    }
+    const sharerId = sharerProfile.id;
+
+    // 2. 生成 viewer_fingerprint（X-Forwarded-For + User-Agent 前 64 字符）
+    const headers = (context as any)?.headers ?? {};
+    const ip = String(headers["x-forwarded-for"] ?? headers["x-real-ip"] ?? "unknown");
+    const ua = String(headers["user-agent"] ?? "");
+    const fingerprint = (ip + "|" + ua).slice(0, 64);
+
+    // 3. 去重：同一 viewer_fingerprint + 同一 sharer 24h 内不重复
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: existing } = await supabaseAdmin
+      .from("share_views")
+      .select("id")
+      .eq("sharer_id", sharerId)
+      .eq("viewer_fingerprint", fingerprint)
+      .gte("created_at", since)
+      .limit(1);
+    if (existing && existing.length > 0) {
+      return { ok: false, reason: "duplicate" };
+    }
+
+    // 4. 写入 share_views
+    const { error: insertError } = await supabaseAdmin.from("share_views").insert({
+      sharer_id: sharerId,
+      viewer_fingerprint: fingerprint,
+      source_type: data.sourceType,
+      object_id: data.objectId ?? null,
+    });
+    if (insertError) throw new Error(insertError.message);
+
+    // 5. 调用 add_contribution(kind=share_view, delta=1)
+    await supabaseAdmin.rpc("add_contribution", {
+      _user: sharerId,
+      _delta: 1,
+      _kind: "share_view",
+      _reason: data.sourceType === "object_card" ? "卡片分享被查看" : "个人名片分享被查看",
+      _source: null,
+      _obs: null,
+      _temp: null,
+      _depth: null,
+      _meta: {},
+    } as never);
+
+    // 6. 触发 cascade_referral_bonus
+    await supabaseAdmin.rpc("cascade_referral_bonus", {
+      _user: sharerId,
+      _gained: 1,
+      _temp: null,
+      _obs: null,
+    } as never);
+
+    return { ok: true };
   });
 
 export const adminAdjustPoints = createServerFn({ method: "POST" })

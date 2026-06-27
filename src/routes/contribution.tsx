@@ -16,6 +16,7 @@ const kindLabel: Record<string, string> = {
   observation_temp: "观察提温",
   invite_signup: "邀请注册",
   referral_bonus: "下线返利",
+  share_view: "分享查看",
   admin_adjust: "管理员调整",
 };
 
@@ -116,7 +117,7 @@ function ContributionPage() {
                 <ul className="mt-3 space-y-2 text-sm">
                   <li>· 你的观察让对象温度上升：<strong>每 10°C 得 1 分</strong>（按线性比例）</li>
                   <li>· 朋友通过你的邀请码注册：<strong>+5 分</strong></li>
-                  <li>· 下线获得积分时持续返利：L1 +10%，L2 +3%，L3 +1%</li>
+                  <li>· 下线获得积分时持续返利：L1 +10%，L2 +10%，L3 +10%</li>
                 </ul>
                 <div className="mt-4 text-[11px] uppercase tracking-wider text-muted-foreground">邀请贡献累计</div>
                 <div className="mt-1 font-serif text-2xl text-accent">{totalReferralPoints.toFixed(2)} 分</div>

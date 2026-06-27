@@ -48,7 +48,7 @@ function PointsSystemPage() {
               立即邀请朋友注册 →
             </Link>
             <p className="text-xs text-muted-foreground sm:max-w-sm">
-              登录后获取你的专属邀请码与链接，每邀请一位好友注册得 <span className="text-accent">5 分</span>，好友贡献还有 <span className="text-accent">10%</span> 返利。
+              登录后获取你的专属邀请码与链接，每邀请一位好友注册得 <span className="text-accent">5 分</span>，好友贡献 L1/L2/L3 各 10% 返利。
             </p>
           </div>
 
@@ -60,7 +60,7 @@ function PointsSystemPage() {
         <div className="container-prose">
           <h2 className="font-serif text-2xl md:text-3xl">📝 积分获取途径</h2>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
+          <div className="mt-8 grid gap-5 md:grid-cols-4">
             {[
               {
                 tag: "01",
@@ -82,6 +82,13 @@ function PointsSystemPage() {
                 reward: "1 分 / 10 分",
                 desc: "你邀请的好友（直系下线）获得了积分。",
                 eg: "好友每赚 10 分，你额外得 1 分。不设上限，自动结算。",
+              },
+              {
+                tag: "04",
+                title: "分享查看",
+                reward: "+1 分/次",
+                desc: "有人扫描你的分享卡查看即得。",
+                eg: "分享对象卡片或个人名片，他人扫码查看即可获得积分。",
               },
             ].map((item) => (
               <div key={item.tag} className="border border-border p-6 flex flex-col">

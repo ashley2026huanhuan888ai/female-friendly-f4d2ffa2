@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { HeatSources } from "@/components/HeatSources";
 import { TemperatureTimeline } from "@/components/TemperatureTimeline";
 import { getTemperatureExplanation } from "@/lib/api/temperature.functions";
 import { getPublicObjectDetail, getPublicObjectObservations, deleteObservation } from "@/lib/api/platform.functions";
+import { recordShareView } from "@/lib/api/contribution.functions";
 import { useAuth } from "@/components/auth-context";
 
 import { FollowButton } from "@/components/FollowButton";
@@ -80,6 +81,7 @@ function ObjectDetail() {
   const fetchMoreObservations = useServerFn(getPublicObjectObservations);
   const removeObservation = useServerFn(deleteObservation);
   const { isAdmin } = useAuth();
+  const recordShareViewFn = useServerFn(recordShareView);
 
   async function handleDeleteObservation(obsId: string) {
     if (!confirm(t("objectDetail.deleteConfirm"))) return;
@@ -121,6 +123,15 @@ function ObjectDetail() {
       cancelled = true;
     };
   }, [id, fetchExpl, fetchDetail]);
+
+  // 检测分享链接中的 from 参数，上报分享查看
+  const search = useSearch({ from: "/objects/$id" });
+  useEffect(() => {
+    const from = (search as any).from;
+    if (from) {
+      recordShareViewFn({ data: { inviteCode: from, sourceType: "object_card", objectId: id } }).catch(() => {});
+    }
+  }, [search, recordShareViewFn, id]);
 
   async function loadMoreObservations() {
     if (loadingMore || obs.length >= obsTotal) return;

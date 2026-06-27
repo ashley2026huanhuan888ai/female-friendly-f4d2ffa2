@@ -53,6 +53,7 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [configs, setConfigs] = useState<Record<string, ItemConfig>>({});
   const [nickname, setNickname] = useState<string>("");
+  const [inviteCode, setInviteCode] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState<{ pct: number; label: string }>({ pct: 0, label: "" });
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
@@ -90,7 +91,10 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
       supabase.auth.getSession().then(({ data }) => {
         if (cancelled || !data.session) return;
         fetchProfile()
-          .then((p: any) => setNickname(p?.display_name || ""))
+          .then((p: any) => {
+            setNickname(p?.display_name || "");
+            setInviteCode(p?.invite_code || "");
+          })
           .catch(() => {});
       })
     );
@@ -101,11 +105,12 @@ export function ExportCardDialog({ open, onClose, object, observations }: Props)
 
   useEffect(() => {
     if (!open) return;
-    const url = `${typeof window !== "undefined" ? window.location.origin : ""}/objects/${object.id}`;
+    const base = `${typeof window !== "undefined" ? window.location.origin : ""}/objects/${object.id}`;
+    const url = inviteCode ? `${base}?from=${inviteCode}` : base;
     QRCode.toDataURL(url, { margin: 1, width: 320, color: { dark: INK, light: "#ffffff" } })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(""));
-  }, [open, object.id]);
+  }, [open, object.id, inviteCode]);
 
   const orderedSelected = useMemo(
     () => observations.filter((o) => selectedIds.has(o.id)),
