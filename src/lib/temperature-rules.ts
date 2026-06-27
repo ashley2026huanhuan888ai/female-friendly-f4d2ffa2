@@ -72,7 +72,7 @@ const SEVERE_TAG_MIN: Record<string, number> = {
   男性凝视: 50,
   容貌规训: 50,
   低俗擦边营销: 50,
-  伪女性友好: 45,
+  伪女性友好: 75,
 };
 
 // 法律/监管强证据触发的最低温度（"女性友好风险温度计"的硬性产品规则）
@@ -269,7 +269,7 @@ export const MISOGYNY_SEMANTIC_FLOORS: ReadonlyArray<{
     ],
   },
   {
-    floor: 35,
+    floor: 75,
     keywords: ["擦边营销", "低俗营销", "伪女性友好", "疯女人", "疯姐姐", "歇斯底里"],
   },
 ];

@@ -45,7 +45,7 @@ export const TAG_WEIGHTS: Record<string, number> = {
   性羞辱: 10,
   受害者归因: 10,
   女性工具化: 7,
-  伪女性友好: 5,
+  伪女性友好: 10,
 };
 
 export const FEMINIST_TAGS = Object.keys(TAG_WEIGHTS) as ReadonlyArray<string>;
