@@ -8,7 +8,7 @@ import { useAuth } from "@/components/auth-context";
 import { toast } from "sonner";
 import { setRemember, consumeExpiredNotice } from "@/lib/remember-login";
 import { useI18n, usePageMeta } from "@/lib/i18n";
-import { bindInviter } from "@/lib/api/contribution.functions";
+import { bindInviter, recordShareView } from "@/lib/api/contribution.functions";
 
 type LoginSearch = {
   redirect?: string;
@@ -42,6 +42,7 @@ function LoginPage() {
   const [pending, setPending] = useState(false);
   const [remember, setRememberState] = useState(true);
   const bindInviterFn = useServerFn(bindInviter);
+  const recordShareViewFn = useServerFn(recordShareView);
   const [errorDetail, setErrorDetail] = useState<null | {
     title: string;
     hint: string;
@@ -63,6 +64,12 @@ function LoginPage() {
       } catch {}
     }
   }, [ref]);
+
+  useEffect(() => {
+    if (ref) {
+      recordShareViewFn({ data: { inviteCode: ref, sourceType: "profile_card" } }).catch(() => {});
+    }
+  }, [ref, recordShareViewFn]);
 
   // 登录后若有暂存的邀请码，尝试绑定
   useEffect(() => {
